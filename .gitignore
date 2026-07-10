@@ -1,0 +1,5 @@
+# Local, per-repo Claude Code permission allowlist — not shared (see coding-agents/agents.md)
+.claude/settings.local.json
+
+# macOS
+.DS_Store
