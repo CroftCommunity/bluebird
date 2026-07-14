@@ -2,6 +2,12 @@ import { test, expect } from '@playwright/test';
 
 // Drives the real built bundle from dist/ (hermetic: served locally, no network).
 test.describe('Phase 0 shell', () => {
+  // Keep it fully hermetic — the garden's AppView calls are stubbed to empty so
+  // nothing reaches the real network.
+  test.beforeEach(async ({ page }) => {
+    await page.route('**/xrpc/app.bsky.feed.getAuthorFeed*', (r) => r.fulfill({ json: { feed: [] } }));
+  });
+
   test('renders the wordmark and tagline', async ({ page }) => {
     await page.goto('/');
     await expect(page.getByRole('heading', { name: 'Skylite' })).toBeVisible();

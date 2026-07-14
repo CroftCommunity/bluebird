@@ -29,13 +29,13 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
   </head>
   <body>
-    <main class="shell">
-      <div class="sky" aria-hidden="true">
-        <span class="moon"></span>
-      </div>
-      <h1 class="wordmark">Skylite</h1>
-      <p class="tagline">A window to the stars</p>
-      <p class="phase">The garden is still being planted.</p>
+    <header class="topbar">
+      <span class="topbar__moon" aria-hidden="true"></span>
+      <h1 class="topbar__wordmark">Skylite</h1>
+      <p class="topbar__tagline">A window to the stars</p>
+    </header>
+    <main class="garden" data-garden aria-live="polite">
+      <p class="garden__status" data-garden-status="loading">Opening the window…</p>
     </main>
     <footer class="build">
       <span class="build__label">build</span>

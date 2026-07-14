@@ -1,0 +1,156 @@
+import type { EmbedView, ImageView, PostView, RecordEmbedView } from '../atproto/types.js';
+import { segmentRichText, type Segment } from '../feed/richtext.js';
+import { el } from './dom.js';
+import { relativeTime } from './time.js';
+import { showLeaveInterstitial } from './interstitial.js';
+
+/**
+ * Render one post into the garden. Big, bright, high-contrast, and — by
+ * construction — no like/repost/reply counts anywhere (anti-compulsion stance,
+ * CONCEPT.md §1). Text is facet-segmented; links are gated (D7); media shows alt
+ * text and posters. Nothing here can post, reply, or interact.
+ */
+
+function domainOf(rawUrl: string): string {
+  try {
+    return new URL(rawUrl).hostname.replace(/^www\./, '');
+  } catch {
+    return rawUrl;
+  }
+}
+
+function renderSegment(seg: Segment): Node {
+  switch (seg.kind) {
+    case 'link': {
+      const btn = el('button', { class: 'seg seg--link', type: 'button', 'data-link': seg.uri }, [
+        seg.text,
+      ]);
+      btn.addEventListener('click', () => showLeaveInterstitial(seg.uri));
+      return btn;
+    }
+    case 'tag':
+      return el('span', { class: 'seg seg--tag' }, [seg.text]);
+    case 'mention':
+      // Profiles are not a destination in v1; render inert, styled.
+      return el('span', { class: 'seg seg--mention' }, [seg.text]);
+    default:
+      return document.createTextNode(seg.text);
+  }
+}
+
+function renderText(post: PostView): HTMLElement | null {
+  const segments = segmentRichText(post.record.text ?? '', post.record.facets);
+  if (segments.length === 0) return null;
+  return el('p', { class: 'post__text' }, segments.map(renderSegment));
+}
+
+function renderImages(images: ImageView[]): HTMLElement {
+  const grid = el('div', { class: `post__images post__images--${Math.min(images.length, 4)}` });
+  for (const img of images) {
+    grid.append(
+      el('img', {
+        class: 'post__image',
+        src: img.thumb,
+        alt: img.alt || '',
+        loading: 'lazy',
+        decoding: 'async',
+      }),
+    );
+  }
+  return grid;
+}
+
+function renderVideo(thumbnail: string | undefined, alt: string | undefined): HTMLElement {
+  // Playback is out of scope for Phase 1 (the HLS host isn't in the CSP); we show
+  // the poster with a clear video marker and alt text.
+  const poster = thumbnail
+    ? el('img', { class: 'post__video-poster', src: thumbnail, alt: alt || 'Video', loading: 'lazy' })
+    : el('div', { class: 'post__video-poster post__video-poster--blank' }, ['Video']);
+  return el('div', { class: 'post__video' }, [poster, el('span', { class: 'post__video-badge' }, ['▶ Video'])]);
+}
+
+function renderExternal(uri: string, title: string, description: string): HTMLElement {
+  // D7: link cards render domain + title only, and are gated on tap.
+  const card = el('button', { class: 'post__external', type: 'button', 'data-external': uri }, [
+    el('span', { class: 'post__external-domain' }, [domainOf(uri)]),
+    title ? el('span', { class: 'post__external-title' }, [title]) : null,
+    description ? el('span', { class: 'post__external-desc' }, [description]) : null,
+  ]);
+  card.addEventListener('click', () => showLeaveInterstitial(uri));
+  return card;
+}
+
+function renderQuoted(rec: RecordEmbedView): HTMLElement | null {
+  const author = rec.author;
+  const text = rec.value?.text;
+  if (!author && !text) return null;
+  return el('div', { class: 'post__quote' }, [
+    author
+      ? el('span', { class: 'post__quote-author' }, [author.displayName || `@${author.handle}`])
+      : null,
+    text ? el('p', { class: 'post__quote-text' }, [text]) : null,
+  ]);
+}
+
+function renderEmbed(embed: EmbedView | undefined): Node | null {
+  if (!embed) return null;
+  switch (embed.$type) {
+    case 'app.bsky.embed.images#view':
+      return renderImages((embed as Extract<EmbedView, { $type: 'app.bsky.embed.images#view' }>).images);
+    case 'app.bsky.embed.video#view': {
+      const v = embed as Extract<EmbedView, { $type: 'app.bsky.embed.video#view' }>;
+      return renderVideo(v.thumbnail, v.alt);
+    }
+    case 'app.bsky.embed.external#view': {
+      const e = embed as Extract<EmbedView, { $type: 'app.bsky.embed.external#view' }>;
+      return renderExternal(e.external.uri, e.external.title, e.external.description);
+    }
+    case 'app.bsky.embed.record#view': {
+      const r = embed as Extract<EmbedView, { $type: 'app.bsky.embed.record#view' }>;
+      return renderQuoted(r.record);
+    }
+    case 'app.bsky.embed.recordWithMedia#view': {
+      const rm = embed as Extract<EmbedView, { $type: 'app.bsky.embed.recordWithMedia#view' }>;
+      const frag = document.createDocumentFragment();
+      const media = renderEmbed(rm.media);
+      if (media) frag.append(media);
+      const quoted = renderQuoted(rm.record.record);
+      if (quoted) frag.append(quoted);
+      return frag.childNodes.length ? frag : null;
+    }
+    default:
+      return null;
+  }
+}
+
+export function renderPost(post: PostView): HTMLElement {
+  const author = post.author;
+  const name = author.displayName?.trim() || `@${author.handle}`;
+
+  const avatar = author.avatar
+    ? el('img', { class: 'post__avatar', src: author.avatar, alt: '', loading: 'lazy' })
+    : el('div', { class: 'post__avatar post__avatar--blank', 'aria-hidden': 'true' }, [
+        name.slice(0, 1).toUpperCase(),
+      ]);
+
+  const header = el('header', { class: 'post__header' }, [
+    avatar,
+    el('div', { class: 'post__id' }, [
+      el('span', { class: 'post__name' }, [name]),
+      el('span', { class: 'post__handle' }, [`@${author.handle}`]),
+    ]),
+    el('time', { class: 'post__time', datetime: post.record.createdAt }, [
+      relativeTime(post.record.createdAt),
+    ]),
+  ]);
+
+  const article = el('article', { class: 'post', 'data-post-uri': post.uri }, [header]);
+
+  const text = renderText(post);
+  if (text) article.append(text);
+
+  const embed = renderEmbed(post.embed);
+  if (embed) article.append(embed);
+
+  return article;
+}

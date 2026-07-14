@@ -1,20 +1,23 @@
 import { skyliteVersion } from './version.js';
+import { mountGarden } from './garden.js';
+import { DEV_INCLUSION } from './feed/inclusion.js';
 
 /**
- * Phase 0 entry point. The garden itself (Phase 1) does not exist yet; all this
- * bundle proves is that the pipeline builds, ships, and renders a build we can
- * point at. It stamps the running version into the page so a browser check —
- * and the e2e gate — can confirm exactly which build is live.
+ * Phase 1 entry point. Stamps the running build (kept from Phase 0) and mounts
+ * the garden — the merged, newest-first, label-filtered read of the inclusion
+ * list. The inclusion list is still the Phase-1 dev fixture; the guardian config
+ * (Phase 2) replaces it without touching this wiring.
  */
-function renderVersionStamp(): void {
+function start(): void {
   const stamp = document.querySelector<HTMLElement>('[data-version-stamp]');
-  if (stamp) {
-    stamp.textContent = skyliteVersion();
-  }
+  if (stamp) stamp.textContent = skyliteVersion();
+
+  const container = document.querySelector<HTMLElement>('[data-garden]');
+  if (container) void mountGarden(container, DEV_INCLUSION);
 }
 
 if (document.readyState === 'loading') {
-  document.addEventListener('DOMContentLoaded', renderVersionStamp, { once: true });
+  document.addEventListener('DOMContentLoaded', start, { once: true });
 } else {
-  renderVersionStamp();
+  start();
 }
