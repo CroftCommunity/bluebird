@@ -4,14 +4,15 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
     <!--
-      CSP allowlist (build-plan §4): the only runtime origins Skylite is permitted
-      to reach are the public AppView (reads) and the Bluesky blob CDN (images).
-      Third-party PDS hosts get added to connect-src in Phase 2 (guardian config).
-      No inline script/style — everything is 'self'.
+      CSP allowlist (build-plan §4): runtime origins are the public AppView
+      (feed reads), the Bluesky blob CDN (images), the PLC directory (DID→PDS
+      resolution), and bsky-network PDS hosts (guardian config getRecord). Other
+      PDS hosts are not statically allowlistable; the local-only config fallback
+      covers guardians off bsky-network. No inline script/style — all 'self'.
     -->
     <meta
       http-equiv="Content-Security-Policy"
-      content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data: https://cdn.bsky.app https://*.cdn.bsky.app; connect-src 'self' https://public.api.bsky.app; manifest-src 'self'; base-uri 'none'; object-src 'none'; form-action 'none'; frame-ancestors 'none'"
+      content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data: https://cdn.bsky.app https://*.cdn.bsky.app; connect-src 'self' https://public.api.bsky.app https://plc.directory https://bsky.social https://*.host.bsky.network; manifest-src 'self'; base-uri 'none'; object-src 'none'; form-action 'none'; frame-ancestors 'none'"
     />
     <title>Skylite</title>
     <meta name="description" content="A window to the stars — a read-only, curated Bluesky garden." />

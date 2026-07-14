@@ -1,0 +1,76 @@
+{
+  "lexicon": 1,
+  "id": "ing.croft.skylite.config",
+  "description": "Guardian-authored control record for a single Skylite child device. Lives in the guardian's own ATProto repo and is read publicly (unauthenticated com.atproto.repo.getRecord) by the child's device. Carries the pause switch, the curated inclusion list grouped into toggleable channels, and a settings version. Contains no data about the child and nothing private.",
+  "defs": {
+    "main": {
+      "type": "record",
+      "key": "literal:self",
+      "record": {
+        "type": "object",
+        "required": ["version", "paused", "updatedAt", "channels"],
+        "properties": {
+          "version": {
+            "type": "integer",
+            "minimum": 1,
+            "description": "Config schema version. 1 for v1."
+          },
+          "paused": {
+            "type": "boolean",
+            "description": "The pause switch / kill switch. When true the child's device locks the garden on its next successful poll."
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "datetime",
+            "description": "When the guardian last changed this config."
+          },
+          "channels": {
+            "type": "array",
+            "description": "Named, individually toggleable groupings of accounts. The child's effective inclusion list is the union of accounts across enabled channels.",
+            "items": { "type": "ref", "ref": "#channel" }
+          }
+        }
+      }
+    },
+    "channel": {
+      "type": "object",
+      "required": ["id", "name", "enabled", "accounts"],
+      "properties": {
+        "id": {
+          "type": "string",
+          "maxLength": 64,
+          "description": "Stable slug identifying the channel (e.g. \"science\")."
+        },
+        "name": {
+          "type": "string",
+          "maxLength": 120,
+          "description": "Display name (e.g. \"Science\")."
+        },
+        "enabled": {
+          "type": "boolean",
+          "description": "Whether this channel is currently shown to the child."
+        },
+        "accounts": {
+          "type": "array",
+          "description": "The accounts in this channel.",
+          "items": { "type": "ref", "ref": "#account" }
+        }
+      }
+    },
+    "account": {
+      "type": "object",
+      "required": ["actor"],
+      "properties": {
+        "actor": {
+          "type": "string",
+          "description": "A handle or DID of an included account (getAuthorFeed accepts either)."
+        },
+        "displayName": {
+          "type": "string",
+          "maxLength": 120,
+          "description": "Optional guardian-facing label."
+        }
+      }
+    }
+  }
+}
