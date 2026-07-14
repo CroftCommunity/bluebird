@@ -18,6 +18,10 @@ export default defineConfig({
   use: {
     baseURL: `http://localhost:${PORT}`,
     trace: 'on-first-retry',
+    // The service worker makes its own fetches that bypass page.route mocks, so
+    // block it by default for the mock-driven hermetic specs. The pwa spec
+    // re-enables it (test.use) to exercise the SW itself.
+    serviceWorkers: 'block',
   },
   projects: [
     {
