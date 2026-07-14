@@ -69,7 +69,8 @@ test.describe('Phase 1 garden (hermetic)', () => {
   });
 
   test('shows an error state when every author fails', async ({ page }) => {
-    await page.route('**/xrpc/app.bsky.feed.getAuthorFeed*', (r) => r.fulfill({ status: 500, body: 'x' }));
+    // 400 is non-retryable, so all authors fail fast (no backoff loop).
+    await page.route('**/xrpc/app.bsky.feed.getAuthorFeed*', (r) => r.fulfill({ status: 400, body: 'x' }));
     await page.goto('/');
     await expect(page.locator('[data-garden-status="error"]')).toBeVisible();
     // sanity: the fixture posts are not present

@@ -3,6 +3,8 @@ import { mountGarden } from './garden.js';
 import { renderPausedLock, renderStaleLock } from './render/locks.js';
 import { ingestProvisioningFromLocation } from './config/binding.js';
 import { resolveGarden } from './config/provider.js';
+import { registerServiceWorker } from './pwa/register.js';
+import { installBackgroundLock } from './lock/backgroundLock.js';
 
 /**
  * Phase 2 entry point. Ingests any provisioning link, resolves which config
@@ -14,6 +16,9 @@ import { resolveGarden } from './config/provider.js';
 async function start(): Promise<void> {
   const stamp = document.querySelector<HTMLElement>('[data-version-stamp]');
   if (stamp) stamp.textContent = skyliteVersion();
+
+  registerServiceWorker();
+  installBackgroundLock();
 
   const container = document.querySelector<HTMLElement>('[data-garden]');
   if (!container) return;
@@ -29,12 +34,12 @@ async function start(): Promise<void> {
     case 'stale-locked':
       renderStaleLock(container);
       return;
-    default:
-      await mountGarden(
-        container,
-        { version: 1, entries: inclusion },
-        { offline: gate.offline },
-      );
+    default: {
+      // Show the "saved posts, offline" banner either when serving a cached
+      // config (D5) or when the device itself is offline.
+      const offline = gate.offline || !navigator.onLine;
+      await mountGarden(container, { version: 1, entries: inclusion }, { offline });
+    }
   }
 }
 

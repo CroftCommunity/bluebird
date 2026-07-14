@@ -546,6 +546,66 @@ body {
   font-size: 0.9rem;
 }
 
+/* --- PIN lock (D6) --- */
+.pinlock {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: grid;
+  place-items: center;
+  padding: 1.5rem;
+  background: linear-gradient(180deg, var(--sky-indigo) 0%, var(--sky-deep) 100%);
+}
+
+.pinlock__card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.7rem;
+  width: 100%;
+  max-width: 18rem;
+  text-align: center;
+}
+
+.pinlock__glyph {
+  font-size: 3rem;
+}
+
+.pinlock__title {
+  margin: 0;
+  font-size: 1.5rem;
+}
+
+.pinlock__input {
+  width: 100%;
+  text-align: center;
+  font-size: 2rem;
+  letter-spacing: 0.5em;
+  padding: 0.6rem;
+  border-radius: 12px;
+  border: 1px solid var(--sky-indigo-soft);
+  background: var(--sky-deep);
+  color: var(--ink);
+}
+
+.pinlock__err {
+  color: #ff9a9a;
+  min-height: 1.2em;
+  font-size: 0.95rem;
+}
+
+.pinlock__btn {
+  width: 100%;
+  padding: 0.8rem;
+  border: none;
+  border-radius: 12px;
+  background: var(--moon);
+  color: var(--sky-deep);
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+}
+
 /* --- build stamp --- */
 .build {
   position: fixed;

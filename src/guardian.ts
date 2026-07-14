@@ -4,6 +4,8 @@ import { SKYLITE_CONFIG_NSID, SKYLITE_CONFIG_RKEY } from './config/types.js';
 import type { SkyliteChannel, SkyliteConfig } from './config/types.js';
 import { parseConfig } from './config/parse.js';
 import { provisioningUrl, setLocalConfig, getLocalConfig } from './config/binding.js';
+import { registerServiceWorker } from './pwa/register.js';
+import { hasPin, setPin, clearPin } from './lock/pin.js';
 
 /**
  * Guardian setup — the guardian's own device. Phase 2 / D2 supports authoring
@@ -111,6 +113,9 @@ function render(): void {
   const linkOut = el('input', { type: 'text', class: 'g-input', readonly: 'readonly', placeholder: 'device link appears here' });
   const saveMsg = el('span', { class: 'g-msg' });
 
+  const pinInput = el('input', { type: 'password', inputmode: 'numeric', autocomplete: 'off', class: 'g-input', placeholder: '••••' });
+  const pinMsg = el('span', { class: 'g-msg' });
+
   root.append(
     el('div', { class: 'g-card' }, [
       el('h2', {}, ['1 · Pause switch']),
@@ -165,6 +170,33 @@ function render(): void {
     ]),
 
     el('div', { class: 'g-card' }, [
+      el('h2', {}, ['5 · Device lock (PIN)']),
+      el('p', { class: 'g-hint' }, ['Optional. When set, Skylite on this device asks for the PIN after it has been in the background. It is a local lock only — no account, stored as a one-way hash.']),
+      el('p', { class: 'g-msg', 'data-pin-status': 'true' }, [hasPin() ? 'A PIN is set on this device.' : 'No PIN set.']),
+      labeled('New PIN (4+ digits)', pinInput),
+      el('div', { class: 'g-row' }, [
+        button('Set PIN', 'g-btn g-btn--primary', () => {
+          const v = pinInput.value.trim();
+          if (v.length < 4) {
+            pinMsg.textContent = 'Use at least 4 digits.';
+            return;
+          }
+          void setPin(v).then(() => {
+            pinInput.value = '';
+            pinMsg.textContent = 'PIN set.';
+            render();
+          });
+        }),
+        button('Remove PIN', 'g-btn g-btn--ghost', () => {
+          clearPin();
+          pinMsg.textContent = 'PIN removed.';
+          render();
+        }),
+        pinMsg,
+      ]),
+    ]),
+
+    el('div', { class: 'g-card' }, [
       el('h2', {}, ['Load an existing config']),
       importArea,
       el('div', { class: 'g-row' }, [
@@ -188,6 +220,7 @@ function render(): void {
 function boot(): void {
   const stamp = document.querySelector<HTMLElement>('[data-version-stamp]');
   if (stamp) stamp.textContent = skyliteVersion();
+  registerServiceWorker();
   root = document.querySelector<HTMLElement>('[data-guardian]');
   // Keep the exported JSON live as any field is edited, without a full re-render
   // (which would steal input focus). Delegated listeners fire in the bubble phase,
