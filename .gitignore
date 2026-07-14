@@ -3,3 +3,12 @@
 
 # macOS
 .DS_Store
+
+# Node / build
+node_modules/
+dist/
+
+# Playwright
+/test-results/
+/playwright-report/
+/playwright/.cache/
