@@ -5,6 +5,7 @@ import { mergeFeeds } from './feed/merge.js';
 import { filterByLabels } from './feed/labels.js';
 import { renderPost } from './render/post.js';
 import { el, clear } from './render/dom.js';
+import { offlineBanner } from './render/locks.js';
 
 /**
  * Orchestrates the read path: pull each included author's feed, merge them
@@ -63,8 +64,14 @@ function statusMessage(status: Status): string {
   }
 }
 
-export function renderGardenInto(container: HTMLElement, result: GardenResult, status: Status): void {
+export function renderGardenInto(
+  container: HTMLElement,
+  result: GardenResult,
+  status: Status,
+  opts: { offline?: boolean } = {},
+): void {
   clear(container);
+  if (opts.offline) container.append(offlineBanner());
   if (status !== 'ready') {
     container.append(el('p', { class: 'garden__status', 'data-garden-status': status }, [statusMessage(status)]));
     return;
@@ -78,14 +85,14 @@ export function renderGardenInto(container: HTMLElement, result: GardenResult, s
 export async function mountGarden(
   container: HTMLElement,
   inclusion: InclusionList,
-  opts: GardenOptions = {},
+  opts: GardenOptions & { offline?: boolean } = {},
 ): Promise<void> {
   renderGardenInto(container, { posts: [], failedActors: [] }, 'loading');
   try {
     const result = await fetchGarden(inclusion, opts);
     const status: Status =
       result.posts.length > 0 ? 'ready' : result.failedActors.length > 0 ? 'error' : 'empty';
-    renderGardenInto(container, result, status);
+    renderGardenInto(container, result, status, { offline: opts.offline ?? false });
   } catch {
     renderGardenInto(container, { posts: [], failedActors: [] }, 'error');
   }

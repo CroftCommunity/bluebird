@@ -345,6 +345,207 @@ body {
   color: var(--sky-deep);
 }
 
+/* --- lock screens + offline banner --- */
+.lock {
+  max-width: 28rem;
+  margin: 4rem auto 0;
+  padding: 2rem 1.5rem;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+.lock__glyph {
+  font-size: 3.5rem;
+  line-height: 1;
+}
+
+.lock__title {
+  margin: 0.4rem 0 0;
+  font-size: 1.7rem;
+  font-weight: 800;
+}
+
+.lock__body {
+  margin: 0;
+  color: var(--ink-dim);
+  font-size: 1.15rem;
+  line-height: 1.5;
+}
+
+.banner {
+  display: flex;
+  align-items: center;
+  gap: 0.6ch;
+  justify-content: center;
+  background: var(--card-soft);
+  color: var(--ink);
+  border-radius: 12px;
+  padding: 0.6rem 0.9rem;
+  font-size: 0.95rem;
+}
+
+.banner__glyph {
+  font-size: 1.1rem;
+}
+
+/* --- guardian setup page --- */
+.guardian {
+  max-width: 680px;
+  margin: 0 auto;
+  padding: 1rem 1rem 5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.1rem;
+}
+
+.g-card {
+  background: var(--card);
+  border-radius: var(--radius);
+  padding: 1.1rem 1.2rem 1.3rem;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+}
+
+.g-card h2 {
+  margin: 0 0 0.6rem;
+  font-size: 1.25rem;
+}
+
+.g-hint {
+  margin: 0 0 0.9rem;
+  color: var(--ink-dim);
+  font-size: 0.95rem;
+  line-height: 1.45;
+}
+
+.g-hint code,
+.g-card code {
+  font-family: ui-monospace, "SF Mono", Menlo, monospace;
+  color: var(--link);
+}
+
+.g-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  margin-top: 0.7rem;
+}
+
+.g-field__label {
+  font-size: 0.85rem;
+  color: var(--ink-dim);
+}
+
+.g-input,
+.g-json {
+  width: 100%;
+  background: var(--sky-deep);
+  color: var(--ink);
+  border: 1px solid var(--sky-indigo-soft);
+  border-radius: 10px;
+  padding: 0.6rem 0.7rem;
+  font: inherit;
+}
+
+.g-json {
+  font-family: ui-monospace, "SF Mono", Menlo, monospace;
+  font-size: 0.85rem;
+  resize: vertical;
+}
+
+.g-channel {
+  border: 1px solid var(--sky-indigo-soft);
+  border-radius: 12px;
+  padding: 0.8rem;
+  margin-bottom: 0.8rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.g-channel__head {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.g-channel__head .g-input {
+  flex: 1;
+  min-width: 8rem;
+}
+
+.g-account {
+  display: flex;
+  gap: 0.4rem;
+  align-items: center;
+}
+
+.g-account .g-input {
+  flex: 1;
+}
+
+.g-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  color: var(--ink);
+  white-space: nowrap;
+}
+
+.g-toggle--big {
+  font-size: 1.1rem;
+}
+
+.g-check {
+  width: 1.3rem;
+  height: 1.3rem;
+  accent-color: var(--moon);
+}
+
+.g-btn {
+  background: var(--card-soft);
+  color: var(--ink);
+  border: none;
+  border-radius: 10px;
+  padding: 0.6rem 0.9rem;
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.g-btn--primary {
+  background: var(--moon);
+  color: var(--sky-deep);
+}
+
+.g-btn--ghost {
+  background: transparent;
+  border: 1px solid var(--sky-indigo-soft);
+  color: var(--ink-dim);
+}
+
+.g-btn--icon {
+  padding: 0.4rem 0.6rem;
+  background: transparent;
+  color: var(--ink-dim);
+}
+
+.g-row {
+  display: flex;
+  gap: 0.6rem;
+  align-items: center;
+  flex-wrap: wrap;
+  margin: 0.4rem 0;
+}
+
+.g-msg {
+  color: var(--moon);
+  font-size: 0.9rem;
+}
+
 /* --- build stamp --- */
 .build {
   position: fixed;

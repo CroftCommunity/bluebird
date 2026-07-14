@@ -28,9 +28,9 @@ const version = computeVersion();
 rmSync(dist, { recursive: true, force: true });
 mkdirSync(dist, { recursive: true });
 
-// Bundle the app; hashed filename lets the service worker (Phase 3) cache-bust.
+// Bundle the app; hashed filenames let the service worker (Phase 3) cache-bust.
 const result = await esbuild.build({
-  entryPoints: [join(root, 'src', 'main.ts')],
+  entryPoints: [join(root, 'src', 'main.ts'), join(root, 'src', 'guardian.ts')],
   bundle: true,
   format: 'esm',
   target: 'es2022',
@@ -44,14 +44,16 @@ const result = await esbuild.build({
   },
 });
 
-// Find the emitted (hashed) entry JS relative to dist.
-const mainJs = Object.keys(result.metafile.outputs).find(
-  (o) => o.endsWith('.js') && result.metafile.outputs[o].entryPoint === 'src/main.ts',
-);
-if (!mainJs) {
-  throw new Error('build: could not locate bundled entry in esbuild metafile');
+// Find an emitted (hashed) entry JS for a given source entry point.
+function entryHref(srcEntry) {
+  const out = Object.keys(result.metafile.outputs).find(
+    (o) => o.endsWith('.js') && result.metafile.outputs[o].entryPoint === srcEntry,
+  );
+  if (!out) throw new Error(`build: could not locate bundled entry for ${srcEntry}`);
+  return '/' + out.replace(/^dist\//, '');
 }
-const mainJsHref = '/' + mainJs.replace(/^dist\//, '');
+const mainJsHref = entryHref('src/main.ts');
+const guardianJsHref = entryHref('src/guardian.ts');
 
 // Static assets copied verbatim into dist.
 for (const asset of ['manifest.webmanifest', 'styles.css', 'CNAME', 'icons', '.nojekyll']) {
@@ -61,12 +63,15 @@ for (const asset of ['manifest.webmanifest', 'styles.css', 'CNAME', 'icons', '.n
   }
 }
 
-// Render index.html from the root template, injecting version + hashed entry.
-const template = readFileSync(join(root, 'index.html'), 'utf8');
-const html = template
-  .replaceAll('%MAIN_JS%', `${mainJsHref}`)
-  .replaceAll('%VERSION%', version)
-  .replaceAll('%STYLES%', `/styles.css?v=${encodeURIComponent(version)}`);
-writeFileSync(join(dist, 'index.html'), html);
+// Render the HTML pages from their root templates, injecting version + entries.
+const stylesHref = `/styles.css?v=${encodeURIComponent(version)}`;
+function renderPage(templateName, replacements) {
+  const template = readFileSync(join(root, templateName), 'utf8');
+  let html = template.replaceAll('%VERSION%', version).replaceAll('%STYLES%', stylesHref);
+  for (const [token, value] of Object.entries(replacements)) html = html.replaceAll(token, value);
+  writeFileSync(join(dist, templateName), html);
+}
+renderPage('index.html', { '%MAIN_JS%': mainJsHref });
+renderPage('guardian.html', { '%GUARDIAN_JS%': guardianJsHref });
 
-console.log(`built ${version} -> dist/  (entry: ${mainJsHref})`);
+console.log(`built ${version} -> dist/  (index: ${mainJsHref}, guardian: ${guardianJsHref})`);
