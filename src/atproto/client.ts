@@ -155,6 +155,32 @@ export class AuthorFeedClient {
     }
   }
 
+  /**
+   * Read a feed generator's output (`app.bsky.feed.getFeed`, public AppView) —
+   * the transport for Telescope's approved-feed discovery (§D). Same polite
+   * backoff. Public feeds serve unauthenticated; a feed that requires auth will
+   * surface as an error, which Telescope renders as "couldn't open this feed".
+   */
+  async getFeed(feedUri: string, opts: { limit?: number; signal?: AbortSignal } = {}): Promise<AuthorFeedResponse> {
+    const url = new URL('/xrpc/app.bsky.feed.getFeed', this.baseUrl);
+    url.searchParams.set('feed', feedUri);
+    url.searchParams.set('limit', String(opts.limit ?? 30));
+
+    for (let attempt = 0; ; attempt++) {
+      const res = await this.fetchImpl(url, {
+        method: 'GET',
+        headers: { accept: 'application/json' },
+        ...(opts.signal ? { signal: opts.signal } : {}),
+      });
+      if (res.ok) return (await res.json()) as AuthorFeedResponse;
+      const retryable = res.status === 429 || (res.status >= 500 && res.status < 600);
+      if (!retryable || attempt >= this.maxRetries) {
+        throw new AuthorFeedError(`getFeed failed: ${res.status} ${res.statusText}`, res.status);
+      }
+      await this.sleep(this.backoffDelay(attempt, res.headers.get('retry-after')));
+    }
+  }
+
   private backoffDelay(attempt: number, retryAfter: string | null): number {
     // Honor an explicit Retry-After (seconds) when the server sends one.
     if (retryAfter) {

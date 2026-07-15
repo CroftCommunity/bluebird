@@ -14,6 +14,8 @@ export async function seedExplorer(
     paused: boolean;
     friends: { did: string; displayName?: string }[];
     showFriendsHearts: boolean;
+    approvedFeeds: { uri: string; name: string }[];
+    telescope: boolean;
   }> = {},
 ): Promise<void> {
   const config = {
@@ -33,8 +35,8 @@ export async function seedExplorer(
     ],
     friends: overrides.friends ?? [],
     showFriendsHearts: overrides.showFriendsHearts ?? false,
-    approvedFeeds: [],
-    telescope: false,
+    approvedFeeds: overrides.approvedFeeds ?? [],
+    telescope: overrides.telescope ?? false,
     showReposts: overrides.showReposts ?? false,
     staleHours: 72,
   };

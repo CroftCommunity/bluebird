@@ -34,6 +34,7 @@ const PAGES = [
   { html: 'saves.html', entry: 'src/saves/page.ts', token: '%SAVES_JS%' },
   { html: 'post.html', entry: 'src/post/page.ts', token: '%POST_JS%' },
   { html: 'mysky.html', entry: 'src/mysky/page.ts', token: '%MYSKY_JS%' },
+  { html: 'telescope.html', entry: 'src/telescope/page.ts', token: '%TELESCOPE_JS%' },
   { html: 'help.html', entry: 'src/help.ts', token: '%HELP_JS%' },
 ];
 
