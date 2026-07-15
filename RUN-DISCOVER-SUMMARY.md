@@ -69,11 +69,25 @@ floor, no counts, gated links.
   tightened, not loosened: still zero anchors and the ONLY button is that follow
   control, which navigates nowhere.
 
+## Telescope — rung 1 (approved feeds), shipped
+
+`/telescope.html` — sponsor-curated discovery. It browses the sponsor's
+**approved feed generators** (`config.approvedFeeds`): a pill picker of feeds,
+and the selected feed's posts via `app.bsky.feed.getFeed` (public AppView). A
+discovery feed shows outside authors, so the SAME safety layers as the garden
+apply, unchanged — **label floor** (`filterByLabels`), no counts, gated links,
+the navigation wall — plus the D1 **follow** control, so a discovered voice can
+be pulled into My Sky (proven end-to-end: discover → follow → My Sky). Empty
+state when no feeds are approved; paused/stale gates honored. New topbar
+"Telescope" link.
+
 ## Staged — the rest of RUN-DISCOVER
 
 - **D2 persisted-follow verify-in-run:** the `followActor` record write path is
   built and unit-shaped, but writing to a real PDS needs a live OAuth session
   (can't be hermetic) — same verify-in-run status as likes.
-- **Telescope (approved feeds):** the config already carries `approvedFeeds` and
-  the `telescope` switch; the discovery-rung UI that browses approved feeds under
-  the navigation wall is the next slice.
+- **Telescope rung 2 — "open search / the whole sky"** (`config.telescope`
+  switch, off by default): a broader, riskier discovery surface beyond the
+  approved feeds. The switch and sponsor UI exist; the search surface itself is
+  the next slice, deliberately deferred (it needs a search API + its own safety
+  pass — "points at the whole sky").
