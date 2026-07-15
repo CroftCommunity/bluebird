@@ -741,6 +741,65 @@ body {
   border-color: var(--accent);
 }
 
+/* §Telescope rung 2 — search. */
+.telescope__search {
+  max-width: 640px;
+  margin: 0 auto;
+  padding: 0.6rem 1rem 0;
+}
+
+.telescope__search-row {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.telescope__search-input {
+  flex: 1;
+  min-width: 0;
+  background: var(--card);
+  color: var(--ink);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  padding: 0.6rem 1rem;
+  font: inherit;
+}
+
+.telescope__search-go {
+  background: var(--cta);
+  color: var(--cta-ink);
+  border: none;
+  border-radius: 999px;
+  padding: 0.6rem 1.2rem;
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.telescope__search-msg {
+  display: block;
+  color: var(--danger);
+  font-weight: 600;
+  min-height: 1.2em;
+  padding: 0.3rem 0.2rem 0;
+}
+
+.telescope__history {
+  max-width: 640px;
+  margin: 0.3rem auto 0;
+  padding: 0 1rem;
+  color: var(--ink-muted);
+  font-size: 0.9rem;
+}
+
+.telescope__history-list {
+  margin: 0.4rem 0 0;
+  padding-left: 1.2rem;
+}
+
+.telescope__history-list [data-blocked] {
+  color: var(--danger);
+}
+
 /* --- saves --- */
 .clip__list {
   display: flex;
