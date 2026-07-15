@@ -3,7 +3,7 @@ import { AuthorFeedClient } from './atproto/client.js';
 import type { InclusionList } from './feed/inclusion.js';
 import { mergeFeeds } from './feed/merge.js';
 import { filterByLabels } from './feed/labels.js';
-import { renderPost, markSavedPosts, applyFriendHearts, type LikeUi } from './render/post.js';
+import { renderPost, markSavedPosts, applyFriendHearts, type LikeUi, type FollowUi } from './render/post.js';
 import { el, clear } from './render/dom.js';
 import { offlineBanner, changeNotice } from './render/locks.js';
 import { savedUris } from './saves/store.js';
@@ -80,7 +80,13 @@ export function renderGardenInto(
   container: HTMLElement,
   result: GardenResult,
   status: Status,
-  opts: { offline?: boolean; changeNotice?: string; like?: LikeUi; friendHearts?: Map<string, string[]> } = {},
+  opts: {
+    offline?: boolean;
+    changeNotice?: string;
+    like?: LikeUi;
+    follow?: FollowUi;
+    friendHearts?: Map<string, string[]>;
+  } = {},
 ): void {
   clear(container);
   if (opts.changeNotice) container.append(changeNotice(opts.changeNotice));
@@ -94,6 +100,7 @@ export function renderGardenInto(
     list.append(
       renderPost(post, {
         ...(opts.like ? { like: opts.like } : {}),
+        ...(opts.follow ? { follow: opts.follow } : {}),
         ...(opts.friendHearts ? { friendHearts: opts.friendHearts } : {}),
       }),
     );
@@ -109,6 +116,7 @@ export async function mountGarden(
     offline?: boolean;
     changeNotice?: string;
     like?: LikeUi;
+    follow?: FollowUi;
     /**
      * §B2 lurk read: a promise of who-liked-what among the sponsor's friends,
      * fetched anonymously in parallel with the garden. The garden paints first
@@ -127,6 +135,7 @@ export async function mountGarden(
       offline: opts.offline ?? false,
       ...(opts.changeNotice ? { changeNotice: opts.changeNotice } : {}),
       ...(opts.like ? { like: opts.like } : {}),
+      ...(opts.follow ? { follow: opts.follow } : {}),
     });
     if (status === 'ready') {
       void savedUris().then((set) => markSavedPosts(container, set));

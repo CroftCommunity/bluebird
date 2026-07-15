@@ -1,0 +1,26 @@
+{
+  "lexicon": 1,
+  "id": "ing.croft.skylite.follow",
+  "description": "An explorer's follow of an actor, written into the explorer's OWN repo (never the sponsor's). Mirrors app.bsky.graph.follow — a subject DID plus createdAt — so a follow → mainline conversion tool is possible later (a spec note, not built). Device-local follows exist in every mode (they power My Sky); this persisted record only exists when the explorer has an account (localOnly off). The explorer can delete her own follows; the sponsor cannot.",
+  "defs": {
+    "main": {
+      "type": "record",
+      "key": "tid",
+      "record": {
+        "type": "object",
+        "required": ["subject", "createdAt"],
+        "properties": {
+          "subject": {
+            "type": "string",
+            "format": "did",
+            "description": "The followed actor's DID."
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "datetime"
+          }
+        }
+      }
+    }
+  }
+}
