@@ -33,6 +33,25 @@ export function markSavedPosts(root: ParentNode, saved: Set<string>): void {
 }
 
 /**
+ * B1/B2 like control. Shown only when the explorer has an account
+ * (`canLike` = capabilities.canPersistLikes = localOnly off). No counts, ever.
+ * When there is no valid session (a lapse) the heart degrades to a gentle
+ * "sign in to like" — the garden is never affected.
+ */
+export interface LikeUi {
+  canLike: boolean;
+  hasSession: boolean;
+  isLiked: (uri: string) => boolean;
+  onToggle: (post: PostView, btn: HTMLButtonElement) => void;
+}
+
+export function setLikeState(btn: HTMLButtonElement, liked: boolean): void {
+  btn.setAttribute('aria-pressed', liked ? 'true' : 'false');
+  btn.textContent = liked ? '♥ Liked' : '♡ Like';
+  btn.classList.toggle('post__like--on', liked);
+}
+
+/**
  * Render one post into the garden. Big, bright, high-contrast, and — by
  * construction — no like/repost/reply counts anywhere (anti-compulsion stance,
  * CONCEPT.md §1). Text is facet-segmented; links are gated (D7); media shows alt
@@ -160,7 +179,7 @@ function renderEmbed(embed: EmbedView | undefined): Node | null {
   }
 }
 
-export function renderPost(post: PostView): HTMLElement {
+export function renderPost(post: PostView, opts: { like?: LikeUi } = {}): HTMLElement {
   const author = post.author;
   const name = author.displayName?.trim() || `@${author.handle}`;
 
@@ -189,8 +208,8 @@ export function renderPost(post: PostView): HTMLElement {
   const embed = renderEmbed(post.embed);
   if (embed) article.append(embed);
 
-  // Save to Saves (D4) — the only "interaction" in the garden, and it's
-  // private and local. No like/repost/reply, by construction.
+  // Save to Saves (D4) — private and local. No like/repost/reply counts, by
+  // construction.
   const saveBtn = el('button', {
     class: 'post__save',
     type: 'button',
@@ -200,7 +219,29 @@ export function renderPost(post: PostView): HTMLElement {
   });
   setSaveState(saveBtn, false);
   saveBtn.addEventListener('click', () => void toggleSave(post, saveBtn));
-  article.append(el('footer', { class: 'post__actions' }, [saveBtn]));
+
+  const actions: HTMLElement[] = [saveBtn];
+
+  // B1/B2 heart — only for an account-holding explorer; no counts.
+  const like = opts.like;
+  if (like?.canLike) {
+    const heart = el('button', {
+      class: 'post__like',
+      type: 'button',
+      'data-like-btn': post.uri,
+      ...(like.hasSession ? {} : { 'data-like-signedout': 'true' }),
+    });
+    if (like.hasSession) {
+      setLikeState(heart, like.isLiked(post.uri));
+    } else {
+      heart.textContent = '♡ Sign in to like';
+      heart.setAttribute('aria-label', 'Sign in to like');
+    }
+    heart.addEventListener('click', () => like.onToggle(post, heart));
+    actions.unshift(heart);
+  }
+
+  article.append(el('footer', { class: 'post__actions' }, actions));
 
   return article;
 }

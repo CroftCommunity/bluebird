@@ -1238,3 +1238,82 @@ body {
   border: 1px solid rgba(255, 214, 92, 0.4);
   color: var(--ink);
 }
+
+/* --- B1/B2 likes + explorer sign-in --- */
+.post__actions {
+  display: flex;
+  gap: 0.6rem;
+  margin-top: 0.9rem;
+}
+
+.post__like {
+  background: var(--card-soft);
+  color: var(--ink);
+  border: 1px solid rgba(255, 214, 92, 0.3);
+  border-radius: 999px;
+  padding: 0.5rem 0.95rem;
+  font: inherit;
+  font-weight: 650;
+  cursor: pointer;
+}
+
+.post__like--on {
+  background: rgba(255, 214, 92, 0.18);
+  color: var(--moon);
+  border-color: var(--moon);
+}
+
+.post__like[data-like-signedout] {
+  color: var(--ink-dim);
+  font-weight: 500;
+}
+
+.signin {
+  align-items: flex-start;
+  gap: 0.7rem;
+}
+
+.signin__body {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  flex: 1;
+}
+
+.signin__lede {
+  margin: 0;
+}
+
+.signin__row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.signin__input {
+  flex: 1 1 14rem;
+  min-width: 0;
+  padding: 0.7rem 0.85rem;
+  font-size: 1rem;
+  border-radius: 12px;
+  border: 1px solid var(--sky-indigo-soft);
+  background: var(--sky-deep);
+  color: var(--ink);
+}
+
+.signin__btn {
+  padding: 0.7rem 1.1rem;
+  font: inherit;
+  font-weight: 650;
+  border-radius: 12px;
+  border: none;
+  background: var(--moon);
+  color: var(--sky-deep);
+  cursor: pointer;
+}
+
+.signin__msg {
+  color: var(--moon);
+  font-size: 0.9rem;
+  min-height: 1.1em;
+}

@@ -9,6 +9,19 @@ import { showHelpHandoff, type HelpContact } from './care/handoff.js';
 import { renderLanding } from './landing.js';
 import { installPullToRefresh } from './refresh/pull.js';
 import { changeSentence } from './config/diff.js';
+import { capabilities } from './config/capabilities.js';
+import type { LikeUi } from './render/post.js';
+import type { OAuthSession } from './atproto/oauth/client.js';
+import {
+  finishExplorerSignInFromUrl,
+  refreshExplorerSessionOnOpen,
+  startExplorerSignIn,
+  persistExplorerSession,
+} from './social/explorer-auth.js';
+import { makeLikeUi, explorerSignInBanner } from './social/like-ui.js';
+
+/** The explorer's scoped OAuth session (B1), or null in localOnly / lapsed states. */
+let explorerSession: OAuthSession | null = null;
 
 /** The trusted-adult contact from whatever config we last knew (any gate state). */
 function helpContact(): HelpContact {
@@ -42,11 +55,37 @@ async function openGarden(container: HTMLElement): Promise<void> {
       // switch (default true), still under the label floor.
       // §3: name what the last config poll changed, always on.
       const notice = changeSentence(changes);
+
+      // B1/B2 likes — only when the explorer has an account (localOnly off).
+      // capabilities() keys on localOnly, never skin.
+      const caps = capabilities(gate.config);
+      const like: LikeUi | undefined = caps.canPersistLikes
+        ? makeLikeUi({
+            getSession: () => explorerSession,
+            setSession: (s) => {
+              explorerSession = s;
+              persistExplorerSession(s);
+            },
+            requestSignIn: () => document.querySelector<HTMLElement>('[data-explorer-handle]')?.focus(),
+          })
+        : undefined;
+
       await mountGarden(
         container,
         { version: 1, entries: inclusion },
-        { offline, includeReposts: gate.config.showReposts, ...(notice ? { changeNotice: notice } : {}) },
+        {
+          offline,
+          includeReposts: gate.config.showReposts,
+          ...(notice ? { changeNotice: notice } : {}),
+          ...(like ? { like } : {}),
+        },
       );
+
+      // Gentle degrade: sharing is on but there's no valid session — offer
+      // sign-in without ever gating the garden (which just rendered above).
+      if (caps.canPersistLikes && !explorerSession) {
+        container.prepend(explorerSignInBanner((handle) => void startExplorerSignIn(handle)));
+      }
     }
   }
 }
@@ -84,6 +123,16 @@ async function start(): Promise<void> {
     renderLanding(container);
     return;
   }
+
+  // B1 explorer identity: finish an OAuth callback if this is one, otherwise
+  // refresh-on-open (keeps sponsor-assisted re-auth rare, docs/custody.md). A
+  // broken refresh chain clears the session and degrades gently.
+  try {
+    explorerSession = await finishExplorerSignInFromUrl();
+  } catch {
+    explorerSession = null;
+  }
+  if (!explorerSession) explorerSession = await refreshExplorerSessionOnOpen();
 
   // S6 refresh: an always-visible control in the header plus a custom pull
   // gesture on the feed container. Both re-poll config and re-fetch feeds.

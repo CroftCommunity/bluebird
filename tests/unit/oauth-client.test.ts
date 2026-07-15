@@ -1,5 +1,16 @@
 import { describe, it, expect } from 'vitest';
-import { beginAuthorization, completeAuthorization, putRecord, type PendingAuth } from '../../src/atproto/oauth/client.js';
+import {
+  beginAuthorization,
+  completeAuthorization,
+  putRecord,
+  createRecord,
+  deleteRecord,
+  refresh,
+  ensureFresh,
+  type PendingAuth,
+  type OAuthSession,
+} from '../../src/atproto/oauth/client.js';
+import { generateDpopKey, exportDpopKey } from '../../src/atproto/oauth/dpop.js';
 
 const CFG = {
   clientId: 'https://skylite.croft.ing/oauth/client-metadata.json',
@@ -121,6 +132,7 @@ describe('putRecord (DPoP-bound write)', () => {
     issuer: 'https://auth.example',
     accessToken: 'AT',
     tokenEndpoint: 'https://auth.example/token',
+    clientId: 'https://app/client-metadata.json',
     dpopKey: { privateJwk: {}, publicJwk: { kty: 'EC', crv: 'P-256', x: 'x', y: 'y' } as const },
   };
 
@@ -142,7 +154,6 @@ describe('putRecord (DPoP-bound write)', () => {
     }) as typeof fetch;
 
     // Use a real generated key so createDpopProof can sign.
-    const { generateDpopKey, exportDpopKey } = await import('../../src/atproto/oauth/dpop.js');
     const realKey = await exportDpopKey(await generateDpopKey());
     const result = await putRecord({ ...session, dpopKey: realKey }, { collection: 'ing.croft.skylite.config', rkey: 'rk', record: { a: 1 } }, fetchImpl);
 
@@ -151,5 +162,105 @@ describe('putRecord (DPoP-bound write)', () => {
     expect(sawProof).toBe(true);
     expect(result.uri).toContain('ing.croft.skylite.config/rk');
     expect(result.session.dpopNonce).toBe('nn');
+  });
+});
+
+describe('createRecord / deleteRecord (likes)', () => {
+  async function realSession(): Promise<OAuthSession> {
+    return {
+      did: 'did:plc:kid',
+      pds: 'https://pds.example',
+      issuer: 'https://auth.example',
+      accessToken: 'AT',
+      tokenEndpoint: 'https://auth.example/token',
+      clientId: 'https://app/client-metadata.json',
+      dpopKey: await exportDpopKey(await generateDpopKey()),
+      expiresAt: Date.now() + 3_600_000,
+    };
+  }
+
+  it('createRecord posts to the PDS and returns the new record uri', async () => {
+    let body: Record<string, unknown> = {};
+    const fetchImpl = ((_i: RequestInfo | URL, init?: RequestInit) => {
+      body = JSON.parse(typeof init?.body === 'string' ? init.body : '{}') as Record<string, unknown>;
+      return Promise.resolve(json({ uri: 'at://did:plc:kid/ing.croft.skylite.like/3k', cid: 'c' }));
+    }) as typeof fetch;
+    const { uri } = await createRecord(await realSession(), { collection: 'ing.croft.skylite.like', record: { subject: 'x' } }, fetchImpl);
+    expect(uri).toContain('ing.croft.skylite.like/3k');
+    expect(body.collection).toBe('ing.croft.skylite.like');
+    expect(body.repo).toBe('did:plc:kid');
+  });
+
+  it('deleteRecord targets the repo + rkey and tolerates an empty body', async () => {
+    let body: Record<string, unknown> = {};
+    const fetchImpl = ((_i: RequestInfo | URL, init?: RequestInit) => {
+      body = JSON.parse(typeof init?.body === 'string' ? init.body : '{}') as Record<string, unknown>;
+      return Promise.resolve(json({}));
+    }) as typeof fetch;
+    await deleteRecord(await realSession(), { collection: 'ing.croft.skylite.like', rkey: '3k' }, fetchImpl);
+    expect(body).toEqual({ repo: 'did:plc:kid', collection: 'ing.croft.skylite.like', rkey: '3k' });
+  });
+});
+
+describe('refresh + ensureFresh (keeping re-auth rare)', () => {
+  async function session(over: Partial<OAuthSession> = {}): Promise<OAuthSession> {
+    return {
+      did: 'did:plc:alice',
+      pds: 'https://pds.example',
+      issuer: 'https://auth.example',
+      accessToken: 'OLD',
+      refreshToken: 'RT1',
+      tokenEndpoint: 'https://auth.example/token',
+      clientId: 'https://app/client-metadata.json',
+      dpopKey: await exportDpopKey(await generateDpopKey()),
+      ...over,
+    };
+  }
+
+  it('rotates the refresh token and updates the access token + expiry', async () => {
+    let body = '';
+    const fetchImpl = ((_i: RequestInfo | URL, init?: RequestInit) => {
+      body = typeof init?.body === 'string' ? init.body : '';
+      return Promise.resolve(
+        new Response(JSON.stringify({ access_token: 'NEW', refresh_token: 'RT2', expires_in: 3600 }), {
+          headers: { 'content-type': 'application/json' },
+        }),
+      );
+    }) as typeof fetch;
+
+    const next = await refresh(await session(), fetchImpl);
+    expect(body).toContain('grant_type=refresh_token');
+    expect(body).toContain('refresh_token=RT1');
+    expect(next.accessToken).toBe('NEW');
+    expect(next.refreshToken).toBe('RT2'); // rotated
+    expect(next.expiresAt).toBeGreaterThan(Date.now());
+  });
+
+  it('ensureFresh returns the session untouched when the token is comfortably valid', async () => {
+    let called = false;
+    const fetchImpl = (() => {
+      called = true;
+      return Promise.resolve(new Response('{}'));
+    }) as typeof fetch;
+    const s = await session({ expiresAt: Date.now() + 3_600_000 });
+    const same = await ensureFresh(s, fetchImpl);
+    expect(called).toBe(false);
+    expect(same).toBe(s);
+  });
+
+  it('ensureFresh refreshes when the token is near/at expiry', async () => {
+    const fetchImpl = (() =>
+      Promise.resolve(
+        new Response(JSON.stringify({ access_token: 'NEW', refresh_token: 'RT2', expires_in: 3600 }), {
+          headers: { 'content-type': 'application/json' },
+        }),
+      )) as typeof fetch;
+    const s = await session({ expiresAt: Date.now() + 1000 }); // within the skew
+    const fresh = await ensureFresh(s, fetchImpl);
+    expect(fresh.accessToken).toBe('NEW');
+  });
+
+  it('refresh without a refresh token asks for a new sign-in', async () => {
+    await expect(refresh(await session({ refreshToken: undefined as unknown as string }))).rejects.toThrow(/new sign-in/);
   });
 });
