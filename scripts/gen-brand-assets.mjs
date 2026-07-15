@@ -60,6 +60,20 @@ async function splash(w, h, out) {
   console.log('splash', out, `${w}x${h}`);
 }
 
+/** The landing hero: the sunset butterfly window in its lit shadowbox niche,
+ *  cropped to exclude the render's baked wordmark (the landing shows the crisp
+ *  SVG wordmark separately, so it is never duplicated). JPEG — photographic,
+ *  keeps the payload tiny (~45 KB vs the 1.5 MB source PNG). */
+async function hero() {
+  const crop = { left: 44, top: 34, width: 1096, height: 532 };
+  await sharp(join(SRC, 'hero-shadowbox.png'))
+    .extract(crop)
+    .resize(900)
+    .jpeg({ quality: 82, mozjpeg: true })
+    .toFile(join(HEADER, 'landing-hero.jpg'));
+  console.log('hero landing-hero.jpg');
+}
+
 const SPLASHES = [
   ['splash-2048x2732.jpg', 2048, 2732],
   ['splash-1640x2360.jpg', 1640, 2360],
@@ -76,5 +90,6 @@ await icon(32, 0.98, 'favicon-32.png');
 await icon(16, 0.98, 'favicon-16.png');
 await headerMark('logo-light.png', 'header-light.png');
 await headerMark('logo-dark.png', 'header-dark.png');
+await hero();
 for (const [name, w, h] of SPLASHES) await splash(w, h, name);
 console.log('done');

@@ -85,7 +85,16 @@ export function renderLanding(container: HTMLElement): void {
 
   container.append(
     el('section', { class: 'landing__hero' }, [
-      el('span', { class: 'landing__mark', 'aria-hidden': 'true' }),
+      // Owner hero render (assets/brand/source/hero-shadowbox.png), cropped to the
+      // framed window — the baked wordmark is excluded so the crisp SVG wordmark
+      // below is never duplicated. Decorative: the <h1> carries the name.
+      el('img', {
+        class: 'landing__hero-img',
+        src: '/icons/brand/landing-hero.jpg',
+        alt: '',
+        'aria-hidden': 'true',
+        decoding: 'async',
+      }),
       el('h1', { class: 'landing__title' }, [wordmark()]),
       el('p', { class: 'landing__subtitle' }, ['A window to the stars.']),
     ]),

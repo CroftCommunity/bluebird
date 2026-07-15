@@ -244,11 +244,38 @@ body {
   grid-template-columns: 1fr 1fr;
 }
 
+.post__image-wrap {
+  position: relative;
+  margin: 0;
+  display: block;
+  min-width: 0;
+}
+
 .post__image {
   width: 100%;
   border-radius: 14px;
   display: block;
   background: var(--card-soft);
+}
+
+/* "ALT" badge — shown only in the full skin (bsky-style), and only rendered at
+   all when the image carries alt text. A small dark pill, bottom-right. */
+.post__alt-badge {
+  display: none;
+  position: absolute;
+  right: 0.5rem;
+  bottom: 0.5rem;
+  padding: 0.1rem 0.4rem;
+  border-radius: 6px;
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  color: rgba(255, 255, 255, 0.95);
+  background: rgba(0, 0, 0, 0.66);
+}
+
+[data-skin="full"] .post__alt-badge {
+  display: block;
 }
 
 .post__video {
@@ -909,6 +936,16 @@ body {
   gap: 0.4rem;
 }
 
+/* Owner hero render — the framed butterfly window in its lit niche. Rounded,
+   softly shadowed, responsive; sits above the crisp SVG wordmark. */
+.landing__hero-img {
+  width: min(100%, 30rem);
+  height: auto;
+  border-radius: var(--radius);
+  box-shadow: 0 12px 34px rgba(0, 0, 0, 0.32);
+  margin-bottom: 0.6rem;
+}
+
 .landing__moon {
   width: 3rem;
   height: 3rem;
@@ -1367,15 +1404,6 @@ body {
   outline-offset: 2px;
 }
 
-.landing__mark {
-  width: 4.2rem;
-  height: 4.2rem;
-  border-radius: 26%;
-  background: var(--header-mark) center / cover no-repeat;
-  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.28);
-  margin-bottom: 0.4rem;
-}
-
 .landing__title {
   display: flex;
   justify-content: center;
@@ -1385,4 +1413,71 @@ body {
   height: 2.8rem;
   width: auto;
   color: var(--ink);
+}
+
+/* ============================================================
+   §B4 — the "full" skin. A cosmetic `skin` value (config.skin === 'full')
+   that echoes bsky.app's flat, edge-to-edge, hairline-divided feed — the
+   owner reference is assets/brand/reference/bsky-*.png. It is PURELY
+   presentational: it re-lays the SAME post DOM and NEVER gates a capability
+   (capabilities-key-on-localOnly-never-skin), and — like every Skylite
+   surface — it still shows NO like/repost/reply counts. The calm, spacious
+   card look is the default "simple" skin; "full" trades the floating cards
+   for a denser, more app-like reading feed. Token-only (no raw hex here), so
+   both themes and the contrast sweep carry over unchanged.
+   ============================================================ */
+
+/* Edge-to-edge feed: the side gutter moves from the container onto each row. */
+[data-skin="full"] .garden {
+  padding-left: 0;
+  padding-right: 0;
+  gap: 0;
+}
+[data-skin="full"] .garden__list {
+  gap: 0;
+}
+
+/* Flat rows separated by a hairline, instead of floating, shadowed cards. */
+[data-skin="full"] .post {
+  background: transparent;
+  border-radius: 0;
+  box-shadow: none;
+  border-bottom: 1px solid var(--border);
+  padding: 1rem 1rem 1.05rem;
+}
+[data-skin="full"] .post:last-child {
+  border-bottom: none;
+}
+
+/* bsky sets the display name, @handle and time on one inline row. */
+[data-skin="full"] .post__header {
+  align-items: flex-start;
+  margin-bottom: 0.4rem;
+}
+[data-skin="full"] .post__id {
+  flex-direction: row;
+  flex-wrap: wrap;
+  align-items: baseline;
+  column-gap: 0.4rem;
+  row-gap: 0.1rem;
+}
+[data-skin="full"] .post__handle {
+  font-size: 0.9rem;
+}
+
+/* Body text sits at a calmer reading size in the denser feed. */
+[data-skin="full"] .post__text {
+  font-size: 1.08rem;
+}
+
+/* Media reads a touch larger and stays rounded, bsky-style. */
+[data-skin="full"] .post__images,
+[data-skin="full"] .post__video {
+  margin-top: 0.6rem;
+}
+
+/* Status/empty text keeps its own comfortable gutter without the container one. */
+[data-skin="full"] .garden__status {
+  padding-left: 1rem;
+  padding-right: 1rem;
 }
