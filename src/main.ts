@@ -7,10 +7,45 @@ import { registerServiceWorker } from './pwa/register.js';
 import { installBackgroundLock } from './lock/backgroundLock.js';
 import { showHelpHandoff, type HelpContact } from './care/handoff.js';
 import { renderLanding } from './landing.js';
+import { installPullToRefresh } from './refresh/pull.js';
 
 /** The trusted-adult contact from whatever config we last knew (any gate state). */
 function helpContact(): HelpContact {
   return (getCachedConfig()?.config ?? getLocalConfig())?.help ?? {};
+}
+
+/**
+ * Re-poll the sponsor config and re-fetch the feeds, then render the resulting
+ * gate. This is the single path both the refresh control and the pull gesture
+ * (S6) call. Offline it leans on the cached config + SW-cached feeds and shows
+ * the offline banner — never a dead spinner.
+ */
+async function openGarden(container: HTMLElement): Promise<void> {
+  const { gate, inclusion } = await resolveGarden();
+  switch (gate.kind) {
+    case 'paused':
+      renderPausedLock(container);
+      return;
+    case 'stale-locked':
+      renderStaleLock(container);
+      return;
+    default: {
+      // Reflect the cosmetic skin switch so it is observable and ready for the
+      // full skin (RUN-SOCIAL B4). Only "simple" is styled today; this NEVER
+      // gates a capability (capabilities-key-on-localOnly-never-skin).
+      document.documentElement.dataset.skin = gate.config.skin;
+      // Show the "saved posts, offline" banner either when serving a cached
+      // config (D5) or when the device itself is offline.
+      const offline = gate.offline || !navigator.onLine;
+      // §3: reposts inject whole outside posts — honor the sponsor's showReposts
+      // switch (default true), still under the label floor.
+      await mountGarden(
+        container,
+        { version: 1, entries: inclusion },
+        { offline, includeReposts: gate.config.showReposts },
+      );
+    }
+  }
 }
 
 /**
@@ -47,31 +82,28 @@ async function start(): Promise<void> {
     return;
   }
 
-  const { gate, inclusion } = await resolveGarden();
-  switch (gate.kind) {
-    case 'paused':
-      renderPausedLock(container);
-      return;
-    case 'stale-locked':
-      renderStaleLock(container);
-      return;
-    default: {
-      // Reflect the cosmetic skin switch so it is observable and ready for the
-      // full skin (RUN-SOCIAL B4). Only "simple" is styled today; this NEVER
-      // gates a capability (capabilities-key-on-localOnly-never-skin).
-      document.documentElement.dataset.skin = gate.config.skin;
-      // Show the "saved posts, offline" banner either when serving a cached
-      // config (D5) or when the device itself is offline.
-      const offline = gate.offline || !navigator.onLine;
-      // §3: reposts inject whole outside posts — honor the sponsor's showReposts
-      // switch (default true), still under the label floor.
-      await mountGarden(
-        container,
-        { version: 1, entries: inclusion },
-        { offline, includeReposts: gate.config.showReposts },
-      );
+  // S6 refresh: an always-visible control in the header plus a custom pull
+  // gesture on the feed container. Both re-poll config and re-fetch feeds.
+  let refreshing = false;
+  const refresh = async (): Promise<void> => {
+    if (refreshing) return;
+    refreshing = true;
+    document.querySelector('[data-refresh]')?.classList.add('topbar__refresh--spin');
+    try {
+      await openGarden(container);
+    } finally {
+      refreshing = false;
+      document.querySelector('[data-refresh]')?.classList.remove('topbar__refresh--spin');
     }
+  };
+  const refreshBtn = document.querySelector<HTMLElement>('[data-refresh]');
+  if (refreshBtn) {
+    refreshBtn.hidden = false;
+    refreshBtn.addEventListener('click', () => void refresh());
   }
+  installPullToRefresh(container, refresh);
+
+  await openGarden(container);
 }
 
 if (document.readyState === 'loading') {

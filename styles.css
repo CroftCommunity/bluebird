@@ -1053,3 +1053,82 @@ body {
   font-size: 1.15rem;
   color: var(--star);
 }
+
+/* --- S6 refresh control + pull-to-refresh --- */
+.topbar__refresh {
+  flex: none;
+  width: 2.4rem;
+  height: 2.4rem;
+  border-radius: 50%;
+  border: 1px solid var(--sky-indigo-soft);
+  background: var(--card);
+  color: var(--ink);
+  font-size: 1.3rem;
+  line-height: 1;
+  cursor: pointer;
+  display: grid;
+  place-items: center;
+}
+
+.topbar__refresh[hidden] {
+  display: none;
+}
+
+.topbar__refresh:focus-visible {
+  outline: 3px solid var(--link);
+  outline-offset: 2px;
+}
+
+.topbar__refresh-icon {
+  display: block;
+}
+
+.topbar__refresh--spin .topbar__refresh-icon {
+  animation: skylite-spin 0.8s linear infinite;
+}
+
+@keyframes skylite-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .topbar__refresh--spin .topbar__refresh-icon {
+    animation: none;
+  }
+  .pull__spinner {
+    animation: none;
+  }
+}
+
+.pull {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3rem;
+  display: grid;
+  place-items: center;
+  pointer-events: none;
+  z-index: 4;
+  transform: translateY(calc(var(--pull, 0px) - 3.2rem));
+  opacity: clamp(0, calc(var(--pull, 0px) / 70), 1);
+}
+
+.pull__spinner {
+  width: 1.4rem;
+  height: 1.4rem;
+  border-radius: 50%;
+  border: 3px solid var(--sky-indigo-soft);
+  border-top-color: var(--moon);
+  opacity: 0.6;
+}
+
+.pull--armed .pull__spinner {
+  opacity: 1;
+}
+
+.pull--loading .pull__spinner {
+  animation: skylite-spin 0.8s linear infinite;
+}
