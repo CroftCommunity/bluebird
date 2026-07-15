@@ -16,6 +16,14 @@ import {
   setChecklistItem,
   type SponsorIdentity,
 } from './sponsor/store.js';
+import {
+  startSignIn,
+  finishSignInFromUrl,
+  getSession,
+  clearSession,
+  publishRecord,
+} from './sponsor/oauth.js';
+import type { OAuthSession } from './atproto/oauth/client.js';
 
 /**
  * S2 sponsor dashboard — the sponsor's own device. Multi-explorer local
@@ -334,12 +342,34 @@ function renderExplorerCard(rkey: string, config: SkyliteConfig, identity: Spons
           ])
         : el('p', { class: 'g-msg' }, ['Set your sponsor DID above to make a device link.']),
       field(`Record body (store as ${SKYLITE_CONFIG_NSID}/${rkey})`, jsonArea),
+      publishRow(rkey, config),
       el('p', {}, [
         el('a', { class: 'g-btn g-btn--ghost', href: `/audit.html?r=${encodeURIComponent(rkey)}`, 'data-audit-link': rkey }, [
           'See what the garden hid, and why',
         ]),
       ]),
     ]),
+  ]);
+}
+
+/** Publish-to-PDS control for one explorer — only when signed in over OAuth. */
+function publishRow(rkey: string, config: SkyliteConfig): HTMLElement {
+  const session = getSession();
+  if (!session) {
+    return el('p', { class: 'g-hint', 'data-publish-signedout': rkey }, [
+      'Sign in with Bluesky above to publish this record to your PDS.',
+    ]);
+  }
+  const msg = el('span', { class: 'g-msg', 'data-publish-msg': rkey });
+  return el('div', { class: 'g-row' }, [
+    button('Publish to my PDS', 'g-btn g-btn--primary', () => {
+      msg.textContent = 'Publishing…';
+      void publishRecord(session, rkey, recordBody(config)).then(
+        (uri) => (msg.textContent = `Published. ${uri}`),
+        (e: unknown) => (msg.textContent = e instanceof Error ? e.message : 'Publish failed.'),
+      );
+    }, { 'data-publish-btn': rkey }),
+    msg,
   ]);
 }
 
@@ -365,27 +395,61 @@ function renderChecklist(): HTMLElement {
   ]);
 }
 
+function renderSignIn(): HTMLElement {
+  const session = getSession();
+  if (session) {
+    return el('div', { class: 'g-signin', 'data-signin': 'in' }, [
+      el('p', { class: 'g-msg' }, ['Signed in as ', el('code', {}, [session.did]), '.']),
+      button('Sign out', 'g-btn g-btn--ghost', () => {
+        clearSession();
+        rerender();
+      }, { 'data-signout': 'true' }),
+    ]);
+  }
+  const handle = textInput('', 'your handle, e.g. you.bsky.social', () => undefined);
+  handle.setAttribute('data-signin-handle', 'true');
+  const msg = el('span', { class: 'g-msg', 'data-signin-msg': 'true' });
+  return el('div', { class: 'g-signin', 'data-signin': 'out' }, [
+    field('Sign in with Bluesky (OAuth — no app passwords)', handle),
+    el('div', { class: 'g-row' }, [
+      button('Sign in with Bluesky', 'g-btn g-btn--primary', () => {
+        if (!handle.value.trim()) {
+          msg.textContent = 'Enter your handle or DID.';
+          return;
+        }
+        msg.textContent = 'Redirecting to Bluesky…';
+        void startSignIn(handle.value).catch((e: unknown) => {
+          msg.textContent = e instanceof Error ? e.message : 'Sign-in failed.';
+        });
+      }, { 'data-signin-btn': 'true' }),
+      msg,
+    ]),
+  ]);
+}
+
 function renderIdentity(identity: SponsorIdentity): HTMLElement {
+  const session = getSession();
   return el('div', { class: 'g-card' }, [
     el('h2', {}, ['You (the sponsor)']),
     el('p', { class: 'g-hint' }, [
       'Your DID identifies where the explorer records live. Provisioning links carry only your DID and a record key — never a password or secret.',
     ]),
+    renderSignIn(),
     field(
       'Sponsor DID',
-      textInput(identity.did ?? '', 'did:plc:… (your sponsor DID)', (v) => {
+      textInput(session?.did ?? identity.did ?? '', 'did:plc:… (your sponsor DID)', (v) => {
         setSponsorIdentity({ ...getSponsorIdentity(), did: v.trim() });
       }),
     ),
     field(
       'PDS host',
-      textInput(identity.pdsHost ?? '', 'PDS host (optional, e.g. https://…)', (v) => {
+      textInput(session?.pds ?? identity.pdsHost ?? '', 'PDS host (optional, e.g. https://…)', (v) => {
         setSponsorIdentity({ ...getSponsorIdentity(), pdsHost: v.trim() });
       }),
     ),
     el('div', { class: 'g-row' }, [button('Apply', 'g-btn g-btn--primary', () => rerender(), { 'data-apply-identity': 'true' })]),
     el('p', { class: 'g-hint' }, [
-      'Publishing to your PDS uses Bluesky OAuth (app passwords are not used anywhere in Skylite). Until you publish, store each explorer’s record body (shown on its card) in your repo as ',
+      'Signed in, “Publish to my PDS” on each explorer writes its record over OAuth. Otherwise store each record body (shown on its card) in your repo as ',
       el('code', {}, [SKYLITE_CONFIG_NSID]),
       ' at its record key.',
     ]),
@@ -421,12 +485,29 @@ function rerender(): void {
   render();
 }
 
+function applySession(session: OAuthSession): void {
+  // A signed-in sponsor's identity drives provisioning links; persist it.
+  setSponsorIdentity({ ...getSponsorIdentity(), did: session.did, pdsHost: session.pds });
+}
+
 function boot(): void {
   const stamp = document.querySelector<HTMLElement>('[data-version-stamp]');
   if (stamp) stamp.textContent = skyliteVersion();
   registerServiceWorker();
   root = document.querySelector<HTMLElement>('[data-sponsor]');
   render();
+
+  // If this load is an OAuth callback, finish it, adopt the identity, re-render.
+  void finishSignInFromUrl()
+    .then((session) => {
+      if (session) {
+        applySession(session);
+        rerender();
+      }
+    })
+    .catch(() => {
+      /* stale/failed callback — leave the dashboard as-is */
+    });
 }
 
 if (document.readyState === 'loading') {
