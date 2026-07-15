@@ -79,6 +79,34 @@ Legacy records with the old boolean `telescope: true` migrate to
 `tier: 'open'` (and `false` → `off`), with the other fields taking the defaults
 above.
 
+## Encrypted history archive (privacy in public)
+
+Search history is sensitive — a child's queries. Syncing it to the sponsor must
+not leave those terms in clear text on the public AppView. The model
+(owner-ruled):
+
+- **Sealed box.** The sponsor's device generates an ECDH P-256 keypair. The
+  **public** key travels the existing sponsor→explorer channel (the config
+  record; published only when the archive is turned on). The explorer's device
+  seals **the whole payload** (query + blocked + tier) to that public key —
+  ECDH → HKDF-SHA256 → AES-256-GCM, a fresh ephemeral key per message
+  (`src/crypto/sealedbox.ts`) — and writes the ciphertext to her own public repo.
+  She can seal but never open. On the public AppView it is inert; lose the
+  sponsor's private key and the archive is unrecoverable trash — an accepted
+  cost, and the point.
+- **Encrypt everything.** Not just the term — `blocked` and `tier` too — so even
+  "a blocked search happened" is unreadable without the key.
+- **The sponsor's private key is protected by the device's WebAuthn** (passkey /
+  PIN / biometric) via the PRF extension: the authenticator derives a stable
+  secret on unlock that wraps the private key at rest, so a stolen sponsor
+  device/localStorage still can't read the archive. A passphrase (PBKDF2, high
+  iterations) is the fallback where PRF is unavailable. This is where a "high
+  work factor" actually applies — protecting the private key, not the public
+  ciphertext (whose margin is the P-256/AES-256 strength itself).
+- **Honesty copy** becomes: your grown-up can read these; they're stored
+  scrambled so no one else can.
+- **Retention:** last 30 days, max 500 (local log and the synced records).
+
 ## Status
 
 **Built** (rung 2 is live on `/telescope.html`): the reach tier, both gates
