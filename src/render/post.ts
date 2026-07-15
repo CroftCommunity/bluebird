@@ -6,6 +6,7 @@ import { showLeaveInterstitial } from './interstitial.js';
 import { recordEmbedHidden } from '../feed/labels.js';
 import { clipFromPost } from '../saves/clip.js';
 import { saveClip, removeClip } from '../saves/store.js';
+import { friendHeartsSentence } from '../social/friends-hearts.js';
 
 function setSaveState(btn: HTMLButtonElement, saved: boolean): void {
   btn.setAttribute('aria-pressed', saved ? 'true' : 'false');
@@ -29,6 +30,26 @@ export function markSavedPosts(root: ParentNode, saved: Set<string>): void {
   root.querySelectorAll<HTMLButtonElement>('[data-save-btn]').forEach((btn) => {
     const uri = btn.getAttribute('data-save-btn');
     if (uri && saved.has(uri)) setSaveState(btn, true);
+  });
+}
+
+/**
+ * B2 friends' hearts, patched onto an already-rendered garden (the lurk read is
+ * anonymous and can be slow, so the garden paints first and this fills in when
+ * the friends' public likes resolve — same after-the-fact pattern as
+ * markSavedPosts). Count-free, by name, among friends only.
+ */
+export function applyFriendHearts(root: ParentNode, byPost: Map<string, string[]>): void {
+  root.querySelectorAll<HTMLElement>('[data-post-uri]').forEach((article) => {
+    const uri = article.getAttribute('data-post-uri');
+    if (!uri) return;
+    const names = byPost.get(uri);
+    if (article.querySelector('[data-friend-hearts]')) return; // idempotent
+    if (!names || names.length === 0) return;
+    const line = el('p', { class: 'post__friends', 'data-friend-hearts': 'true' }, [friendHeartsSentence(names)]);
+    const footer = article.querySelector('.post__actions');
+    if (footer) footer.before(line);
+    else article.append(line);
   });
 }
 
@@ -179,7 +200,10 @@ function renderEmbed(embed: EmbedView | undefined): Node | null {
   }
 }
 
-export function renderPost(post: PostView, opts: { like?: LikeUi } = {}): HTMLElement {
+export function renderPost(
+  post: PostView,
+  opts: { like?: LikeUi; friendHearts?: Map<string, string[]> } = {},
+): HTMLElement {
   const author = post.author;
   const name = author.displayName?.trim() || `@${author.handle}`;
 
@@ -207,6 +231,16 @@ export function renderPost(post: PostView, opts: { like?: LikeUi } = {}): HTMLEl
 
   const embed = renderEmbed(post.embed);
   if (embed) article.append(embed);
+
+  // B2 friends' hearts — a relational, count-free "Liked by <friends>" line.
+  // Sourced from friends' PUBLIC like records (read anonymously), shown only
+  // among the sponsor-curated friends and only by name. Never a global count.
+  const heartNames = opts.friendHearts?.get(post.uri);
+  if (heartNames && heartNames.length > 0) {
+    article.append(
+      el('p', { class: 'post__friends', 'data-friend-hearts': 'true' }, [friendHeartsSentence(heartNames)]),
+    );
+  }
 
   // Save to Saves (D4) — private and local. No like/repost/reply counts, by
   // construction.

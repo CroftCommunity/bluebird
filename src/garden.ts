@@ -3,7 +3,7 @@ import { AuthorFeedClient } from './atproto/client.js';
 import type { InclusionList } from './feed/inclusion.js';
 import { mergeFeeds } from './feed/merge.js';
 import { filterByLabels } from './feed/labels.js';
-import { renderPost, markSavedPosts, type LikeUi } from './render/post.js';
+import { renderPost, markSavedPosts, applyFriendHearts, type LikeUi } from './render/post.js';
 import { el, clear } from './render/dom.js';
 import { offlineBanner, changeNotice } from './render/locks.js';
 import { savedUris } from './saves/store.js';
@@ -80,7 +80,7 @@ export function renderGardenInto(
   container: HTMLElement,
   result: GardenResult,
   status: Status,
-  opts: { offline?: boolean; changeNotice?: string; like?: LikeUi } = {},
+  opts: { offline?: boolean; changeNotice?: string; like?: LikeUi; friendHearts?: Map<string, string[]> } = {},
 ): void {
   clear(container);
   if (opts.changeNotice) container.append(changeNotice(opts.changeNotice));
@@ -90,7 +90,14 @@ export function renderGardenInto(
     return;
   }
   const list = el('div', { class: 'garden__list', 'data-garden-list': 'true' });
-  for (const post of result.posts) list.append(renderPost(post, opts.like ? { like: opts.like } : {}));
+  for (const post of result.posts) {
+    list.append(
+      renderPost(post, {
+        ...(opts.like ? { like: opts.like } : {}),
+        ...(opts.friendHearts ? { friendHearts: opts.friendHearts } : {}),
+      }),
+    );
+  }
   container.append(list);
 }
 
@@ -98,7 +105,18 @@ export function renderGardenInto(
 export async function mountGarden(
   container: HTMLElement,
   inclusion: InclusionList,
-  opts: GardenOptions & { offline?: boolean; changeNotice?: string; like?: LikeUi } = {},
+  opts: GardenOptions & {
+    offline?: boolean;
+    changeNotice?: string;
+    like?: LikeUi;
+    /**
+     * §B2 lurk read: a promise of who-liked-what among the sponsor's friends,
+     * fetched anonymously in parallel with the garden. The garden paints first
+     * (it must never wait on a slow friend PDS); hearts are patched in when this
+     * resolves. A rejection is swallowed — the garden is never affected.
+     */
+    friendHearts?: Promise<Map<string, string[]>>;
+  } = {},
 ): Promise<void> {
   renderGardenInto(container, { posts: [], failedActors: [] }, 'loading');
   try {
@@ -110,7 +128,12 @@ export async function mountGarden(
       ...(opts.changeNotice ? { changeNotice: opts.changeNotice } : {}),
       ...(opts.like ? { like: opts.like } : {}),
     });
-    if (status === 'ready') void savedUris().then((set) => markSavedPosts(container, set));
+    if (status === 'ready') {
+      void savedUris().then((set) => markSavedPosts(container, set));
+      if (opts.friendHearts) {
+        void opts.friendHearts.then((byPost) => applyFriendHearts(container, byPost)).catch(() => {});
+      }
+    }
   } catch {
     renderGardenInto(container, { posts: [], failedActors: [] }, 'error');
   }

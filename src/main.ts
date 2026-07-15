@@ -19,6 +19,7 @@ import {
   persistExplorerSession,
 } from './social/explorer-auth.js';
 import { makeLikeUi, explorerSignInBanner } from './social/like-ui.js';
+import { fetchFriendHearts } from './social/friends-hearts.js';
 import { installTheme } from './brand/theme.js';
 
 /** The explorer's scoped OAuth session (B1), or null in localOnly / lapsed states. */
@@ -71,6 +72,15 @@ async function openGarden(container: HTMLElement): Promise<void> {
           })
         : undefined;
 
+      // B2 friends' hearts — the see-but-not-be-seen lurk read. When the sponsor
+      // enabled it (or the explorer has an account), read friends' PUBLIC likes
+      // anonymously — NO session, NO credential — and annotate the garden by
+      // name. A localOnly explorer can lurk with no repo of her own.
+      const friendHearts =
+        caps.canSeeFriendsHearts && gate.config.friends.length > 0
+          ? fetchFriendHearts(gate.config.friends).catch(() => new Map<string, string[]>())
+          : undefined;
+
       await mountGarden(
         container,
         { version: 1, entries: inclusion },
@@ -79,6 +89,7 @@ async function openGarden(container: HTMLElement): Promise<void> {
           includeReposts: gate.config.showReposts,
           ...(notice ? { changeNotice: notice } : {}),
           ...(like ? { like } : {}),
+          ...(friendHearts ? { friendHearts } : {}),
         },
       );
 
