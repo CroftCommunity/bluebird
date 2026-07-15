@@ -73,16 +73,43 @@ export function toggleTheme(): Theme {
   return next;
 }
 
+/** Reflect the active theme onto any [data-theme-toggle] controls on the page. */
+function updateToggles(): void {
+  const t = activeTheme();
+  document.querySelectorAll<HTMLElement>('[data-theme-toggle]').forEach((btn) => {
+    const icon = btn.querySelector<HTMLElement>('[data-theme-icon]') ?? btn;
+    icon.textContent = t === 'dark' ? '☾' : '☀';
+    btn.setAttribute('aria-label', t === 'dark' ? 'Switch to light theme' : 'Switch to dark theme');
+    btn.setAttribute('aria-pressed', t === 'dark' ? 'true' : 'false');
+  });
+}
+
+function wireToggles(): void {
+  document.querySelectorAll<HTMLElement>('[data-theme-toggle]').forEach((btn) => {
+    if (btn.dataset.themeWired) return;
+    btn.dataset.themeWired = '1';
+    btn.addEventListener('click', () => {
+      toggleTheme();
+      updateToggles();
+    });
+  });
+  updateToggles();
+}
+
 let installed = false;
 
-/** Apply on load and, with no override, follow live system-theme changes. */
+/** Apply on load, wire theme toggles, and follow live system changes (no override). */
 export function installTheme(): void {
   applyTheme();
+  wireToggles();
   if (installed) return;
   installed = true;
   try {
     window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => {
-      if (!storedOverride()) applyTheme();
+      if (!storedOverride()) {
+        applyTheme();
+        updateToggles();
+      }
     });
   } catch {
     /* no matchMedia — leave the applied default */

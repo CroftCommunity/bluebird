@@ -1,4 +1,5 @@
 import { test, expect, type Page } from '@playwright/test';
+import { seedExplorer } from './helpers.js';
 
 // P2 theme mechanics: device-local theme, default = prefers-color-scheme, a
 // manual override that persists and wins, and theme-color meta kept in sync.
@@ -39,6 +40,22 @@ test.describe('P2 theme mechanics', () => {
     expect(await dataTheme(page)).toBe('dark'); // override applied
     expect(await bgToken(page)).toBe('#212121'); // beats the light media query
     expect(await themeColor(page)).toBe('#212121');
+  });
+
+  test('the topbar theme toggle flips the theme and persists', async ({ page }) => {
+    await seedExplorer(page); // set-up device → the topbar (with the toggle) shows
+    await page.route('**/xrpc/app.bsky.feed.getAuthorFeed*', (r) => r.fulfill({ json: { feed: [] } }));
+    await page.emulateMedia({ colorScheme: 'light' });
+    await page.goto('/');
+
+    const toggle = page.locator('[data-theme-toggle]');
+    await expect(toggle).toBeVisible();
+    await toggle.click();
+    expect(await dataTheme(page)).toBe('dark');
+    expect(await bgToken(page)).toBe('#212121');
+
+    await page.reload();
+    expect(await dataTheme(page)).toBe('dark'); // persisted
   });
 
   test('live system change is followed when there is no override', async ({ page }) => {

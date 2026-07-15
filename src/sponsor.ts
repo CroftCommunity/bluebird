@@ -1,3 +1,4 @@
+import { installTheme } from './brand/theme.js';
 import { skyliteVersion } from './version.js';
 import { el, clear } from './render/dom.js';
 import { SKYLITE_CONFIG_NSID } from './config/types.js';
@@ -491,6 +492,7 @@ function applySession(session: OAuthSession): void {
 }
 
 function boot(): void {
+  installTheme();
   const stamp = document.querySelector<HTMLElement>('[data-version-stamp]');
   if (stamp) stamp.textContent = skyliteVersion();
   registerServiceWorker();

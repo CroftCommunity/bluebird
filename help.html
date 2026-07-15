@@ -19,12 +19,15 @@
   </head>
   <body>
     <header class="topbar">
-      <span class="topbar__moon" aria-hidden="true"></span>
-      <h1 class="topbar__wordmark">How Skylite works</h1>
+      <span class="topbar__mark" data-header-mark aria-hidden="true"></span>
+      <h1 class="topbar__wordmark">
+        <svg class="wordmark" viewBox="0 0 300 72" role="img" aria-label="Skylite" xmlns="http://www.w3.org/2000/svg"><text x="2" y="56" fill="currentColor" font-family="system-ui,-apple-system,'Segoe UI',Roboto,sans-serif" font-weight="800" font-size="60" textLength="292" lengthAdjust="spacingAndGlyphs">Skylite</text></svg>
+      </h1>
       <nav class="topbar__nav">
         <a href="/">Garden</a>
         <a href="/saves.html">Saves</a>
       </nav>
+      <button type="button" class="topbar__theme" data-theme-toggle aria-label="Switch theme"><span class="topbar__theme-icon" data-theme-icon aria-hidden="true">☀</span></button>
     </header>
     <main class="explain">
       <section class="explain__card">
