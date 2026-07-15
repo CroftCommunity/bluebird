@@ -115,17 +115,23 @@ discovery author-bounding, and device-local search-history logging with a visibl
 "your grown-up can see these" recent-searches list. The search box is hidden when
 `tier: 'off'`.
 
-**Encrypted archive — built through phase 2:** the sealed box (#19), the sponsor
-key vault (#20), and the config exchange + sealed-record write (this phase):
-`search.auditPubKeyJwk` is published in the config; when present and the explorer
-has an account, each attempt is sealed to it and written to
-`ing.croft.skylite.search` in the explorer's own repo (best-effort, mirroring
-likes/follows). Retention is 30 days / 500. **Remaining (phase 3):** the sponsor
-audit-view decrypt section + the explorer-DID linkage on the roster.
+**Encrypted archive — COMPLETE (phases 1–3):**
+- sealed box (#19); sponsor key vault (#20);
+- config exchange + sealed-record write (#21): `search.auditPubKeyJwk` is
+  published in the config; when present and the explorer has an account, each
+  attempt is sealed to it and written to `ing.croft.skylite.search` in the
+  explorer's own repo (best-effort, mirroring likes/follows), 30-day/500 retention;
+- sponsor enables the archive (#22): create/reuse the audit keypair, publish the
+  public key;
+- **sponsor audit-view decrypt (#23):** the audit page reads the explorer's
+  sealed records (public `listRecords`, handle→DID), unlocks the vault on the
+  sponsor device, and decrypts to a per-explorer timeline (query · when · blocked
+  · tier). A record it can't open is skipped; a wrong passphrase reads nothing.
 
-**Verify-in-run / staged:** live `searchPosts`/`getFeed` against the real AppView;
-the real PDS record write + WebAuthn-PRF unlock (need a session / authenticator);
-repo-side retention pruning (today the 30-day/500 policy prunes the on-device log).
+**Verify-in-run / staged:** live `searchPosts`/`getFeed`/`resolveHandle`/PDS reads
+and the real PDS record write against the live network; the WebAuthn-PRF unlock
+(needs an authenticator — the passphrase path is fully tested); repo-side
+retention pruning (today the 30-day/500 policy prunes the on-device log).
 
 ## What this is NOT (staged)
 

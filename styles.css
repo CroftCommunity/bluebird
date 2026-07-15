@@ -593,6 +593,28 @@ body {
   cursor: pointer;
 }
 
+/* §Phase 3B — the decrypted search-history timeline in the audit view. */
+.audit__history {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  margin-top: 0.6rem;
+}
+.audit__history-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.5rem;
+  padding: 0.4rem 0;
+  border-bottom: 1px solid var(--border);
+}
+.audit__history-q {
+  font-weight: 600;
+}
+.audit__history-row[data-blocked] .audit__history-q {
+  color: var(--danger);
+}
+
 /* §Phase 3 — the encrypted-archive sub-panel inside the search card. */
 .g-subcard {
   margin-top: 0.8rem;
