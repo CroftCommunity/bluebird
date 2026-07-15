@@ -108,7 +108,12 @@ test.describe('Saves (D4)', () => {
   test('saved state is reflected back in the garden', async ({ page }) => {
     await page.goto('/');
     await page.locator('[data-save-btn]').first().click();
+    // Confirm the optimistic state AND that the (async IndexedDB) write committed
+    // — the clip is readable in Saves — BEFORE navigating back. Without this the
+    // save can race a too-quick navigation and never commit (flaky).
+    await expect(page.locator('[data-save-btn]').first()).toHaveText('★ Saved');
     await page.goto('/saves.html');
+    await expect(page.locator('[data-clip]')).toHaveCount(1);
     await page.goto('/');
     // On return, the button shows saved (async mark).
     await expect(page.locator('[data-save-btn]').first()).toHaveText('★ Saved');
