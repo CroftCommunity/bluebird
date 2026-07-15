@@ -5,7 +5,7 @@ import { registerServiceWorker } from './pwa/register.js';
 import { listExplorers, getExplorerHandle, setExplorerHandle, type ExplorerEntry } from './sponsor/store.js';
 import { effectiveInclusion } from './config/inclusion.js';
 import { fetchAudit, LABEL_MEANINGS, type AccountAudit, type AuditResult } from './audit/audit.js';
-import { unlockAuditKey } from './sponsor/audit-key.js';
+import { unlockAuditKey, auditVault } from './sponsor/audit-key.js';
 import { resolveHandleToDid, fetchSealedHistory, decryptHistory } from './search/audit-read.js';
 import { relativeTime } from './render/time.js';
 
@@ -108,6 +108,8 @@ function searchHistorySection(explorer: ExplorerEntry): HTMLElement | null {
   handleInput.value = getExplorerHandle(explorer.rkey) ?? '';
   handleInput.addEventListener('input', () => setExplorerHandle(explorer.rkey, handleInput.value));
 
+  // A passkey vault unlocks with the platform authenticator (no passphrase field).
+  const usesPasskey = auditVault()?.method === 'webauthn-prf';
   const pass = el('input', {
     type: 'password',
     class: 'g-input',
@@ -119,7 +121,7 @@ function searchHistorySection(explorer: ExplorerEntry): HTMLElement | null {
   const list = el('div', { class: 'audit__history', 'data-history-list': 'true' });
 
   const show = el('button', { type: 'button', class: 'g-btn g-btn--primary', 'data-history-show': 'true' }, [
-    'Show search history',
+    usesPasskey ? 'Unlock with passkey & show history' : 'Show search history',
   ]);
   show.addEventListener('click', () => {
     const handle = handleInput.value.trim();
@@ -127,14 +129,16 @@ function searchHistorySection(explorer: ExplorerEntry): HTMLElement | null {
       msg.textContent = 'Enter the explorer’s handle.';
       return;
     }
-    msg.textContent = 'Unlocking and reading…';
+    msg.textContent = usesPasskey ? 'Waiting for your passkey…' : 'Unlocking and reading…';
     clear(list);
     void (async () => {
       let priv: JsonWebKey;
       try {
-        priv = await unlockAuditKey({ passphrase: pass.value });
+        priv = await unlockAuditKey(usesPasskey ? {} : { passphrase: pass.value });
       } catch {
-        msg.textContent = 'That passphrase didn’t work on this device.';
+        msg.textContent = usesPasskey
+          ? 'Couldn’t unlock with your passkey on this device.'
+          : 'That passphrase didn’t work on this device.';
         return;
       }
       try {
@@ -165,10 +169,14 @@ function searchHistorySection(explorer: ExplorerEntry): HTMLElement | null {
   return el('section', { class: 'g-card', 'data-history-section': 'true' }, [
     el('h2', {}, ['Search history (encrypted)']),
     el('p', { class: 'g-hint' }, [
-      'Only this device can read these — they are stored scrambled everywhere else. Enter the explorer’s handle and your history passphrase.',
+      usesPasskey
+        ? 'Only this device can read these — they are stored scrambled everywhere else. Enter the explorer’s handle, then unlock with your passkey.'
+        : 'Only this device can read these — they are stored scrambled everywhere else. Enter the explorer’s handle and your history passphrase.',
     ]),
     el('label', { class: 'g-field' }, [el('span', { class: 'g-field__label' }, ['Explorer’s handle']), handleInput]),
-    el('label', { class: 'g-field' }, [el('span', { class: 'g-field__label' }, ['History passphrase']), pass]),
+    ...(usesPasskey
+      ? []
+      : [el('label', { class: 'g-field' }, [el('span', { class: 'g-field__label' }, ['History passphrase']), pass])]),
     show,
     msg,
     list,

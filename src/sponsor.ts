@@ -268,29 +268,39 @@ function encryptedArchiveControl(config: SkyliteConfig, save: () => void): HTMLE
       );
       return;
     }
+    const enableWith = (opts: { method: 'passphrase' | 'webauthn-prf'; passphrase?: string }): void => {
+      msg.textContent = 'Setting up the encryption key…';
+      void ensureAuditVault(opts)
+        .then((pubKeyJwk) => {
+          config.search.auditPubKeyJwk = pubKeyJwk;
+          save();
+          render();
+        })
+        .catch(() => {
+          msg.textContent =
+            opts.method === 'webauthn-prf'
+              ? "Couldn't set up a passkey on this device. Try a passphrase instead."
+              : "Couldn't set up the key on this device.";
+        });
+    };
+
     const pass = textInput('', 'a passphrase only you know', () => {}, 'password');
     pass.setAttribute('data-archive-pass', 'true');
     wrap.append(
       el('p', { class: 'g-hint' }, [
-        'Store search history ENCRYPTED so no one but you can read it — not even on the public network. Choose a passphrase to lock the key on this device.',
+        'Store search history ENCRYPTED so no one but you can read it — not even on the public network. Lock the key to this device with a passphrase, or this device’s passkey / fingerprint.',
       ]),
       field('Passphrase for the history key', pass),
-      button('Turn on encrypted history', 'g-btn g-btn--primary', () => {
+      button('Turn on with a passphrase', 'g-btn g-btn--primary', () => {
         if (pass.value.length < 8) {
           msg.textContent = 'Use at least 8 characters.';
           return;
         }
-        msg.textContent = 'Setting up the encryption key…';
-        void ensureAuditVault({ method: 'passphrase', passphrase: pass.value })
-          .then((pubKeyJwk) => {
-            config.search.auditPubKeyJwk = pubKeyJwk;
-            save();
-            render();
-          })
-          .catch(() => {
-            msg.textContent = "Couldn't set up the key on this device.";
-          });
+        enableWith({ method: 'passphrase', passphrase: pass.value });
       }, { 'data-archive-on': 'true' }),
+      button('Use this device’s passkey / fingerprint', 'g-btn g-btn--ghost', () => {
+        enableWith({ method: 'webauthn-prf' });
+      }, { 'data-archive-on-passkey': 'true' }),
       msg,
     );
   };
