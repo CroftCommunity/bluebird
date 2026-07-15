@@ -1,5 +1,6 @@
 import { test, expect, type Route } from '@playwright/test';
 import { EMBED_FIXTURE_FEEDS } from '../fixtures/embeds.js';
+import { seedExplorer } from './helpers.js';
 
 // Hermetic DOM-level proof of the §3 embed invariants. Each getAuthorFeed call
 // is fulfilled from local fixtures; the real built bundle renders from dist/.
@@ -12,6 +13,7 @@ async function mockAppView(route: Route): Promise<void> {
 
 test.describe('§3 embed invariants (hermetic)', () => {
   test.beforeEach(async ({ page }) => {
+    await seedExplorer(page);
     await page.route('**/xrpc/app.bsky.feed.getAuthorFeed*', mockAppView);
   });
 

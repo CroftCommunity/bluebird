@@ -8,10 +8,12 @@ test.describe('Phase 0 shell', () => {
     await page.route('**/xrpc/app.bsky.feed.getAuthorFeed*', (r) => r.fulfill({ json: { feed: [] } }));
   });
 
-  test('renders the wordmark and topbar nav', async ({ page }) => {
+  test('an un-set-up device sees the landing wordmark (not the explorer chrome)', async ({ page }) => {
     await page.goto('/');
     await expect(page.getByRole('heading', { name: 'Skylite' })).toBeVisible();
-    await expect(page.getByRole('button', { name: 'Get help' })).toBeVisible();
+    // The explorer-surface "Get help" button is NOT shown to a stranger (§S1:
+    // product surface and project docs never share navigation).
+    await expect(page.getByRole('button', { name: 'Get help' })).toBeHidden();
   });
 
   test('stamps a real build version into the page', async ({ page }) => {

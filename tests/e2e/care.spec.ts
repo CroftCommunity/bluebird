@@ -29,6 +29,7 @@ test.describe('Help handoff (IDEAS.md §3)', () => {
   });
 
   test('without a contact, offers gentle guidance instead of a mailto', async ({ page }) => {
+    await localConfigWithHelp(page, undefined); // set-up device (no help contact) → topbar/help visible
     await page.route('**/xrpc/app.bsky.feed.getAuthorFeed*', emptyFeeds);
     await page.goto('/');
     await page.locator('[data-help-btn]').click();
@@ -38,6 +39,7 @@ test.describe('Help handoff (IDEAS.md §3)', () => {
   });
 
   test('"Never mind" dismisses the handoff', async ({ page }) => {
+    await localConfigWithHelp(page, undefined); // set-up device → topbar/help visible
     await page.route('**/xrpc/app.bsky.feed.getAuthorFeed*', emptyFeeds);
     await page.goto('/');
     await page.locator('[data-help-btn]').click();

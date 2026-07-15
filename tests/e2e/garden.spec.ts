@@ -1,5 +1,6 @@
 import { test, expect, type Route } from '@playwright/test';
 import { FIXTURE_FEEDS, FIXTURE_POSTS } from '../fixtures/authorFeed.js';
+import { seedExplorer } from './helpers.js';
 
 // Hermetic: every getAuthorFeed call is fulfilled from local fixtures, so the
 // garden renders with zero network. Drives the real built bundle from dist/.
@@ -13,6 +14,7 @@ async function mockAppView(route: Route): Promise<void> {
 
 test.describe('Phase 1 garden (hermetic)', () => {
   test.beforeEach(async ({ page }) => {
+    await seedExplorer(page); // set-up device → `/` opens the garden, not the landing
     await page.route('**/xrpc/app.bsky.feed.getAuthorFeed*', mockAppView);
   });
 

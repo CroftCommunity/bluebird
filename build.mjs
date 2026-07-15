@@ -64,7 +64,7 @@ function entryHref(srcEntry) {
 const pageHrefs = Object.fromEntries(PAGES.map((p) => [p.entry, entryHref(p.entry)]));
 
 // Static assets copied verbatim into dist.
-for (const asset of ['manifest.webmanifest', 'styles.css', 'CNAME', 'icons', '.nojekyll']) {
+for (const asset of ['manifest.webmanifest', 'styles.css', 'CNAME', 'icons', '.nojekyll', 'LICENSE']) {
   const from = join(root, asset);
   if (existsSync(from)) {
     cpSync(from, join(dist, asset), { recursive: true });

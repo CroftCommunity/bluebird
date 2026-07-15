@@ -1,11 +1,12 @@
 import { skyliteVersion } from './version.js';
 import { mountGarden } from './garden.js';
 import { renderPausedLock, renderStaleLock } from './render/locks.js';
-import { ingestProvisioningFromLocation, getCachedConfig, getLocalConfig } from './config/binding.js';
+import { ingestProvisioningFromLocation, getBinding, getCachedConfig, getLocalConfig } from './config/binding.js';
 import { resolveGarden } from './config/provider.js';
 import { registerServiceWorker } from './pwa/register.js';
 import { installBackgroundLock } from './lock/backgroundLock.js';
 import { showHelpHandoff, type HelpContact } from './care/handoff.js';
+import { renderLanding } from './landing.js';
 
 /** The trusted-adult contact from whatever config we last knew (any gate state). */
 function helpContact(): HelpContact {
@@ -36,6 +37,16 @@ async function start(): Promise<void> {
   // A fresh provisioning link binds this device, then is cleared from the URL.
   ingestProvisioningFromLocation(window.location, window.history);
 
+  // S1 role funnel: a device that is not yet set up (no binding, no local
+  // config) sees the landing with two doors — never the garden. A provisioning
+  // arrival was bound just above, so it skips straight past this.
+  const setUp = getBinding() !== null || getLocalConfig() !== null;
+  if (!setUp) {
+    document.querySelector('.topbar')?.setAttribute('hidden', 'hidden');
+    renderLanding(container);
+    return;
+  }
+
   const { gate, inclusion } = await resolveGarden();
   switch (gate.kind) {
     case 'paused':
@@ -45,6 +56,10 @@ async function start(): Promise<void> {
       renderStaleLock(container);
       return;
     default: {
+      // Reflect the cosmetic skin switch so it is observable and ready for the
+      // full skin (RUN-SOCIAL B4). Only "simple" is styled today; this NEVER
+      // gates a capability (capabilities-key-on-localOnly-never-skin).
+      document.documentElement.dataset.skin = gate.config.skin;
       // Show the "saved posts, offline" banner either when serving a cached
       // config (D5) or when the device itself is offline.
       const offline = gate.offline || !navigator.onLine;
