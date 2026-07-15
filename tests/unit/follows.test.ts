@@ -5,6 +5,10 @@ import {
   isFollowedLocally,
   addLocalFollow,
   removeLocalFollow,
+  followActor,
+  unfollowActor,
+  followNameFor,
+  followNames,
 } from '../../src/social/follows.js';
 
 // A minimal in-memory localStorage so the device-local follow set (which the
@@ -47,5 +51,31 @@ describe('device-local follow set (My Sky source, every mode)', () => {
     removeLocalFollow('did:plc:pat');
     expect(isFollowedLocally('did:plc:pat')).toBe(false);
     expect(isFollowedLocally('did:plc:sam')).toBe(true);
+  });
+});
+
+describe('friendly names (captured at follow time)', () => {
+  it('remembers the name on follow and shows it in the sky list', async () => {
+    // No session → device-local only; no OAuth mock needed.
+    await followActor('did:plc:pat', null, '2026-07-15T00:00:00Z', { name: 'Pat' });
+    await followActor('did:plc:sam', null, '2026-07-15T00:00:00Z', { name: 'Sam' });
+    expect(followNameFor('did:plc:pat')).toBe('Pat');
+    expect(followNames()).toEqual([
+      { did: 'did:plc:pat', name: 'Pat' },
+      { did: 'did:plc:sam', name: 'Sam' },
+    ]);
+  });
+
+  it('falls back to the DID when no name was captured', async () => {
+    await followActor('did:plc:anon', null, '2026-07-15T00:00:00Z');
+    expect(followNameFor('did:plc:anon')).toBeUndefined();
+    expect(followNames()).toEqual([{ did: 'did:plc:anon', name: 'did:plc:anon' }]);
+  });
+
+  it('forgets the name on unfollow', async () => {
+    await followActor('did:plc:pat', null, '2026-07-15T00:00:00Z', { name: 'Pat' });
+    await unfollowActor('did:plc:pat', null);
+    expect(followNameFor('did:plc:pat')).toBeUndefined();
+    expect(isFollowedLocally('did:plc:pat')).toBe(false);
   });
 });

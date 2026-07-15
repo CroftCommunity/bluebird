@@ -692,6 +692,28 @@ body {
   border-color: var(--accent);
 }
 
+/* §D1 follow-from-quoted: a small follow control beside the inert quoted author.
+   It records a device-local follow only — never a door into the outside feed. */
+.post__quote-authorrow {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+.post__follow--quote {
+  padding: 0.25rem 0.6rem;
+  font-size: 0.85rem;
+}
+
+/* §D1 "In your sky" header — a calm, count-free line naming who you follow. */
+.mysky__header {
+  max-width: 640px;
+  margin: 0 auto;
+  padding: 0.4rem 1rem 0;
+  color: var(--ink-muted);
+  font-weight: 600;
+}
+
 /* --- saves --- */
 .clip__list {
   display: flex;
