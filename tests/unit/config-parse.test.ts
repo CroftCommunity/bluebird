@@ -48,4 +48,11 @@ describe('parseConfig', () => {
     const c = parseConfig({ paused: false, channels: [{ id: 'x', name: 'X', accounts: [] }] });
     expect(c?.channels[0]?.enabled).toBe(false);
   });
+
+  it('parses an optional help contact and omits it when empty', () => {
+    const withHelp = parseConfig({ paused: false, help: { contactName: 'Mum', contactEmail: 'm@x.com' } });
+    expect(withHelp?.help).toEqual({ contactName: 'Mum', contactEmail: 'm@x.com' });
+    const noHelp = parseConfig({ paused: false, help: { contactName: '   ' } });
+    expect(noHelp?.help).toBeUndefined();
+  });
 });

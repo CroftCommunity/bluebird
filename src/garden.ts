@@ -3,9 +3,10 @@ import { AuthorFeedClient } from './atproto/client.js';
 import type { InclusionList } from './feed/inclusion.js';
 import { mergeFeeds } from './feed/merge.js';
 import { filterByLabels } from './feed/labels.js';
-import { renderPost } from './render/post.js';
+import { renderPost, markSavedPosts } from './render/post.js';
 import { el, clear } from './render/dom.js';
 import { offlineBanner } from './render/locks.js';
+import { savedUris } from './scrapbook/store.js';
 
 /**
  * Orchestrates the read path: pull each included author's feed, merge them
@@ -93,6 +94,7 @@ export async function mountGarden(
     const status: Status =
       result.posts.length > 0 ? 'ready' : result.failedActors.length > 0 ? 'error' : 'empty';
     renderGardenInto(container, result, status, { offline: opts.offline ?? false });
+    if (status === 'ready') void savedUris().then((set) => markSavedPosts(container, set));
   } catch {
     renderGardenInto(container, { posts: [], failedActors: [] }, 'error');
   }

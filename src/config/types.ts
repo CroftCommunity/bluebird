@@ -18,12 +18,18 @@ export interface SkyliteChannel {
   accounts: SkyliteAccount[];
 }
 
+export interface SkyliteHelp {
+  contactName?: string;
+  contactEmail?: string;
+}
+
 export interface SkyliteConfig {
   $type?: typeof SKYLITE_CONFIG_NSID;
   version: number;
   paused: boolean;
   updatedAt: string;
   channels: SkyliteChannel[];
+  help?: SkyliteHelp;
 }
 
 /** Where the child device's config came from, for honest UI. */

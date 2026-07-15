@@ -3,6 +3,33 @@ import { segmentRichText, type Segment } from '../feed/richtext.js';
 import { el } from './dom.js';
 import { relativeTime } from './time.js';
 import { showLeaveInterstitial } from './interstitial.js';
+import { clipFromPost } from '../scrapbook/clip.js';
+import { saveClip, removeClip } from '../scrapbook/store.js';
+
+function setSaveState(btn: HTMLButtonElement, saved: boolean): void {
+  btn.setAttribute('aria-pressed', saved ? 'true' : 'false');
+  btn.textContent = saved ? '★ Saved' : '☆ Save';
+  btn.classList.toggle('post__save--on', saved);
+}
+
+async function toggleSave(post: PostView, btn: HTMLButtonElement): Promise<void> {
+  const saved = btn.getAttribute('aria-pressed') === 'true';
+  if (saved) {
+    await removeClip(post.uri);
+    setSaveState(btn, false);
+  } else {
+    await saveClip(clipFromPost(post, '', Date.now()));
+    setSaveState(btn, true);
+  }
+}
+
+/** Reflect which posts are already in the Scrapbook onto their Save buttons. */
+export function markSavedPosts(root: ParentNode, saved: Set<string>): void {
+  root.querySelectorAll<HTMLButtonElement>('[data-save-btn]').forEach((btn) => {
+    const uri = btn.getAttribute('data-save-btn');
+    if (uri && saved.has(uri)) setSaveState(btn, true);
+  });
+}
 
 /**
  * Render one post into the garden. Big, bright, high-contrast, and — by
@@ -151,6 +178,19 @@ export function renderPost(post: PostView): HTMLElement {
 
   const embed = renderEmbed(post.embed);
   if (embed) article.append(embed);
+
+  // Save to Scrapbook (D4) — the only "interaction" in the garden, and it's
+  // private and local. No like/repost/reply, by construction.
+  const saveBtn = el('button', {
+    class: 'post__save',
+    type: 'button',
+    'data-save-btn': post.uri,
+    'aria-pressed': 'false',
+    'aria-label': 'Save to scrapbook',
+  });
+  setSaveState(saveBtn, false);
+  saveBtn.addEventListener('click', () => void toggleSave(post, saveBtn));
+  article.append(el('footer', { class: 'post__actions' }, [saveBtn]));
 
   return article;
 }

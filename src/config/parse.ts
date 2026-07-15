@@ -1,4 +1,4 @@
-import type { SkyliteAccount, SkyliteChannel, SkyliteConfig } from './types.js';
+import type { SkyliteAccount, SkyliteChannel, SkyliteConfig, SkyliteHelp } from './types.js';
 
 // Defensive parsing of an untrusted config record. The record comes off a public
 // PDS read (or local import) and must never be trusted structurally — a
@@ -42,10 +42,20 @@ export function parseConfig(v: unknown): SkyliteConfig | null {
   const channels = Array.isArray(v.channels)
     ? v.channels.map(parseChannel).filter((c): c is SkyliteChannel => c !== null)
     : [];
+  const help = parseHelp(v.help);
   return {
     version,
     paused: v.paused,
     updatedAt: typeof v.updatedAt === 'string' ? v.updatedAt : '',
     channels,
+    ...(help ? { help } : {}),
   };
+}
+
+function parseHelp(v: unknown): SkyliteHelp | null {
+  if (!isObj(v)) return null;
+  const help: SkyliteHelp = {};
+  if (typeof v.contactName === 'string' && v.contactName.trim()) help.contactName = v.contactName;
+  if (typeof v.contactEmail === 'string' && v.contactEmail.trim()) help.contactEmail = v.contactEmail;
+  return help.contactName || help.contactEmail ? help : null;
 }
