@@ -36,6 +36,7 @@
   --border: #C0CCD6;      /* Sky Silver — decorative separation */
   --navy: #1C335C;        /* Twilight Navy — wordmark, deep ink */
   --danger: #C0392B;      /* error text — 5.44:1 on --bg */
+  --header-mark: url("/icons/brand/header-light.png");
 
   --radius: 20px;
 
@@ -62,6 +63,7 @@
     --border: #3A3A3A;     /* Steel-Mist Grey */
     --navy: #0E1A33;       /* Dark Twilight Navy */
     --danger: #FF9A9A;     /* error text — 7.93:1 on --bg */
+    --header-mark: url("/icons/brand/header-dark.png");
 
     color-scheme: dark;
   }
@@ -86,6 +88,7 @@
   --border: #3A3A3A;
   --navy: #0E1A33;
   --danger: #FF9A9A;
+  --header-mark: url("/icons/brand/header-dark.png");
 
   color-scheme: dark;
 }

@@ -1,14 +1,14 @@
 {
   "name": "Skylite",
   "short_name": "Skylite",
-  "description": "A window to the stars — a read-only, curated Bluesky garden for one child.",
+  "description": "A window to the stars — a calm, read-first window into Bluesky, grown for you by someone who cares about you.",
   "id": "/",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",
   "orientation": "portrait",
-  "background_color": "#0d0e2b",
-  "theme_color": "#14164b",
+  "background_color": "#FFFFFF",
+  "theme_color": "#FFFFFF",
   "icons": [
     {
       "src": "/icons/icon-192.png",
