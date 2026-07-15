@@ -662,6 +662,18 @@ body {
   color: var(--highlight-ink);
 }
 
+/* §B3 share button — sits beside Save; available in every mode (no account). */
+.post__share {
+  background: var(--card-soft);
+  color: var(--ink);
+  border: none;
+  border-radius: 999px;
+  padding: 0.5rem 1rem;
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+
 /* --- saves --- */
 .clip__list {
   display: flex;
@@ -714,7 +726,10 @@ body {
 .clip__actions {
   margin-top: 0.5rem;
   display: flex;
+  gap: 0.5rem;
   justify-content: flex-end;
+  align-items: center;
+  flex-wrap: wrap;
 }
 
 .clip__remove {
@@ -724,6 +739,28 @@ body {
   border-radius: 999px;
   padding: 0.4rem 0.9rem;
   font: inherit;
+  cursor: pointer;
+}
+
+/* §B3 saves controls: open the full post-view, or share the permalink. */
+.clip__open {
+  margin-right: auto;
+  color: var(--link);
+  font-weight: 600;
+  text-decoration: none;
+}
+.clip__open:hover {
+  text-decoration: underline;
+}
+
+.clip__share {
+  background: var(--card-soft);
+  color: var(--ink);
+  border: none;
+  border-radius: 999px;
+  padding: 0.4rem 0.9rem;
+  font: inherit;
+  font-weight: 600;
   cursor: pointer;
 }
 

@@ -7,6 +7,7 @@ import { recordEmbedHidden } from '../feed/labels.js';
 import { clipFromPost } from '../saves/clip.js';
 import { saveClip, removeClip } from '../saves/store.js';
 import { friendHeartsSentence } from '../social/friends-hearts.js';
+import { sharePost, type ShareOutcome } from '../share/share.js';
 
 function setSaveState(btn: HTMLButtonElement, saved: boolean): void {
   btn.setAttribute('aria-pressed', saved ? 'true' : 'false');
@@ -70,6 +71,40 @@ export function setLikeState(btn: HTMLButtonElement, liked: boolean): void {
   btn.setAttribute('aria-pressed', liked ? 'true' : 'false');
   btn.textContent = liked ? '♥ Liked' : '♡ Like';
   btn.classList.toggle('post__like--on', liked);
+}
+
+/** §B3 share control — available in every mode (no account needed). Shares the
+ *  Skylite permalink; falls back to copying the link, with gentle inline feedback. */
+function shareFeedback(outcome: ShareOutcome): string {
+  switch (outcome) {
+    case 'copied':
+      return '✓ Link copied';
+    case 'failed':
+      return "Couldn't share";
+    default:
+      return '↗ Share'; // 'shared' / 'dismissed' — return to the resting label
+  }
+}
+
+function shareButton(post: PostView): HTMLButtonElement {
+  const btn = el('button', {
+    class: 'post__share',
+    type: 'button',
+    'data-share-btn': post.uri,
+    'aria-label': 'Share this post',
+  });
+  btn.textContent = '↗ Share';
+  btn.addEventListener('click', () => {
+    void sharePost(post.uri, { text: post.record.text }).then((outcome) => {
+      btn.textContent = shareFeedback(outcome);
+      if (outcome === 'copied' || outcome === 'failed') {
+        setTimeout(() => {
+          btn.textContent = '↗ Share';
+        }, 2000);
+      }
+    });
+  });
+  return btn;
 }
 
 /**
@@ -261,7 +296,7 @@ export function renderPost(
   setSaveState(saveBtn, false);
   saveBtn.addEventListener('click', () => void toggleSave(post, saveBtn));
 
-  const actions: HTMLElement[] = [saveBtn];
+  const actions: HTMLElement[] = [saveBtn, shareButton(post)];
 
   // B1/B2 heart — only for an account-holding explorer; no counts.
   const like = opts.like;

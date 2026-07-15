@@ -1,4 +1,4 @@
-import type { AuthorFeedResponse, FeedViewPost } from './types.js';
+import type { AuthorFeedResponse, FeedViewPost, PostView } from './types.js';
 
 /**
  * Read-only client for `app.bsky.feed.getAuthorFeed`. Unauthenticated by design
@@ -126,6 +126,33 @@ export class AuthorFeedClient {
       cursor = page.cursor;
     }
     return out.slice(0, maxPosts);
+  }
+
+  /**
+   * Fetch hydrated post views by at:// URI (`app.bsky.feed.getPosts`, public,
+   * unauthenticated). Used by the post-view page (§B3) to render a single shared
+   * post in full. Same polite backoff as getAuthorFeed.
+   */
+  async getPosts(uris: string[], signal?: AbortSignal): Promise<{ posts: PostView[] }> {
+    const url = new URL('/xrpc/app.bsky.feed.getPosts', this.baseUrl);
+    for (const uri of uris) url.searchParams.append('uris', uri);
+
+    for (let attempt = 0; ; attempt++) {
+      const res = await this.fetchImpl(url, {
+        method: 'GET',
+        headers: { accept: 'application/json' },
+        ...(signal ? { signal } : {}),
+      });
+      if (res.ok) {
+        const data = (await res.json()) as { posts?: PostView[] };
+        return { posts: data.posts ?? [] };
+      }
+      const retryable = res.status === 429 || (res.status >= 500 && res.status < 600);
+      if (!retryable || attempt >= this.maxRetries) {
+        throw new AuthorFeedError(`getPosts failed: ${res.status} ${res.statusText}`, res.status);
+      }
+      await this.sleep(this.backoffDelay(attempt, res.headers.get('retry-after')));
+    }
   }
 
   private backoffDelay(attempt: number, retryAfter: string | null): number {

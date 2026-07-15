@@ -5,6 +5,7 @@ import { registerServiceWorker } from '../pwa/register.js';
 import type { Clip } from './clip.js';
 import { listClips, saveClip, removeClip } from './store.js';
 import { exportBackup, importBackupFile } from '../backup/ui.js';
+import { postPermalink, sharePost, type ShareOutcome } from '../share/share.js';
 
 /**
  * The Saves page (D4): the explorer's private, on-device saves. Each clip keeps
@@ -28,6 +29,25 @@ function renderClip(clip: Clip): HTMLElement {
     void removeClip(clip.uri).then(render);
   });
 
+  // Open the full post in the §B3 post-view (a plain link — reachable offline?
+  // no, it reads live — but always visible; the post-view degrades gracefully).
+  const open = el('a', { class: 'clip__open', href: postPermalink(clip.uri), 'data-clip-open': clip.uri }, [
+    'Open post',
+  ]);
+
+  // §B3 share — the Skylite permalink, native sheet or copy fallback.
+  const share = el('button', { class: 'clip__share', type: 'button', 'data-clip-share': clip.uri, 'aria-label': 'Share this post' }, ['↗ Share']);
+  share.addEventListener('click', () => {
+    void sharePost(clip.uri, { text: clip.text }).then((outcome: ShareOutcome) => {
+      share.textContent = outcome === 'copied' ? '✓ Link copied' : outcome === 'failed' ? "Couldn't share" : '↗ Share';
+      if (outcome === 'copied' || outcome === 'failed') {
+        setTimeout(() => {
+          share.textContent = '↗ Share';
+        }, 2000);
+      }
+    });
+  });
+
   return el('article', { class: 'clip', 'data-clip': clip.uri }, [
     el('div', { class: 'clip__head' }, [
       clip.thumb ? el('img', { class: 'clip__thumb', src: clip.thumb, alt: '', loading: 'lazy' }) : null,
@@ -37,7 +57,7 @@ function renderClip(clip: Clip): HTMLElement {
       ]),
     ]),
     note,
-    el('div', { class: 'clip__actions' }, [remove]),
+    el('div', { class: 'clip__actions' }, [open, share, remove]),
   ]);
 }
 
