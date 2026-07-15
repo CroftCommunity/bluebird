@@ -430,8 +430,8 @@ body {
   font-size: 1.1rem;
 }
 
-/* --- guardian setup page --- */
-.guardian {
+/* --- sponsor setup page --- */
+.sponsor {
   max-width: 680px;
   margin: 0 auto;
   padding: 1rem 1rem 5rem;
@@ -607,7 +607,7 @@ body {
   color: var(--sky-deep);
 }
 
-/* --- scrapbook --- */
+/* --- saves --- */
 .clip__list {
   display: flex;
   flex-direction: column;

@@ -14,9 +14,9 @@ function helpContact(): HelpContact {
 
 /**
  * Phase 2 entry point. Ingests any provisioning link, resolves which config
- * governs this device (guardian PDS → local → dev fixture) and its D5 gate, then
+ * governs this device (sponsor PDS → local → dev fixture) and its D5 gate, then
  * renders the garden, the pause lock, or the staleness lock accordingly. The
- * inclusion list now comes from the guardian's enabled channels — the Phase-1
+ * inclusion list now comes from the sponsor's enabled channels — the Phase-1
  * dev fixture is only the unprovisioned fallback.
  */
 async function start(): Promise<void> {

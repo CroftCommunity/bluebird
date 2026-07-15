@@ -13,7 +13,7 @@
 export const SKYLITE_CONFIG_NSID = 'ing.croft.skylite.config';
 
 /**
- * Legacy fixed rkey from the v1 single-child deployment. New explorer records
+ * Legacy fixed rkey from the v1 single-explorer deployment. New explorer records
  * use a random rkey; this constant only exists to migrate the one existing
  * deployed record and to keep the unprovisioned demo pointer stable.
  */

@@ -13,12 +13,12 @@ const bodyOf = (init: RequestInit | undefined): string =>
   typeof init?.body === 'string' ? init.body : '';
 
 const SESSION_OK = {
-  did: 'did:plc:guardian',
-  handle: 'guardian.test',
+  did: 'did:plc:sponsor',
+  handle: 'sponsor.test',
   accessJwt: 'access-token',
   refreshJwt: 'refresh-token',
   didDoc: {
-    id: 'did:plc:guardian',
+    id: 'did:plc:sponsor',
     service: [{ id: '#atproto_pds', type: 'AtprotoPersonalDataServer', serviceEndpoint: 'https://pds.host.bsky.network/' }],
   },
 };
@@ -36,10 +36,10 @@ describe('WriteClient.createSession', () => {
         return Promise.resolve(json(SESSION_OK));
       },
     });
-    const session = await client.createSession('guardian.test', 'app-pass');
+    const session = await client.createSession('sponsor.test', 'app-pass');
     expect(seenUrl).toBe('https://bsky.social/xrpc/com.atproto.server.createSession');
-    expect(seenBody).toEqual({ identifier: 'guardian.test', password: 'app-pass' });
-    expect(session.did).toBe('did:plc:guardian');
+    expect(seenBody).toEqual({ identifier: 'sponsor.test', password: 'app-pass' });
+    expect(session.did).toBe('did:plc:sponsor');
     expect(session.pdsHost).toBe('https://pds.host.bsky.network'); // trailing slash trimmed
   });
 
@@ -64,12 +64,12 @@ describe('WriteClient.putRecord', () => {
         seenUrl = urlOf(input);
         seenAuth = new Headers(init?.headers).get('authorization');
         seenBody = JSON.parse(bodyOf(init)) as Record<string, unknown>;
-        return Promise.resolve(json({ uri: 'at://did:plc:guardian/ing.croft.skylite.config/self', cid: 'bafy' }));
+        return Promise.resolve(json({ uri: 'at://did:plc:sponsor/ing.croft.skylite.config/self', cid: 'bafy' }));
       },
     });
     const session = {
-      did: 'did:plc:guardian',
-      handle: 'guardian.test',
+      did: 'did:plc:sponsor',
+      handle: 'sponsor.test',
       accessJwt: 'ACCESS',
       refreshJwt: 'r',
       pdsHost: 'https://pds.host.bsky.network',
@@ -77,7 +77,7 @@ describe('WriteClient.putRecord', () => {
     const res = await client.putRecord(session, { collection: 'ing.croft.skylite.config', rkey: 'self', record: { a: 1 } });
     expect(seenUrl).toBe('https://pds.host.bsky.network/xrpc/com.atproto.repo.putRecord');
     expect(seenAuth).toBe('Bearer ACCESS');
-    expect(seenBody).toMatchObject({ repo: 'did:plc:guardian', collection: 'ing.croft.skylite.config', rkey: 'self' });
+    expect(seenBody).toMatchObject({ repo: 'did:plc:sponsor', collection: 'ing.croft.skylite.config', rkey: 'self' });
     expect(res.uri).toContain('ing.croft.skylite.config/self');
   });
 });
@@ -92,14 +92,14 @@ describe('WriteClient.publishConfig', () => {
         calls.push(url);
         if (url.endsWith('createSession')) return Promise.resolve(json(SESSION_OK));
         putBody = JSON.parse(bodyOf(init)) as Record<string, unknown>;
-        return Promise.resolve(json({ uri: 'at://did:plc:guardian/ing.croft.skylite.config/self', cid: 'c' }));
+        return Promise.resolve(json({ uri: 'at://did:plc:sponsor/ing.croft.skylite.config/self', cid: 'c' }));
       },
     });
-    const { uri, session } = await client.publishConfig('guardian.test', 'app-pass', config);
+    const { uri, session } = await client.publishConfig('sponsor.test', 'app-pass', config);
     expect(calls[0]).toContain('createSession');
     expect(calls[1]).toContain('putRecord');
     expect((putBody.record as Record<string, unknown>).$type).toBe('ing.croft.skylite.config');
-    expect(session.handle).toBe('guardian.test');
+    expect(session.handle).toBe('sponsor.test');
     expect(uri).toContain('/self');
   });
 

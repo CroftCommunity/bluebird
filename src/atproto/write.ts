@@ -3,11 +3,11 @@ import { SKYLITE_CONFIG_NSID, SKYLITE_CONFIG_RKEY_LEGACY } from '../config/types
 import { pdsEndpointFromDoc, type DidDocument } from './repo.js';
 
 /**
- * Guardian write path (Phase 2 remainder). The guardian, on their own device,
+ * Sponsor write path (Phase 2 remainder). The sponsor, on their own device,
  * signs in and Skylite writes the config record into their PDS. This uses the
  * legacy identifier + **app-password** session (com.atproto.server.createSession
  * → com.atproto.repo.putRecord) rather than full OAuth: it is verifiable
- * end-to-end and keeps the guardian scope, and the child's device still never
+ * end-to-end and keeps the sponsor scope, and the explorer's device still never
  * authenticates. The password is used only to create the session and is never
  * stored — only the returned tokens live in memory for the page session.
  *
@@ -108,7 +108,7 @@ export class WriteClient {
     return { uri: data.uri, cid: data.cid };
   }
 
-  /** Sign in and publish the Skylite config to the guardian's repo. */
+  /** Sign in and publish the Skylite config to the sponsor's repo. */
   async publishConfig(
     identifier: string,
     password: string,

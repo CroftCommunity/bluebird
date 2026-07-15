@@ -14,7 +14,7 @@ import { CONFIG_DEFAULTS, SKYLITE_CONFIG_VERSION } from './types.js';
 // field degrades to its default, never throws into the explorer's UI.
 //
 // Applying CONFIG_DEFAULTS for every missing field IS the v1->v2 migration: a
-// legacy single-child record (paused + channels + help, no switches) parses into
+// legacy single-explorer record (paused + channels + help, no switches) parses into
 // the canonical two-switch shape with localOnly=true, skin=simple, etc.
 
 function isObj(v: unknown): v is Record<string, unknown> {

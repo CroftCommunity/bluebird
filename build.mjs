@@ -29,8 +29,8 @@ const version = computeVersion();
 // template uses for the hashed script src (arecipe page-per-destination shape).
 const PAGES = [
   { html: 'index.html', entry: 'src/main.ts', token: '%MAIN_JS%' },
-  { html: 'guardian.html', entry: 'src/guardian.ts', token: '%GUARDIAN_JS%' },
-  { html: 'scrapbook.html', entry: 'src/scrapbook/page.ts', token: '%SCRAPBOOK_JS%' },
+  { html: 'sponsor.html', entry: 'src/sponsor.ts', token: '%SPONSOR_JS%' },
+  { html: 'saves.html', entry: 'src/saves/page.ts', token: '%SAVES_JS%' },
   { html: 'help.html', entry: 'src/help.ts', token: '%HELP_JS%' },
 ];
 

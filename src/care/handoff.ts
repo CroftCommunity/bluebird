@@ -3,7 +3,7 @@ import { el } from '../render/dom.js';
 /**
  * The out-of-band "something's wrong" handoff (IDEAS.md §3). One tap reaches the
  * trusted adult — a prefilled mailto, nothing more. NOT platform reporting, NOT
- * activity monitoring, NO telemetry. Distress routes to a person the child
+ * activity monitoring, NO telemetry. Distress routes to a person the explorer
  * chooses to reach. The honest inverse of surveillance.
  */
 

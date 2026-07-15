@@ -9,10 +9,10 @@ import { hasPin, setPin, clearPin } from './lock/pin.js';
 import { WriteClient } from './atproto/write.js';
 
 /**
- * Guardian setup — the guardian's own device. Phase 2 / D2 supports authoring
+ * Sponsor setup — the sponsor's own device. Phase 2 / D2 supports authoring
  * config **locally** (no account needed) with export/import, saving it to this
- * device (local-only mode), and generating a provisioning link for the child's
- * device. Writing the record straight into the guardian's PDS over OAuth is the
+ * device (local-only mode), and generating a provisioning link for the explorer's
+ * device. Writing the record straight into the sponsor's PDS over OAuth is the
  * deferred RUN-04 convenience; the exported JSON is the record body to store.
  */
 
@@ -107,7 +107,7 @@ function render(): void {
   const importArea = el('textarea', { class: 'g-json', rows: 6, placeholder: 'Paste a config JSON to load…' });
   const importMsg = el('span', { class: 'g-msg' });
 
-  const didInput = el('input', { type: 'text', class: 'g-input', placeholder: 'did:plc:… (guardian DID)' });
+  const didInput = el('input', { type: 'text', class: 'g-input', placeholder: 'did:plc:… (sponsor DID)' });
   const pdsInput = el('input', { type: 'text', class: 'g-input', placeholder: 'PDS host (optional, e.g. https://…)' });
   const linkOut = el('input', { type: 'text', class: 'g-input', readonly: 'readonly', placeholder: 'device link appears here' });
   const saveMsg = el('span', { class: 'g-msg' });
@@ -133,12 +133,12 @@ function render(): void {
   root.append(
     el('div', { class: 'g-card' }, [
       el('h2', {}, ['1 · Pause switch']),
-      el('label', { class: 'g-toggle g-toggle--big' }, [pause, el('span', {}, ['Pause Skylite for the child'])]),
+      el('label', { class: 'g-toggle g-toggle--big' }, [pause, el('span', {}, ['Pause Skylite for the explorer'])]),
     ]),
 
     el('div', { class: 'g-card' }, [
       el('h2', {}, ['2 · Channels']),
-      el('p', { class: 'g-hint' }, ['The child sees the accounts in every channel that is On.']),
+      el('p', { class: 'g-hint' }, ['The explorer sees the accounts in every channel that is On.']),
       ...config.channels.map((c, i) => renderChannel(c, i)),
       button('+ Add channel', 'g-btn', () => {
         config.channels.push({ id: `channel-${config.channels.length + 1}`, name: 'New channel', enabled: true, accounts: [{ actor: '' }] });
@@ -195,9 +195,9 @@ function render(): void {
     ]),
 
     el('div', { class: 'g-card' }, [
-      el('h2', {}, ['4 · Set up the child’s device']),
-      el('p', { class: 'g-hint' }, ['Store the JSON above as a record in your repo, then make a link for the child’s device.']),
-      labeled('Guardian DID', didInput),
+      el('h2', {}, ['4 · Set up the explorer’s device']),
+      el('p', { class: 'g-hint' }, ['Store the JSON above as a record in your repo, then make a link for the explorer’s device.']),
+      labeled('Sponsor DID', didInput),
       labeled('PDS host', pdsInput),
       el('div', { class: 'g-row' }, [
         button('Make device link', 'g-btn g-btn--primary', () => {
@@ -209,7 +209,7 @@ function render(): void {
           }
           const origin = `${window.location.origin}/`;
           linkOut.value = provisioningUrl(origin, {
-            guardianDid: did,
+            sponsorDid: did,
             rkey: SKYLITE_CONFIG_RKEY_LEGACY,
             ...(pdsInput.value.trim() ? { pdsHost: pdsInput.value.trim() } : {}),
           });
@@ -220,7 +220,7 @@ function render(): void {
 
     el('div', { class: 'g-card' }, [
       el('h2', {}, ["5 · Trusted grown-up (for the “Get help” button)"]),
-      el('p', { class: 'g-hint' }, ['Optional. When set, the child’s “Get help” button starts a message to this person. Nothing is sent automatically — it just opens a pre-filled email.']),
+      el('p', { class: 'g-hint' }, ['Optional. When set, the explorer’s “Get help” button starts a message to this person. Nothing is sent automatically — it just opens a pre-filled email.']),
       labeled('Name', helpName),
       labeled('Email', helpEmail),
     ]),
@@ -277,7 +277,7 @@ function boot(): void {
   const stamp = document.querySelector<HTMLElement>('[data-version-stamp]');
   if (stamp) stamp.textContent = skyliteVersion();
   registerServiceWorker();
-  root = document.querySelector<HTMLElement>('[data-guardian]');
+  root = document.querySelector<HTMLElement>('[data-sponsor]');
   // Keep the exported JSON live as any field is edited, without a full re-render
   // (which would steal input focus). Delegated listeners fire in the bubble phase,
   // after each control's own target-phase handler has updated the model — so

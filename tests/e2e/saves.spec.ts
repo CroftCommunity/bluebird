@@ -1,6 +1,6 @@
 import { test, expect, type Route } from '@playwright/test';
 
-// D4 Scrapbook — local IndexedDB. Hermetic: garden served from a single mocked
+// D4 Saves — local IndexedDB. Hermetic: garden served from a single mocked
 // author so there's a post to save.
 
 function feed(text: string): unknown {
@@ -34,21 +34,21 @@ async function localConfig(page: import('@playwright/test').Page): Promise<void>
   });
 }
 
-test.describe('Scrapbook (D4)', () => {
+test.describe('Saves (D4)', () => {
   test.beforeEach(async ({ page }) => {
     await localConfig(page);
     await page.route('**/xrpc/app.bsky.feed.getAuthorFeed*', (r: Route) => r.fulfill({ json: feed('CLIP ME') }));
   });
 
-  test('save a post, see it in the scrapbook, note it, then remove it', async ({ page }) => {
+  test('save a post, see it in the saves, note it, then remove it', async ({ page }) => {
     await page.goto('/');
     const saveBtn = page.locator('[data-save-btn]').first();
     await expect(saveBtn).toHaveText('☆ Save');
     await saveBtn.click();
     await expect(saveBtn).toHaveText('★ Saved');
 
-    // The clip is in the scrapbook.
-    await page.goto('/scrapbook.html');
+    // The clip is in the saves.
+    await page.goto('/saves.html');
     const clip = page.locator('[data-clip]');
     await expect(clip).toHaveCount(1);
     await expect(clip).toContainText('CLIP ME');
@@ -59,15 +59,15 @@ test.describe('Scrapbook (D4)', () => {
     await page.reload();
     await expect(page.locator('[data-clip-note]')).toHaveValue('want to draw this');
 
-    // Remove empties the scrapbook.
+    // Remove empties the saves.
     await page.locator('.clip__remove').click();
-    await expect(page.locator('[data-scrapbook-empty]')).toBeVisible();
+    await expect(page.locator('[data-saves-empty]')).toBeVisible();
   });
 
   test('saved state is reflected back in the garden', async ({ page }) => {
     await page.goto('/');
     await page.locator('[data-save-btn]').first().click();
-    await page.goto('/scrapbook.html');
+    await page.goto('/saves.html');
     await page.goto('/');
     // On return, the button shows saved (async mark).
     await expect(page.locator('[data-save-btn]').first()).toHaveText('★ Saved');

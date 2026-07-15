@@ -59,9 +59,9 @@ function inclusionFor(gate: Gate): InclusionEntry[] {
 
 async function pollPds(repo: RepoClient, binding: Binding): Promise<PollResult> {
   try {
-    const pdsHost = binding.pdsHost ?? (await repo.resolvePds(binding.guardianDid));
+    const pdsHost = binding.pdsHost ?? (await repo.resolvePds(binding.sponsorDid));
     const rec = await repo.getRecord(pdsHost, {
-      repo: binding.guardianDid,
+      repo: binding.sponsorDid,
       collection: SKYLITE_CONFIG_NSID,
       rkey: binding.rkey,
     });

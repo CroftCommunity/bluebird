@@ -5,7 +5,7 @@ import type { Clip } from './clip.js';
 import { listClips, saveClip, removeClip } from './store.js';
 
 /**
- * The Scrapbook page (D4): the child's private, on-device saves. Each clip keeps
+ * The Saves page (D4): the explorer's private, on-device saves. Each clip keeps
  * a private note. Local only — the page says so plainly (anti-decoy).
  */
 
@@ -21,7 +21,7 @@ function renderClip(clip: Clip): HTMLElement {
   note.value = clip.note;
   note.addEventListener('input', () => void saveClip({ ...clip, note: note.value }));
 
-  const remove = el('button', { class: 'clip__remove', type: 'button', 'aria-label': 'Remove from scrapbook' }, ['Remove']);
+  const remove = el('button', { class: 'clip__remove', type: 'button', 'aria-label': 'Remove from saves' }, ['Remove']);
   remove.addEventListener('click', () => {
     void removeClip(clip.uri).then(render);
   });
@@ -45,7 +45,7 @@ async function render(): Promise<void> {
   clear(root);
   if (clips.length === 0) {
     root.append(
-      el('p', { class: 'garden__status', 'data-scrapbook-empty': 'true' }, [
+      el('p', { class: 'garden__status', 'data-saves-empty': 'true' }, [
         'Nothing saved yet. Tap ☆ Save on a post to keep it here.',
       ]),
     );
@@ -60,7 +60,7 @@ function boot(): void {
   const stamp = document.querySelector<HTMLElement>('[data-version-stamp]');
   if (stamp) stamp.textContent = skyliteVersion();
   registerServiceWorker();
-  root = document.querySelector<HTMLElement>('[data-scrapbook]');
+  root = document.querySelector<HTMLElement>('[data-saves]');
   void render();
 }
 

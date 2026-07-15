@@ -6,7 +6,7 @@ import { filterByLabels } from './feed/labels.js';
 import { renderPost, markSavedPosts } from './render/post.js';
 import { el, clear } from './render/dom.js';
 import { offlineBanner } from './render/locks.js';
-import { savedUris } from './scrapbook/store.js';
+import { savedUris } from './saves/store.js';
 
 /**
  * Orchestrates the read path: pull each included author's feed, merge them

@@ -2,10 +2,10 @@ import { el, clear } from './dom.js';
 
 /**
  * Calm, honest lock screens. Skylite is a safety tool, so these are gentle and
- * age-appropriate — never alarming, never blaming the child.
+ * age-appropriate — never alarming, never blaming the explorer.
  */
 
-/** Pause switch (D2/D5): the guardian has paused the garden. */
+/** Pause switch (D2/D5): the sponsor has paused the garden. */
 export function renderPausedLock(container: HTMLElement): void {
   clear(container);
   container.append(

@@ -1,8 +1,8 @@
 import type { EmbedView, PostView } from '../atproto/types.js';
 
 /**
- * A saved post. The Scrapbook (D4) is private, local bookmarking in place of
- * like/repost — a kid can clip a post and add a private note ("want to draw this
+ * A saved post. The Saves (D4) is private, local bookmarking in place of
+ * like/repost — a explorer can clip a post and add a private note ("want to draw this
  * later"). It lives only on the device (IndexedDB); the UI says so plainly.
  */
 export interface Clip {
