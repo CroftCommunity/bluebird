@@ -89,4 +89,30 @@ export class RepoClient {
     if (!res.ok) throw new RepoError(`getRecord failed: ${res.status}`, res.status);
     return (await res.json()) as GetRecordResponse<T>;
   }
+
+  /**
+   * List records in a repo collection via its PDS host — public, unauthenticated
+   * (used to read a friend's like collection for friends' hearts, §B2). One page;
+   * callers follow the cursor if they need more.
+   */
+  async listRecords<T = unknown>(
+    pdsHost: string,
+    params: { repo: string; collection: string; limit?: number; cursor?: string },
+  ): Promise<{ records: ListedRecord<T>[]; cursor?: string }> {
+    const url = new URL('/xrpc/com.atproto.repo.listRecords', pdsHost);
+    url.searchParams.set('repo', params.repo);
+    url.searchParams.set('collection', params.collection);
+    url.searchParams.set('limit', String(params.limit ?? 100));
+    if (params.cursor) url.searchParams.set('cursor', params.cursor);
+    const res = await this.fetchImpl(url, { headers: { accept: 'application/json' } });
+    if (!res.ok) throw new RepoError(`listRecords failed: ${res.status}`, res.status);
+    const data = (await res.json()) as { records?: ListedRecord<T>[]; cursor?: string };
+    return { records: data.records ?? [], ...(data.cursor ? { cursor: data.cursor } : {}) };
+  }
+}
+
+export interface ListedRecord<T = unknown> {
+  uri: string;
+  cid: string;
+  value: T;
 }

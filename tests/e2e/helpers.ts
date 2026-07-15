@@ -8,7 +8,13 @@ import type { Page } from '@playwright/test';
  */
 export async function seedExplorer(
   page: Page,
-  overrides: Partial<{ showReposts: boolean; skin: 'simple' | 'full'; paused: boolean }> = {},
+  overrides: Partial<{
+    showReposts: boolean;
+    skin: 'simple' | 'full';
+    paused: boolean;
+    friends: { did: string; displayName?: string }[];
+    showFriendsHearts: boolean;
+  }> = {},
 ): Promise<void> {
   const config = {
     version: 2,
@@ -25,8 +31,8 @@ export async function seedExplorer(
         accounts: [{ actor: 'bsky.app' }, { actor: 'atproto.com' }, { actor: 'safety.bsky.app' }],
       },
     ],
-    friends: [],
-    showFriendsHearts: false,
+    friends: overrides.friends ?? [],
+    showFriendsHearts: overrides.showFriendsHearts ?? false,
     approvedFeeds: [],
     telescope: false,
     showReposts: overrides.showReposts ?? false,
