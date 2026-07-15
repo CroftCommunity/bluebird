@@ -2,6 +2,7 @@ import {
   beginAuthorization,
   completeAuthorization,
   putRecord,
+  ensureFresh,
   type OAuthSession,
   type PendingAuth,
 } from '../atproto/oauth/client.js';
@@ -81,7 +82,8 @@ export async function finishSignInFromUrl(): Promise<OAuthSession | null> {
 
 /** Publish an explorer's config record into the sponsor's PDS over DPoP. */
 export async function publishRecord(session: OAuthSession, rkey: string, record: SkyliteConfig): Promise<string> {
-  const { session: next, uri } = await putRecord(session, { collection: SKYLITE_CONFIG_NSID, rkey, record });
+  const fresh = await ensureFresh(session); // proactive refresh so an expired token just works
+  const { session: next, uri } = await putRecord(fresh, { collection: SKYLITE_CONFIG_NSID, rkey, record });
   ss()?.setItem(KEY_SESSION, JSON.stringify(next));
   return uri;
 }

@@ -49,8 +49,12 @@ export interface OAuthSession {
   accessToken: string;
   refreshToken?: string;
   tokenEndpoint: string;
+  /** The client_id, needed to refresh without re-resolving. */
+  clientId: string;
   dpopKey: StoredDpopKey;
   dpopNonce?: string;
+  /** Epoch ms when the access token expires (from `expires_in`), if known. */
+  expiresAt?: number;
 }
 
 function fetchOf(cfg: OAuthConfig): typeof fetch {
@@ -192,9 +196,57 @@ export async function completeAuthorization(
     accessToken,
     ...(typeof data.refresh_token === 'string' ? { refreshToken: data.refresh_token } : {}),
     tokenEndpoint: pending.tokenEndpoint,
+    clientId: cfg.clientId,
     dpopKey: pending.dpopKey,
     ...(nonce ? { dpopNonce: nonce } : {}),
+    ...(typeof data.expires_in === 'number' ? { expiresAt: Date.now() + data.expires_in * 1000 } : {}),
   };
+}
+
+/**
+ * Refresh the session (rotating refresh token). atproto refresh tokens are
+ * single-use and rotate, so the returned session must replace the old one.
+ */
+export async function refresh(
+  session: OAuthSession,
+  fetchImpl: typeof fetch = globalThis.fetch.bind(globalThis),
+): Promise<OAuthSession> {
+  if (!session.refreshToken) throw new Error('No refresh token — a new sign-in is needed.');
+  const key = await importDpopKey(session.dpopKey);
+  const { data, nonce, status } = await dpopForm(
+    session.tokenEndpoint,
+    { grant_type: 'refresh_token', refresh_token: session.refreshToken, client_id: session.clientId },
+    key,
+    fetchImpl,
+    session.dpopNonce ? { nonce: session.dpopNonce } : {},
+  );
+  const accessToken = data.access_token;
+  if (typeof accessToken !== 'string') {
+    throw new Error(`Refresh failed (${status})${data.error ? `: ${data.error}` : ''}`);
+  }
+  const nextNonce = nonce ?? session.dpopNonce;
+  return {
+    ...session,
+    accessToken,
+    refreshToken: typeof data.refresh_token === 'string' ? data.refresh_token : session.refreshToken,
+    ...(nextNonce ? { dpopNonce: nextNonce } : {}),
+    ...(typeof data.expires_in === 'number' ? { expiresAt: Date.now() + data.expires_in * 1000 } : {}),
+  };
+}
+
+/**
+ * Proactive refresh-on-open: return a session whose access token is comfortably
+ * valid, refreshing first if it is missing or within `skewMs` of expiry. This
+ * is what keeps re-auth rare (custody posture 1, docs/custody.md) — the sponsor
+ * is only ever pulled in when the refresh chain itself has broken.
+ */
+export async function ensureFresh(
+  session: OAuthSession,
+  fetchImpl: typeof fetch = globalThis.fetch.bind(globalThis),
+  skewMs = 60_000,
+): Promise<OAuthSession> {
+  if (session.expiresAt !== undefined && session.expiresAt - Date.now() > skewMs) return session;
+  return refresh(session, fetchImpl);
 }
 
 /** A DPoP-authenticated request to the session's PDS (used for writes). */
