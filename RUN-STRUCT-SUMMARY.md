@@ -9,7 +9,7 @@ The tier model is dead. Skylite now runs on the two-switch model
 principles with their named invariants, a multi-explorer sponsor dashboard,
 backup/restore, a refresh that works, and a public-data label audit.
 
-**Gate: full `npm test` green — lint · typecheck · 106 unit · build · 48 e2e.**
+**Gate: full `npm test` green — lint · typecheck · 123 unit · build · 50 e2e.**
 No new dependencies (the zero-runtime-dep, esbuild + Vitest + Playwright spine
 is unchanged).
 
@@ -54,14 +54,19 @@ Door B pastes a link/code → binds → opens the garden. Provisioned devices sk
 the landing. Footer carries the project docs; explorer chrome is hidden here
 (product surface and project docs never share navigation).
 
-### S2 — sponsor multi-explorer dashboard
+### S2 — sponsor multi-explorer dashboard + Bluesky OAuth
 One card per explorer (random rkey), create/edit/remove, persisted locally and
 across reloads. Every switch editable per explorer; the exported record body
 updates live. Per-explorer provisioning link (sponsorDid + rkey, no secrets)
 with copy. Public-record hygiene inline (nickname guidance, rkey shown, "public"
 notes). Required onboarding checklist (email 2FA · harden inbox · revocation
-page). **App passwords removed entirely** (`atproto/write.ts` + its test
-deleted, publish card gone, sponsor CSP locked to `'self'`).
+page). **App passwords removed entirely** — replaced by **Bluesky OAuth** as the
+only sign-in path: atproto authorization-code + PKCE + PAR + DPoP-bound tokens,
+all dependency-free on WebCrypto (`src/atproto/oauth/*`). Sign in with a handle,
+then "Publish to my PDS" writes each explorer's record over a DPoP-authenticated
+`putRecord`. Tokens live in sessionStorage (ephemeral, per-tab); a hosted
+`oauth/client-metadata.json` is the `client_id`; the sponsor CSP adds the
+discovery + auth + PDS hosts.
 
 ### S5 — backup & restore
 One versioned JSON (saves + notes, local follows, device settings). Export via
@@ -123,12 +128,16 @@ tests with their implementation; each later phase commits tests alongside code).
 
 ## Deferred / honest edges (filed, not hidden)
 
-- **OAuth publish to the sponsor's PDS is not implemented live.** App passwords
-  are forbidden and were removed; a half-built, untested OAuth flow was **not**
-  shipped in their place. The dashboard produces the exact record body + rkey +
-  collection for out-of-band storage. Full atproto OAuth (PAR + PKCE + DPoP +
-  token refresh + DPoP-bound `putRecord`) is the primary RUN-STRUCT follow-up
-  and a verify-in-run item.
+- **OAuth publish — shipped; live consent still to be verified.** The full
+  atproto OAuth client (PKCE, PAR, DPoP-bound tokens, DPoP `putRecord`) is
+  implemented and tested: the pure crypto/builders against real WebCrypto (the
+  RFC 7636 S256 vector, a DPoP proof that verifies against its embedded key), the
+  discovery chain and PAR/token nonce retries with mocked responses, and a
+  hermetic **end-to-end** sponsor e2e (sign in → PAR → callback → token → DPoP
+  publish). What a hermetic test cannot cover — the real consent screen and
+  server-side DPoP validation against a live PDS — remains a verify-in-run item,
+  along with narrowing the scope from `atproto transition:generic` to a
+  per-collection grant. Token refresh on expiry is a small follow-up.
 - **QR for the provisioning link — deferred.** The copyable link fully
   provisions a device; QR encoding (no external deps allowed) is a small
   follow-up.
