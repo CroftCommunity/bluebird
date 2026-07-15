@@ -3,7 +3,7 @@ import { AuthorFeedClient } from './atproto/client.js';
 import type { InclusionList } from './feed/inclusion.js';
 import { mergeFeeds } from './feed/merge.js';
 import { filterByLabels } from './feed/labels.js';
-import { renderPost, markSavedPosts } from './render/post.js';
+import { renderPost, markSavedPosts, type LikeUi } from './render/post.js';
 import { el, clear } from './render/dom.js';
 import { offlineBanner, changeNotice } from './render/locks.js';
 import { savedUris } from './saves/store.js';
@@ -80,7 +80,7 @@ export function renderGardenInto(
   container: HTMLElement,
   result: GardenResult,
   status: Status,
-  opts: { offline?: boolean; changeNotice?: string } = {},
+  opts: { offline?: boolean; changeNotice?: string; like?: LikeUi } = {},
 ): void {
   clear(container);
   if (opts.changeNotice) container.append(changeNotice(opts.changeNotice));
@@ -90,7 +90,7 @@ export function renderGardenInto(
     return;
   }
   const list = el('div', { class: 'garden__list', 'data-garden-list': 'true' });
-  for (const post of result.posts) list.append(renderPost(post));
+  for (const post of result.posts) list.append(renderPost(post, opts.like ? { like: opts.like } : {}));
   container.append(list);
 }
 
@@ -98,7 +98,7 @@ export function renderGardenInto(
 export async function mountGarden(
   container: HTMLElement,
   inclusion: InclusionList,
-  opts: GardenOptions & { offline?: boolean; changeNotice?: string } = {},
+  opts: GardenOptions & { offline?: boolean; changeNotice?: string; like?: LikeUi } = {},
 ): Promise<void> {
   renderGardenInto(container, { posts: [], failedActors: [] }, 'loading');
   try {
@@ -108,6 +108,7 @@ export async function mountGarden(
     renderGardenInto(container, result, status, {
       offline: opts.offline ?? false,
       ...(opts.changeNotice ? { changeNotice: opts.changeNotice } : {}),
+      ...(opts.like ? { like: opts.like } : {}),
     });
     if (status === 'ready') void savedUris().then((set) => markSavedPosts(container, set));
   } catch {

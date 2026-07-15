@@ -308,3 +308,48 @@ export async function putRecord(
   }
   return { session: next, uri: data.uri, ...(typeof data.cid === 'string' ? { cid: data.cid } : {}) };
 }
+
+/** Create a record (server-assigned rkey unless one is given) over DPoP. */
+export async function createRecord(
+  session: OAuthSession,
+  params: { collection: string; record: unknown; rkey?: string },
+  fetchImpl: typeof fetch = globalThis.fetch.bind(globalThis),
+): Promise<{ session: OAuthSession; uri: string; cid?: string }> {
+  const { res, nonce } = await pdsRequest(
+    session,
+    '/xrpc/com.atproto.repo.createRecord',
+    {
+      repo: session.did,
+      collection: params.collection,
+      record: params.record,
+      validate: false,
+      ...(params.rkey ? { rkey: params.rkey } : {}),
+    },
+    fetchImpl,
+  );
+  const data = (await res.json().catch(() => ({}))) as XrpcJson;
+  const next = { ...session, ...(nonce ? { dpopNonce: nonce } : {}) };
+  if (!res.ok || typeof data.uri !== 'string') {
+    throw new Error(`createRecord failed (${res.status})${data.error ? `: ${String(data.error)}` : ''}`);
+  }
+  return { session: next, uri: data.uri, ...(typeof data.cid === 'string' ? { cid: data.cid } : {}) };
+}
+
+/** Delete a record by rkey over DPoP. */
+export async function deleteRecord(
+  session: OAuthSession,
+  params: { collection: string; rkey: string },
+  fetchImpl: typeof fetch = globalThis.fetch.bind(globalThis),
+): Promise<OAuthSession> {
+  const { res, nonce } = await pdsRequest(
+    session,
+    '/xrpc/com.atproto.repo.deleteRecord',
+    { repo: session.did, collection: params.collection, rkey: params.rkey },
+    fetchImpl,
+  );
+  if (!res.ok) {
+    const data = (await res.json().catch(() => ({}))) as XrpcJson;
+    throw new Error(`deleteRecord failed (${res.status})${data.error ? `: ${String(data.error)}` : ''}`);
+  }
+  return { ...session, ...(nonce ? { dpopNonce: nonce } : {}) };
+}

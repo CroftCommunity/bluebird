@@ -3,6 +3,8 @@ import {
   beginAuthorization,
   completeAuthorization,
   putRecord,
+  createRecord,
+  deleteRecord,
   refresh,
   ensureFresh,
   type PendingAuth,
@@ -160,6 +162,43 @@ describe('putRecord (DPoP-bound write)', () => {
     expect(sawProof).toBe(true);
     expect(result.uri).toContain('ing.croft.skylite.config/rk');
     expect(result.session.dpopNonce).toBe('nn');
+  });
+});
+
+describe('createRecord / deleteRecord (likes)', () => {
+  async function realSession(): Promise<OAuthSession> {
+    return {
+      did: 'did:plc:kid',
+      pds: 'https://pds.example',
+      issuer: 'https://auth.example',
+      accessToken: 'AT',
+      tokenEndpoint: 'https://auth.example/token',
+      clientId: 'https://app/client-metadata.json',
+      dpopKey: await exportDpopKey(await generateDpopKey()),
+      expiresAt: Date.now() + 3_600_000,
+    };
+  }
+
+  it('createRecord posts to the PDS and returns the new record uri', async () => {
+    let body: Record<string, unknown> = {};
+    const fetchImpl = ((_i: RequestInfo | URL, init?: RequestInit) => {
+      body = JSON.parse(typeof init?.body === 'string' ? init.body : '{}') as Record<string, unknown>;
+      return Promise.resolve(json({ uri: 'at://did:plc:kid/ing.croft.skylite.like/3k', cid: 'c' }));
+    }) as typeof fetch;
+    const { uri } = await createRecord(await realSession(), { collection: 'ing.croft.skylite.like', record: { subject: 'x' } }, fetchImpl);
+    expect(uri).toContain('ing.croft.skylite.like/3k');
+    expect(body.collection).toBe('ing.croft.skylite.like');
+    expect(body.repo).toBe('did:plc:kid');
+  });
+
+  it('deleteRecord targets the repo + rkey and tolerates an empty body', async () => {
+    let body: Record<string, unknown> = {};
+    const fetchImpl = ((_i: RequestInfo | URL, init?: RequestInit) => {
+      body = JSON.parse(typeof init?.body === 'string' ? init.body : '{}') as Record<string, unknown>;
+      return Promise.resolve(json({}));
+    }) as typeof fetch;
+    await deleteRecord(await realSession(), { collection: 'ing.croft.skylite.like', rkey: '3k' }, fetchImpl);
+    expect(body).toEqual({ repo: 'did:plc:kid', collection: 'ing.croft.skylite.like', rkey: '3k' });
   });
 });
 

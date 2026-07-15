@@ -1,0 +1,26 @@
+{
+  "lexicon": 1,
+  "id": "ing.croft.skylite.like",
+  "description": "An explorer's like of a post, written into the explorer's OWN repo (never the sponsor's). Mirrors app.bsky.feed.like — a subject strongRef plus createdAt — so a like/follow → mainline conversion tool is possible later (a spec note, not built). Only exists when the explorer has an account (localOnly off). The explorer can delete her own likes; the sponsor cannot.",
+  "defs": {
+    "main": {
+      "type": "record",
+      "key": "tid",
+      "record": {
+        "type": "object",
+        "required": ["subject", "createdAt"],
+        "properties": {
+          "subject": {
+            "type": "ref",
+            "ref": "com.atproto.repo.strongRef",
+            "description": "The liked post (its AT-URI + CID)."
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "datetime"
+          }
+        }
+      }
+    }
+  }
+}
