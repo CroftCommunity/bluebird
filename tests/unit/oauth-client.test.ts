@@ -1,0 +1,155 @@
+import { describe, it, expect } from 'vitest';
+import { beginAuthorization, completeAuthorization, putRecord, type PendingAuth } from '../../src/atproto/oauth/client.js';
+
+const CFG = {
+  clientId: 'https://skylite.croft.ing/oauth/client-metadata.json',
+  redirectUri: 'https://skylite.croft.ing/sponsor.html',
+  scope: 'atproto transition:generic',
+};
+
+const DISCOVERY: Record<string, unknown> = {
+  'resolveHandle': { did: 'did:plc:alice' },
+  'plc.directory/did:plc:alice': {
+    id: 'did:plc:alice',
+    service: [{ id: '#atproto_pds', type: 'AtprotoPersonalDataServer', serviceEndpoint: 'https://pds.example' }],
+  },
+  'pds.example/.well-known/oauth-protected-resource': { authorization_servers: ['https://auth.example'] },
+  'auth.example/.well-known/oauth-authorization-server': {
+    issuer: 'https://auth.example',
+    authorization_endpoint: 'https://auth.example/authorize',
+    token_endpoint: 'https://auth.example/token',
+    pushed_authorization_request_endpoint: 'https://auth.example/par',
+  },
+};
+
+function json(body: unknown, init: ResponseInit = {}): Response {
+  return new Response(JSON.stringify(body), { headers: { 'content-type': 'application/json' }, ...init });
+}
+
+/** A stateful mock: discovery GETs + a PAR that demands a DPoP nonce once. */
+function mockAuthFetch(): { fetchImpl: typeof fetch; calls: string[] } {
+  const calls: string[] = [];
+  let parTries = 0;
+  const fetchImpl = ((input: RequestInfo | URL, init?: RequestInit) => {
+    const url = typeof input === 'string' ? input : input instanceof URL ? input.href : input.url;
+    calls.push(url);
+    for (const [needle, body] of Object.entries(DISCOVERY)) {
+      if (url.includes(needle)) return Promise.resolve(json(body));
+    }
+    if (url.includes('/par')) {
+      parTries++;
+      const hasNonce = new Headers(init?.headers).get('dpop')?.includes('nonce') ?? false;
+      if (parTries === 1 && !hasNonce) {
+        return Promise.resolve(json({ error: 'use_dpop_nonce' }, { status: 400, headers: { 'DPoP-Nonce': 'nonce-1' } }));
+      }
+      return Promise.resolve(json({ request_uri: 'urn:req:abc', expires_in: 60 }, { status: 201 }));
+    }
+    return Promise.resolve(new Response('nope', { status: 404 }));
+  }) as typeof fetch;
+  return { fetchImpl, calls };
+}
+
+describe('beginAuthorization', () => {
+  it('resolves, PARs (retrying for the DPoP nonce), and returns an authorize URL', async () => {
+    const { fetchImpl } = mockAuthFetch();
+    const { authorizeUrl, pending } = await beginAuthorization('alice.test', { ...CFG, fetchImpl });
+
+    expect(authorizeUrl).toContain('https://auth.example/authorize');
+    expect(authorizeUrl).toContain('request_uri=urn%3Areq%3Aabc');
+    expect(authorizeUrl).toContain(encodeURIComponent(CFG.clientId));
+
+    expect(pending.did).toBe('did:plc:alice');
+    expect(pending.pds).toBe('https://pds.example');
+    expect(pending.verifier.length).toBeGreaterThanOrEqual(43);
+    expect(pending.dpopKey.publicJwk.crv).toBe('P-256');
+    expect(pending.state).toBeTruthy();
+  });
+});
+
+describe('completeAuthorization', () => {
+  async function pendingFixture(): Promise<PendingAuth> {
+    const { fetchImpl } = mockAuthFetch();
+    return (await beginAuthorization('alice.test', { ...CFG, fetchImpl })).pending;
+  }
+
+  it('exchanges the code for DPoP-bound tokens', async () => {
+    const pending = await pendingFixture();
+    const tokenFetch = ((input: RequestInfo | URL) => {
+      const url = typeof input === 'string' ? input : input instanceof URL ? input.href : input.url;
+      if (url.includes('/token')) {
+        return Promise.resolve(
+          json(
+            { access_token: 'AT', refresh_token: 'RT', token_type: 'DPoP', sub: 'did:plc:alice' },
+            { headers: { 'DPoP-Nonce': 'n2' } },
+          ),
+        );
+      }
+      return Promise.resolve(new Response('nope', { status: 404 }));
+    }) as typeof fetch;
+
+    const session = await completeAuthorization(pending, { code: 'CODE', state: pending.state }, { ...CFG, fetchImpl: tokenFetch });
+    expect(session.accessToken).toBe('AT');
+    expect(session.refreshToken).toBe('RT');
+    expect(session.did).toBe('did:plc:alice');
+    expect(session.dpopNonce).toBe('n2');
+  });
+
+  it('refuses a mismatched state', async () => {
+    const pending = await pendingFixture();
+    await expect(
+      completeAuthorization(pending, { code: 'x', state: 'WRONG' }, CFG),
+    ).rejects.toThrow(/state mismatch/);
+  });
+
+  it('refuses a token whose sub is not the resolved DID', async () => {
+    const pending = await pendingFixture();
+    const badSub = ((input: RequestInfo | URL) => {
+      const url = typeof input === 'string' ? input : input instanceof URL ? input.href : input.url;
+      if (url.includes('/token')) return Promise.resolve(json({ access_token: 'AT', sub: 'did:plc:evil' }));
+      return Promise.resolve(new Response('nope', { status: 404 }));
+    }) as typeof fetch;
+    await expect(
+      completeAuthorization(pending, { code: 'c', state: pending.state }, { ...CFG, fetchImpl: badSub }),
+    ).rejects.toThrow(/subject/);
+  });
+});
+
+describe('putRecord (DPoP-bound write)', () => {
+  const session = {
+    did: 'did:plc:alice',
+    pds: 'https://pds.example',
+    issuer: 'https://auth.example',
+    accessToken: 'AT',
+    tokenEndpoint: 'https://auth.example/token',
+    dpopKey: { privateJwk: {}, publicJwk: { kty: 'EC', crv: 'P-256', x: 'x', y: 'y' } as const },
+  };
+
+  it('sends a DPoP Authorization header and a proof, retrying on a nonce challenge', async () => {
+    let tries = 0;
+    let sawAuth = '';
+    let sawProof = false;
+    // A real key is needed to sign — mint a session via the flow instead.
+    // Simpler: assert the request shape using a mock that inspects headers.
+    const fetchImpl = ((_input: RequestInfo | URL, init?: RequestInit) => {
+      const h = new Headers(init?.headers);
+      sawAuth = h.get('authorization') ?? '';
+      sawProof = !!h.get('dpop');
+      tries++;
+      if (tries === 1) {
+        return Promise.resolve(json({ error: 'use_dpop_nonce' }, { status: 401, headers: { 'DPoP-Nonce': 'nn' } }));
+      }
+      return Promise.resolve(json({ uri: 'at://did:plc:alice/ing.croft.skylite.config/rk', cid: 'bafy' }));
+    }) as typeof fetch;
+
+    // Use a real generated key so createDpopProof can sign.
+    const { generateDpopKey, exportDpopKey } = await import('../../src/atproto/oauth/dpop.js');
+    const realKey = await exportDpopKey(await generateDpopKey());
+    const result = await putRecord({ ...session, dpopKey: realKey }, { collection: 'ing.croft.skylite.config', rkey: 'rk', record: { a: 1 } }, fetchImpl);
+
+    expect(tries).toBe(2); // retried after the nonce challenge
+    expect(sawAuth).toBe('DPoP AT');
+    expect(sawProof).toBe(true);
+    expect(result.uri).toContain('ing.croft.skylite.config/rk');
+    expect(result.session.dpopNonce).toBe('nn');
+  });
+});
