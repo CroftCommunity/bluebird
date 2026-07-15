@@ -6,6 +6,7 @@ import { parseConfig } from './config/parse.js';
 import { provisioningUrl, setLocalConfig, getLocalConfig } from './config/binding.js';
 import { registerServiceWorker } from './pwa/register.js';
 import { hasPin, setPin, clearPin } from './lock/pin.js';
+import { WriteClient } from './atproto/write.js';
 
 /**
  * Guardian setup — the guardian's own device. Phase 2 / D2 supports authoring
@@ -127,6 +128,10 @@ function render(): void {
     config.help = { ...config.help, contactEmail: helpEmail.value };
   });
 
+  const idInput = el('input', { type: 'text', class: 'g-input', autocomplete: 'username', placeholder: 'handle or email' });
+  const pwInput = el('input', { type: 'password', class: 'g-input', autocomplete: 'off', placeholder: 'app password (xxxx-xxxx-xxxx-xxxx)' });
+  const publishMsg = el('span', { class: 'g-msg', 'data-publish-msg': 'true' });
+
   root.append(
     el('div', { class: 'g-card' }, [
       el('h2', {}, ['1 · Pause switch']),
@@ -154,6 +159,41 @@ function render(): void {
         saveMsg,
       ]),
       labeled('Config JSON (your record body)', exportArea),
+    ]),
+
+    el('div', { class: 'g-card' }, [
+      el('h2', {}, ['Publish to your Bluesky account (optional)']),
+      el('p', { class: 'g-hint' }, [
+        'Sign in and Skylite will save the config into your own repo as ',
+        el('code', {}, [`${SKYLITE_CONFIG_NSID}/${SKYLITE_CONFIG_RKEY}`]),
+        '. Use an ',
+        el('strong', {}, ['App Password']),
+        ' (Bluesky → Settings → App Passwords), not your main password. Your password is used only to sign in and is never stored.',
+      ]),
+      labeled('Handle or email', idInput),
+      labeled('App password', pwInput),
+      el('div', { class: 'g-row' }, [
+        button('Sign in & publish', 'g-btn g-btn--primary', () => {
+          const id = idInput.value.trim();
+          if (!id || !pwInput.value) {
+            publishMsg.textContent = 'Enter your handle/email and app password.';
+            return;
+          }
+          publishMsg.textContent = 'Publishing…';
+          void new WriteClient()
+            .publishConfig(id, pwInput.value, config)
+            .then(({ session, uri }) => {
+              pwInput.value = ''; // discard the password from the field
+              didInput.value = session.did;
+              pdsInput.value = session.pdsHost;
+              publishMsg.textContent = `Published as @${session.handle}. Record: ${uri}. Now make the device link below.`;
+            })
+            .catch((e: unknown) => {
+              publishMsg.textContent = e instanceof Error ? e.message : 'Publish failed.';
+            });
+        }),
+        publishMsg,
+      ]),
     ]),
 
     el('div', { class: 'g-card' }, [

@@ -39,4 +39,39 @@ test.describe('Guardian setup page', () => {
     const stored = await page.evaluate(() => localStorage.getItem('skylite.config.local'));
     expect(stored).toContain('nasa.gov');
   });
+
+  test('signs in and publishes the config to the PDS (mocked)', async ({ page }) => {
+    // Mock the atproto write endpoints — no real network / credentials.
+    await page.route('**/xrpc/com.atproto.server.createSession', (r) =>
+      r.fulfill({
+        json: {
+          did: 'did:plc:guardian',
+          handle: 'guardian.test',
+          accessJwt: 'a',
+          refreshJwt: 'r',
+          didDoc: {
+            id: 'did:plc:guardian',
+            service: [{ id: '#atproto_pds', type: 'AtprotoPersonalDataServer', serviceEndpoint: 'https://pds.host.bsky.network' }],
+          },
+        },
+      }),
+    );
+    let putBody: unknown;
+    await page.route('**/xrpc/com.atproto.repo.putRecord', (r) => {
+      putBody = r.request().postDataJSON();
+      return r.fulfill({ json: { uri: 'at://did:plc:guardian/ing.croft.skylite.config/self', cid: 'c' } });
+    });
+
+    await page.goto('/guardian.html');
+    await page.getByPlaceholder('handle or email').fill('guardian.test');
+    await page.getByPlaceholder('app password (xxxx-xxxx-xxxx-xxxx)').fill('abcd-efgh-ijkl-mnop');
+    await page.getByRole('button', { name: 'Sign in & publish' }).click();
+
+    await expect(page.locator('[data-publish-msg]')).toContainText('Published as @guardian.test');
+    // The publish fills the guardian DID for the device link.
+    await expect(page.getByPlaceholder('did:plc:… (guardian DID)')).toHaveValue('did:plc:guardian');
+    // The password field is cleared after publishing.
+    await expect(page.getByPlaceholder('app password (xxxx-xxxx-xxxx-xxxx)')).toHaveValue('');
+    expect((putBody as { collection: string }).collection).toBe('ing.croft.skylite.config');
+  });
 });
