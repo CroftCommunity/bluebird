@@ -593,6 +593,17 @@ body {
   cursor: pointer;
 }
 
+/* §Phase 3 — the encrypted-archive sub-panel inside the search card. */
+.g-subcard {
+  margin-top: 0.8rem;
+  padding: 0.8rem;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
 .g-btn--primary {
   background: var(--cta);
   color: var(--cta-ink);
