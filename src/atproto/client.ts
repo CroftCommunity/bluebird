@@ -181,6 +181,35 @@ export class AuthorFeedClient {
     }
   }
 
+  /**
+   * Search posts across the network (`app.bsky.feed.searchPosts`, public AppView)
+   * — the transport for Telescope rung 2. Returns hydrated post views. The query
+   * is gated BEFORE this is called (src/search/policy.ts) and results are
+   * label-floored AFTER; this method is just the read.
+   */
+  async searchPosts(query: string, opts: { limit?: number; signal?: AbortSignal } = {}): Promise<{ posts: PostView[] }> {
+    const url = new URL('/xrpc/app.bsky.feed.searchPosts', this.baseUrl);
+    url.searchParams.set('q', query);
+    url.searchParams.set('limit', String(opts.limit ?? 25));
+
+    for (let attempt = 0; ; attempt++) {
+      const res = await this.fetchImpl(url, {
+        method: 'GET',
+        headers: { accept: 'application/json' },
+        ...(opts.signal ? { signal: opts.signal } : {}),
+      });
+      if (res.ok) {
+        const data = (await res.json()) as { posts?: PostView[] };
+        return { posts: data.posts ?? [] };
+      }
+      const retryable = res.status === 429 || (res.status >= 500 && res.status < 600);
+      if (!retryable || attempt >= this.maxRetries) {
+        throw new AuthorFeedError(`searchPosts failed: ${res.status} ${res.statusText}`, res.status);
+      }
+      await this.sleep(this.backoffDelay(attempt, res.headers.get('retry-after')));
+    }
+  }
+
   private backoffDelay(attempt: number, retryAfter: string | null): number {
     // Honor an explicit Retry-After (seconds) when the server sends one.
     if (retryAfter) {

@@ -79,6 +79,18 @@ Legacy records with the old boolean `telescope: true` migrate to
 `tier: 'open'` (and `false` → `off`), with the other fields taking the defaults
 above.
 
+## Status
+
+**Built** (rung 2 is live on `/telescope.html`): the reach tier, both gates
+(blocklist substring, allowlist whole-word), the label floor on results,
+discovery author-bounding, and device-local search-history logging with a visible
+"your grown-up can see these" recent-searches list. The search box is hidden when
+`tier: 'off'`.
+
+**Verify-in-run / staged:** live `searchPosts`/`getFeed` against the real AppView;
+account-synced or remote search history (today the log is on-device — a sponsor
+sees it on the device or, later, via the account path).
+
 ## What this is NOT (staged)
 
 - The **default lists are seeds**, deliberately modest — a real deployment
