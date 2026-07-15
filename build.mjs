@@ -64,13 +64,23 @@ function entryHref(srcEntry) {
 }
 const pageHrefs = Object.fromEntries(PAGES.map((p) => [p.entry, entryHref(p.entry)]));
 
-// Static assets copied verbatim into dist.
-for (const asset of ['manifest.webmanifest', 'styles.css', 'CNAME', 'icons', '.nojekyll', 'LICENSE', 'oauth']) {
+// Static assets copied verbatim into dist. (Note: assets/brand/source/ is NEVER
+// listed here — the multi-MB source renders must not ship; see tests/e2e/
+// brand-bundle.spec.ts.)
+for (const asset of ['manifest.webmanifest', 'CNAME', 'icons', '.nojekyll', 'LICENSE', 'oauth']) {
   const from = join(root, asset);
   if (existsSync(from)) {
     cpSync(from, join(dist, asset), { recursive: true });
   }
 }
+
+// The served stylesheet is tokens.css (brand tokens, the only place raw hex
+// lives) concatenated with styles.css (components), so tokens resolve first in
+// a single request with no per-page <link> juggling.
+writeFileSync(
+  join(dist, 'styles.css'),
+  `${readFileSync(join(root, 'tokens.css'), 'utf8')}\n${readFileSync(join(root, 'styles.css'), 'utf8')}`,
+);
 
 // Render the HTML pages from their root templates, injecting version + entries.
 const stylesHref = `/styles.css?v=${encodeURIComponent(version)}`;

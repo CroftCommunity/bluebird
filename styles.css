@@ -1,17 +1,18 @@
-/* Skylite — night-sky palette (CONCEPT.md §4): deep indigo, warm yellow, white.
-   Big, bright, high-contrast, large text, no counts, no chrome. */
+/* Skylite — brand tokens live in tokens.css (the only place raw hex is allowed).
+   The legacy night-sky variable names below are now ALIASES onto the semantic
+   tokens, so every existing rule re-themes for free (light/dark) with no hex
+   here. RUN-BRAND P4 replaces these aliases with direct token usage. */
 :root {
-  --sky-deep: #0d0e2b;
-  --sky-indigo: #14164b;
-  --sky-indigo-soft: #23276e;
-  --card: #1b1e57;
-  --card-soft: #262a6e;
-  --moon: #ffd65c;
-  --star: #ffffff;
-  --ink: #eef0ff;
-  --ink-dim: #a9adde;
-  --link: #8fd3ff;
-  --radius: 20px;
+  --sky-deep: var(--bg);
+  --sky-indigo: var(--bg);
+  --sky-indigo-soft: var(--border);
+  --card: var(--bg-raised);
+  --card-soft: var(--bg-sunken);
+  --moon: var(--highlight);
+  --star: var(--ink);
+  --ink-dim: var(--ink-muted);
+  --link: var(--accent);
+  /* --ink, --radius come from tokens.css */
 }
 
 * {
@@ -817,7 +818,7 @@ body {
 }
 
 .pinlock__err {
-  color: #ff9a9a;
+  color: var(--danger);
   min-height: 1.2em;
   font-size: 0.95rem;
 }
