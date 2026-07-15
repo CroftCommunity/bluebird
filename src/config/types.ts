@@ -43,6 +43,25 @@ export interface SkyliteFriend {
   displayName?: string;
 }
 
+/** Telescope rung 2 search reach (see docs/telescope-search.md). */
+export type SearchTier = 'off' | 'discovery' | 'open';
+
+/** The sponsor-set search trust gradient + its layered safeguards. */
+export interface SkyliteSearch {
+  /** Reach: no search / bounded to approved-feed authors / whole network. */
+  tier: SearchTier;
+  /** Positive gate: only queries matching an allowed topic run. Default off. */
+  useAllowlist: boolean;
+  /** Sponsor additions to the seeded default topic allowlist. */
+  allowlistExtra: string[];
+  /** Negative gate: queries containing a blocked term are refused. Default on. */
+  useBlocklist: boolean;
+  /** Sponsor additions to the seeded default blocklist. */
+  blocklistExtra: string[];
+  /** Search-history visible to the sponsor (the accountability indicator). Default on. */
+  logHistory: boolean;
+}
+
 /** An approved discovery feed (Telescope rung 1). */
 export interface SkyliteApprovedFeed {
   /** at:// feed generator URI. */
@@ -81,8 +100,8 @@ export interface SkyliteConfig {
   showFriendsHearts: boolean;
   /** Approved discovery feeds (Telescope rung 1). */
   approvedFeeds: SkyliteApprovedFeed[];
-  /** Open search (Telescope rung 2). Default false. */
-  telescope: boolean;
+  /** Open search (Telescope rung 2) — a sponsor-set trust gradient. See docs/telescope-search.md. */
+  search: SkyliteSearch;
   /** Whether reposts (whole outside posts) are injected into the garden. Default true. */
   showReposts: boolean;
   /** Staleness window in hours before an unreachable config locks the garden. Default 72. */
@@ -96,13 +115,22 @@ export type ConfigSource = 'pds' | 'pds-cached' | 'local' | 'dev-fixture';
 
 export const DEFAULT_STALE_HOURS = 72;
 
+/** Default search block for a new explorer — the safe end of the gradient. */
+export const SEARCH_DEFAULTS: SkyliteSearch = {
+  tier: 'off',
+  useAllowlist: false,
+  allowlistExtra: [],
+  useBlocklist: true,
+  blocklistExtra: [],
+  logHistory: true,
+};
+
 /** Canonical defaults for every optional/switchable field (also the migration target). */
 export const CONFIG_DEFAULTS = {
   localOnly: true,
   skin: 'simple' as Skin,
   paused: false,
   showFriendsHearts: false,
-  telescope: false,
   showReposts: true,
   staleHours: DEFAULT_STALE_HOURS,
 } as const;

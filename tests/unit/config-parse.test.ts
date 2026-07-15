@@ -29,7 +29,7 @@ describe('parseConfig (two-switch v2)', () => {
     expect(c?.friends[0]?.did).toBe('did:plc:friend');
     expect(c?.showFriendsHearts).toBe(true);
     expect(c?.approvedFeeds[0]?.name).toBe('Discover');
-    expect(c?.telescope).toBe(true);
+    expect(c?.search.tier).toBe('open'); // legacy telescope:true migrates to tier 'open'
     expect(c?.showReposts).toBe(false);
     expect(c?.staleHours).toBe(24);
   });
@@ -47,7 +47,8 @@ describe('parseConfig (two-switch v2)', () => {
     expect(c?.localOnly).toBe(CONFIG_DEFAULTS.localOnly); // true
     expect(c?.skin).toBe(CONFIG_DEFAULTS.skin); // simple
     expect(c?.showReposts).toBe(CONFIG_DEFAULTS.showReposts); // true
-    expect(c?.telescope).toBe(false);
+    expect(c?.search.tier).toBe('off'); // no legacy telescope → off
+    expect(c?.search.useBlocklist).toBe(true); // safe default
     expect(c?.showFriendsHearts).toBe(false);
     expect(c?.staleHours).toBe(CONFIG_DEFAULTS.staleHours); // 72
     expect(c?.friends).toEqual([]);

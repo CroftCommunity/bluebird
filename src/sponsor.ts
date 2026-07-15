@@ -188,6 +188,58 @@ function skinSelect(config: SkyliteConfig, save: () => void): HTMLSelectElement 
   return sel;
 }
 
+/** §Telescope rung 2 — the search trust-gradient controls (docs/telescope-search.md). */
+function searchSettings(config: SkyliteConfig, save: () => void): HTMLElement {
+  const s = config.search;
+  const tierSel = el('select', { class: 'g-input', 'data-search-tier': 'true' }, [
+    el('option', { value: 'off', ...(s.tier === 'off' ? { selected: 'selected' } : {}) }, ['Off — approved feeds only']),
+    el('option', { value: 'discovery', ...(s.tier === 'discovery' ? { selected: 'selected' } : {}) }, [
+      'Within discovery — search only the authors your approved feeds surface',
+    ]),
+    el('option', { value: 'open', ...(s.tier === 'open' ? { selected: 'selected' } : {}) }, [
+      'Open — search the whole sky (under the safeguards below)',
+    ]),
+  ]);
+  tierSel.addEventListener('change', () => {
+    s.tier = tierSel.value === 'discovery' ? 'discovery' : tierSel.value === 'open' ? 'open' : 'off';
+    save();
+  });
+
+  const commaList = (label: string, values: string[], onSet: (v: string[]) => void, placeholder: string): HTMLElement =>
+    field(
+      label,
+      textInput(values.join(', '), placeholder, (v) => {
+        onSet(v.split(',').map((t) => t.trim()).filter(Boolean));
+        save();
+      }),
+    );
+
+  return el('div', { class: 'g-card' }, [
+    el('h3', {}, ['Search (Telescope rung 2)']),
+    el('p', { class: 'g-hint' }, [
+      'A trust gradient, not a locked room. The label floor (no adult or graphic content) always applies. See the safeguards below.',
+    ]),
+    field('How far search can reach', tierSel),
+    toggle('Block unsafe search terms (recommended)', s.useBlocklist, (v) => {
+      s.useBlocklist = v;
+      save();
+    }),
+    commaList('Extra blocked words (comma-separated)', s.blocklistExtra, (v) => (s.blocklistExtra = v), 'e.g. word1, word2'),
+    toggle('Only allow searches about approved topics', s.useAllowlist, (v) => {
+      s.useAllowlist = v;
+      save();
+    }),
+    commaList('Extra allowed topics (comma-separated)', s.allowlistExtra, (v) => (s.allowlistExtra = v), 'e.g. astronomy, chess'),
+    toggle('Let me see what was searched (search history)', s.logHistory, (v) => {
+      s.logHistory = v;
+      save();
+    }),
+    el('p', { class: 'g-hint' }, [
+      'With the allowlist off, searches are open except for blocked words. With it on, a search must match an allowed topic. Both can be on together.',
+    ]),
+  ]);
+}
+
 function helpFields(config: SkyliteConfig, save: () => void): HTMLElement {
   const wrap = el('div', {});
   wrap.append(
@@ -298,10 +350,6 @@ function renderExplorerCard(rkey: string, config: SkyliteConfig, identity: Spons
       el('p', { class: 'g-hint' }, [
         'Reposts pull in whole posts from outside the garden. Labels are the only safety layer for those outside authors. Turn off for the tightest garden.',
       ]),
-      toggle('Telescope: open search (points at the whole sky)', config.telescope, (v) => {
-        config.telescope = v;
-        save();
-      }),
       toggle('Let a “this device only” explorer see friends’ hearts', config.showFriendsHearts, (v) => {
         config.showFriendsHearts = v;
         save();
@@ -318,6 +366,8 @@ function renderExplorerCard(rkey: string, config: SkyliteConfig, identity: Spons
       el('h3', {}, ['Approved feeds (Telescope)']),
       renderFeeds(config, save),
     ]),
+
+    searchSettings(config, save),
 
     field('Contact for the “Get help” button (optional)', helpFields(config, save)),
     field('Check-in window (hours unreachable before the garden locks)', staleField(config, save)),

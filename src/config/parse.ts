@@ -5,9 +5,11 @@ import type {
   SkyliteConfig,
   SkyliteFriend,
   SkyliteHelp,
+  SkyliteSearch,
+  SearchTier,
   Skin,
 } from './types.js';
-import { CONFIG_DEFAULTS, SKYLITE_CONFIG_VERSION } from './types.js';
+import { CONFIG_DEFAULTS, SEARCH_DEFAULTS, SKYLITE_CONFIG_VERSION } from './types.js';
 
 // Defensive parsing of an untrusted config record. The record comes off a public
 // PDS read (or local import) and must never be trusted structurally — a malformed
@@ -63,6 +65,34 @@ function parseSkin(v: unknown): Skin {
   return v === 'full' ? 'full' : 'simple';
 }
 
+/** Only allow the known tiers; anything else is the safe default (off). */
+function parseTier(v: unknown): SearchTier {
+  return v === 'discovery' || v === 'open' ? v : 'off';
+}
+
+function stringList(v: unknown): string[] {
+  return Array.isArray(v) ? v.filter((s): s is string => typeof s === 'string' && s.trim() !== '') : [];
+}
+
+/**
+ * Parse the search block. Legacy migration: a v2 record with the old boolean
+ * `telescope` (no `search`) becomes `tier: 'open'` when it was true, else `off` —
+ * the rest taking SEARCH_DEFAULTS.
+ */
+function parseSearch(v: unknown, legacyTelescope: unknown): SkyliteSearch {
+  if (!isObj(v)) {
+    return { ...SEARCH_DEFAULTS, tier: legacyTelescope === true ? 'open' : 'off' };
+  }
+  return {
+    tier: parseTier(v.tier),
+    useAllowlist: typeof v.useAllowlist === 'boolean' ? v.useAllowlist : SEARCH_DEFAULTS.useAllowlist,
+    allowlistExtra: stringList(v.allowlistExtra),
+    useBlocklist: typeof v.useBlocklist === 'boolean' ? v.useBlocklist : SEARCH_DEFAULTS.useBlocklist,
+    blocklistExtra: stringList(v.blocklistExtra),
+    logHistory: typeof v.logHistory === 'boolean' ? v.logHistory : SEARCH_DEFAULTS.logHistory,
+  };
+}
+
 function parseHelp(v: unknown): SkyliteHelp | null {
   if (!isObj(v)) return null;
   const help: SkyliteHelp = {};
@@ -109,7 +139,7 @@ export function parseConfig(v: unknown): SkyliteConfig | null {
     showFriendsHearts:
       typeof v.showFriendsHearts === 'boolean' ? v.showFriendsHearts : CONFIG_DEFAULTS.showFriendsHearts,
     approvedFeeds,
-    telescope: typeof v.telescope === 'boolean' ? v.telescope : CONFIG_DEFAULTS.telescope,
+    search: parseSearch(v.search, v.telescope),
     showReposts: typeof v.showReposts === 'boolean' ? v.showReposts : CONFIG_DEFAULTS.showReposts,
     staleHours,
     ...(help ? { help } : {}),
@@ -129,7 +159,7 @@ export function newExplorerConfig(displayName = ''): SkyliteConfig {
     friends: [],
     showFriendsHearts: CONFIG_DEFAULTS.showFriendsHearts,
     approvedFeeds: [],
-    telescope: CONFIG_DEFAULTS.telescope,
+    search: { ...SEARCH_DEFAULTS },
     showReposts: CONFIG_DEFAULTS.showReposts,
     staleHours: CONFIG_DEFAULTS.staleHours,
   };

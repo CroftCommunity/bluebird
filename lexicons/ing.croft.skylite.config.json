@@ -57,9 +57,10 @@
             "description": "Approved discovery feeds (Telescope rung 1).",
             "items": { "type": "ref", "ref": "#approvedFeed" }
           },
-          "telescope": {
-            "type": "boolean",
-            "description": "Open search (Telescope rung 2). Default false."
+          "search": {
+            "type": "ref",
+            "ref": "#search",
+            "description": "Open search (Telescope rung 2) — a sponsor-set trust gradient. Legacy boolean `telescope` migrates to search.tier (true→open, false→off)."
           },
           "showReposts": {
             "type": "boolean",
@@ -139,6 +140,23 @@
       "properties": {
         "uri": { "type": "string", "format": "at-uri", "description": "The feed generator's at:// URI." },
         "name": { "type": "string", "maxLength": 120, "description": "Sponsor-cached display name at approval time." }
+      }
+    },
+    "search": {
+      "type": "object",
+      "description": "Telescope rung 2 search trust-gradient (see docs/telescope-search.md).",
+      "required": ["tier", "useAllowlist", "allowlistExtra", "useBlocklist", "blocklistExtra", "logHistory"],
+      "properties": {
+        "tier": {
+          "type": "string",
+          "knownValues": ["off", "discovery", "open"],
+          "description": "Reach: off (approved feeds only) / discovery (approved-feed authors) / open (whole network)."
+        },
+        "useAllowlist": { "type": "boolean", "description": "Positive gate: only queries matching an allowed topic run. Default false." },
+        "allowlistExtra": { "type": "array", "items": { "type": "string" }, "description": "Sponsor additions to the seeded topic allowlist." },
+        "useBlocklist": { "type": "boolean", "description": "Negative gate: queries with a blocked term are refused. Default true." },
+        "blocklistExtra": { "type": "array", "items": { "type": "string" }, "description": "Sponsor additions to the seeded blocklist." },
+        "logHistory": { "type": "boolean", "description": "Search history visible to the sponsor (accountability). Default true." }
       }
     }
   }
