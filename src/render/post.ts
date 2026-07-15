@@ -115,14 +115,21 @@ function renderText(post: PostView): HTMLElement | null {
 function renderImages(images: ImageView[]): HTMLElement {
   const grid = el('div', { class: `post__images post__images--${Math.min(images.length, 4)}` });
   for (const img of images) {
+    const hasAlt = Boolean(img.alt && img.alt.trim());
+    // Each image sits in a figure so an "ALT" badge (bsky-style, §B4 full skin)
+    // can overlay it when the image carries alt text — a positive accessibility
+    // signal, never a count. The badge is CSS-hidden except in the full skin.
     grid.append(
-      el('img', {
-        class: 'post__image',
-        src: img.thumb,
-        alt: img.alt || '',
-        loading: 'lazy',
-        decoding: 'async',
-      }),
+      el('figure', { class: 'post__image-wrap' }, [
+        el('img', {
+          class: 'post__image',
+          src: img.thumb,
+          alt: img.alt || '',
+          loading: 'lazy',
+          decoding: 'async',
+        }),
+        hasAlt ? el('span', { class: 'post__alt-badge', 'aria-hidden': 'true' }, ['ALT']) : null,
+      ]),
     );
   }
   return grid;
