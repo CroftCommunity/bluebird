@@ -17,6 +17,7 @@ import {
   setChecklistItem,
   type SponsorIdentity,
 } from './sponsor/store.js';
+import { ensureAuditVault } from './sponsor/audit-key.js';
 import {
   startSignIn,
   finishSignInFromUrl,
@@ -237,7 +238,64 @@ function searchSettings(config: SkyliteConfig, save: () => void): HTMLElement {
     el('p', { class: 'g-hint' }, [
       'With the allowlist off, searches are open except for blocked words. With it on, a search must match an allowed topic. Both can be on together.',
     ]),
+    encryptedArchiveControl(config, save),
   ]);
+}
+
+/**
+ * §Phase 3 — turn on the ENCRYPTED search-history archive. Creates (or reuses)
+ * this device's audit keypair, protected by a passphrase, and publishes its
+ * PUBLIC key into the config so the explorer device seals history to it. Only
+ * this device's private key can ever read it (docs/telescope-search.md).
+ */
+function encryptedArchiveControl(config: SkyliteConfig, save: () => void): HTMLElement {
+  const msg = el('span', { class: 'g-msg', role: 'status', 'data-archive-msg': 'true' });
+  const wrap = el('div', { class: 'g-subcard', 'data-archive-control': 'true' });
+
+  const render = (): void => {
+    clear(wrap);
+    if (config.search.auditPubKeyJwk) {
+      wrap.append(
+        el('p', { class: 'g-hint' }, [
+          'Encrypted history is ON. Searches are stored scrambled and only this device can read them. Keep this device — lose it and the history becomes unreadable.',
+        ]),
+        button('Turn off encrypted history', 'g-btn g-btn--ghost', () => {
+          delete config.search.auditPubKeyJwk;
+          save();
+          render();
+        }, { 'data-archive-off': 'true' }),
+        msg,
+      );
+      return;
+    }
+    const pass = textInput('', 'a passphrase only you know', () => {}, 'password');
+    pass.setAttribute('data-archive-pass', 'true');
+    wrap.append(
+      el('p', { class: 'g-hint' }, [
+        'Store search history ENCRYPTED so no one but you can read it — not even on the public network. Choose a passphrase to lock the key on this device.',
+      ]),
+      field('Passphrase for the history key', pass),
+      button('Turn on encrypted history', 'g-btn g-btn--primary', () => {
+        if (pass.value.length < 8) {
+          msg.textContent = 'Use at least 8 characters.';
+          return;
+        }
+        msg.textContent = 'Setting up the encryption key…';
+        void ensureAuditVault({ method: 'passphrase', passphrase: pass.value })
+          .then((pubKeyJwk) => {
+            config.search.auditPubKeyJwk = pubKeyJwk;
+            save();
+            render();
+          })
+          .catch(() => {
+            msg.textContent = "Couldn't set up the key on this device.";
+          });
+      }, { 'data-archive-on': 'true' }),
+      msg,
+    );
+  };
+  render();
+  return wrap;
 }
 
 function helpFields(config: SkyliteConfig, save: () => void): HTMLElement {

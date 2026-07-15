@@ -85,6 +85,24 @@ export function removeExplorer(rkey: string): void {
   writeAll(listExplorers().filter((e) => e.rkey !== rkey));
 }
 
+// The explorer's ACCOUNT handle (sponsor-local, never in the public config) —
+// the audit view (phase 3) resolves it to a DID to read the explorer's sealed
+// search-history collection.
+const KEY_HANDLES = 'skylite.sponsor.explorer.handles';
+
+export function getExplorerHandle(rkey: string): string | undefined {
+  const map = readJson<Record<string, string>>(KEY_HANDLES) ?? {};
+  const h = map[rkey];
+  return typeof h === 'string' && h.trim() ? h.trim() : undefined;
+}
+
+export function setExplorerHandle(rkey: string, handle: string): void {
+  const map = readJson<Record<string, string>>(KEY_HANDLES) ?? {};
+  if (handle.trim()) map[rkey] = handle.trim();
+  else delete map[rkey];
+  writeJson(KEY_HANDLES, map);
+}
+
 export function getSponsorIdentity(): SponsorIdentity {
   return readJson<SponsorIdentity>(KEY_IDENTITY) ?? {};
 }
