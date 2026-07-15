@@ -36,3 +36,15 @@ export function offlineBanner(): HTMLElement {
     el('span', {}, ["Showing saved posts — you're offline."]),
   ]);
 }
+
+/**
+ * §3 garden-change notice — a plain, always-on banner naming what the last
+ * config poll changed ("3 accounts were added to your garden."). Honesty toward
+ * the explorer and the sponsor-account-compromise tripwire.
+ */
+export function changeNotice(text: string): HTMLElement {
+  return el('div', { class: 'banner banner--change', 'data-change-notice': 'true' }, [
+    el('span', { class: 'banner__glyph', 'aria-hidden': 'true' }, ['🌱']),
+    el('span', {}, [text]),
+  ]);
+}

@@ -1231,3 +1231,10 @@ body {
   margin: 0.2rem 0 0;
   color: var(--ink-dim);
 }
+
+/* --- §3 garden-change notice --- */
+.banner--change {
+  background: rgba(255, 214, 92, 0.14);
+  border: 1px solid rgba(255, 214, 92, 0.4);
+  color: var(--ink);
+}

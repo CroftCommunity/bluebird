@@ -9,7 +9,7 @@ The tier model is dead. Skylite now runs on the two-switch model
 principles with their named invariants, a multi-explorer sponsor dashboard,
 backup/restore, a refresh that works, and a public-data label audit.
 
-**Gate: full `npm test` green — lint · typecheck · 101 unit · build · 46 e2e.**
+**Gate: full `npm test` green — lint · typecheck · 106 unit · build · 48 e2e.**
 No new dependencies (the zero-runtime-dep, esbuild + Vitest + Playwright spine
 is unchanged).
 
@@ -36,6 +36,10 @@ is unchanged).
   label-floored). Per-explorer `staleHours` threaded through the gate.
 - **Skin** is stamped as `data-skin` (observable; only "simple" styled — full
   is RUN-SOCIAL B4). Never gates a capability.
+- **Garden-change transparency** (§3, always on): the device diffs each config
+  poll locally (`diffInclusion`) and shows a plain banner — "3 accounts were
+  added to your garden." — honesty toward the explorer and the
+  sponsor-account-compromise tripwire.
 
 ### S3 — vocabulary sweep
 guardian/custodian→**sponsor**, child/kid→**explorer**, scrapbook→**Saves**
@@ -128,9 +132,6 @@ tests with their implementation; each later phase commits tests alongside code).
 - **QR for the provisioning link — deferred.** The copyable link fully
   provisions a device; QR encoding (no external deps allowed) is a small
   follow-up.
-- **Garden-change transparency notices** ("3 accounts were added") from §3 are
-  **not built this run** — a noted gap for a follow-up; the config-diff hook is
-  the place to add them.
 - **Full skin** is RUN-SOCIAL B4; only the simple skin is styled (switch is
   plumbed via `data-skin`).
 - **PIN-setting UI** was dropped from the (relocated) sponsor page; the D6

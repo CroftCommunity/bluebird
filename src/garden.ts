@@ -5,7 +5,7 @@ import { mergeFeeds } from './feed/merge.js';
 import { filterByLabels } from './feed/labels.js';
 import { renderPost, markSavedPosts } from './render/post.js';
 import { el, clear } from './render/dom.js';
-import { offlineBanner } from './render/locks.js';
+import { offlineBanner, changeNotice } from './render/locks.js';
 import { savedUris } from './saves/store.js';
 
 /**
@@ -80,9 +80,10 @@ export function renderGardenInto(
   container: HTMLElement,
   result: GardenResult,
   status: Status,
-  opts: { offline?: boolean } = {},
+  opts: { offline?: boolean; changeNotice?: string } = {},
 ): void {
   clear(container);
+  if (opts.changeNotice) container.append(changeNotice(opts.changeNotice));
   if (opts.offline) container.append(offlineBanner());
   if (status !== 'ready') {
     container.append(el('p', { class: 'garden__status', 'data-garden-status': status }, [statusMessage(status)]));
@@ -97,14 +98,17 @@ export function renderGardenInto(
 export async function mountGarden(
   container: HTMLElement,
   inclusion: InclusionList,
-  opts: GardenOptions & { offline?: boolean } = {},
+  opts: GardenOptions & { offline?: boolean; changeNotice?: string } = {},
 ): Promise<void> {
   renderGardenInto(container, { posts: [], failedActors: [] }, 'loading');
   try {
     const result = await fetchGarden(inclusion, opts);
     const status: Status =
       result.posts.length > 0 ? 'ready' : result.failedActors.length > 0 ? 'error' : 'empty';
-    renderGardenInto(container, result, status, { offline: opts.offline ?? false });
+    renderGardenInto(container, result, status, {
+      offline: opts.offline ?? false,
+      ...(opts.changeNotice ? { changeNotice: opts.changeNotice } : {}),
+    });
     if (status === 'ready') void savedUris().then((set) => markSavedPosts(container, set));
   } catch {
     renderGardenInto(container, { posts: [], failedActors: [] }, 'error');

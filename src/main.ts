@@ -8,6 +8,7 @@ import { installBackgroundLock } from './lock/backgroundLock.js';
 import { showHelpHandoff, type HelpContact } from './care/handoff.js';
 import { renderLanding } from './landing.js';
 import { installPullToRefresh } from './refresh/pull.js';
+import { changeSentence } from './config/diff.js';
 
 /** The trusted-adult contact from whatever config we last knew (any gate state). */
 function helpContact(): HelpContact {
@@ -21,7 +22,7 @@ function helpContact(): HelpContact {
  * the offline banner — never a dead spinner.
  */
 async function openGarden(container: HTMLElement): Promise<void> {
-  const { gate, inclusion } = await resolveGarden();
+  const { gate, inclusion, changes } = await resolveGarden();
   switch (gate.kind) {
     case 'paused':
       renderPausedLock(container);
@@ -39,10 +40,12 @@ async function openGarden(container: HTMLElement): Promise<void> {
       const offline = gate.offline || !navigator.onLine;
       // §3: reposts inject whole outside posts — honor the sponsor's showReposts
       // switch (default true), still under the label floor.
+      // §3: name what the last config poll changed, always on.
+      const notice = changeSentence(changes);
       await mountGarden(
         container,
         { version: 1, entries: inclusion },
-        { offline, includeReposts: gate.config.showReposts },
+        { offline, includeReposts: gate.config.showReposts, ...(notice ? { changeNotice: notice } : {}) },
       );
     }
   }
