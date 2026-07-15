@@ -10,6 +10,7 @@ import { AuthorFeedClient } from '../atproto/client.js';
 import { filterByLabels } from '../feed/labels.js';
 import { queryAllowed } from '../search/policy.js';
 import { logSearch, getSearchHistory } from '../search/history.js';
+import { archiveSearch } from '../search/archive.js';
 import { makeFollowUi } from '../social/follow-ui.js';
 import { getExplorerSession, persistExplorerSession } from '../social/explorer-auth.js';
 import type { OAuthSession } from '../atproto/oauth/client.js';
@@ -114,7 +115,25 @@ function renderResults(results: HTMLElement, status: string, posts: ReturnType<t
 
 async function runSearch(query: string, config: SkyliteConfig, results: HTMLElement, msg: HTMLElement): Promise<void> {
   const verdict = queryAllowed(query, config.search);
-  if (config.search.logHistory && query.trim()) logSearch(query.trim(), !verdict.ok, Date.now());
+  if (config.search.logHistory && query.trim()) {
+    const now = Date.now();
+    logSearch(query.trim(), !verdict.ok, now);
+    // Encrypted archive: when the sponsor published an audit key and the explorer
+    // has an account, seal this attempt to that key and sync it (best-effort).
+    void archiveSearch(
+      { q: query.trim(), blocked: !verdict.ok, tier: config.search.tier },
+      {
+        session: explorerSession,
+        ...(config.search.auditPubKeyJwk ? { auditPubKeyJwk: config.search.auditPubKeyJwk } : {}),
+        nowIso: new Date(now).toISOString(),
+      },
+    ).then((s) => {
+      if (s && s !== explorerSession) {
+        explorerSession = s;
+        persistExplorerSession(s);
+      }
+    });
+  }
 
   if (!verdict.ok) {
     clear(results);
@@ -186,9 +205,14 @@ function searchSection(config: SkyliteConfig): HTMLElement {
     config.search.tier === 'discovery'
       ? 'Search stays within the feeds your grown-up approved.'
       : 'Search is open. The calm rules still apply — nothing unsafe gets through, and blocked words are turned away.';
+  // Honesty copy for the encrypted archive (docs/telescope-search.md).
+  const archiveNote = config.search.auditPubKeyJwk
+    ? 'Your grown-up can read what you search here. It is stored scrambled, so no one else can.'
+    : null;
   const section = el('section', { class: 'telescope__search', 'data-search': 'true' }, [
     row,
     el('p', { class: 'g-hint' }, [note]),
+    ...(archiveNote ? [el('p', { class: 'g-hint', 'data-archive-note': 'true' }, [archiveNote])] : []),
     msg,
     results,
   ]);

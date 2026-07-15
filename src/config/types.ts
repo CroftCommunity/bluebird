@@ -60,6 +60,13 @@ export interface SkyliteSearch {
   blocklistExtra: string[];
   /** Search-history visible to the sponsor (the accountability indicator). Default on. */
   logHistory: boolean;
+  /**
+   * When the sponsor turned on the ENCRYPTED archive, their audit PUBLIC key
+   * (EC P-256 JWK), published here via the config so the explorer device can seal
+   * each search to it. Present ⇒ the device seals + syncs the ciphertext; absent
+   * ⇒ history stays on-device. Only the sponsor's private key can read it.
+   */
+  auditPubKeyJwk?: JsonWebKey;
 }
 
 /** An approved discovery feed (Telescope rung 1). */

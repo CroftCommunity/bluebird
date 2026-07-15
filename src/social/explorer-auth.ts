@@ -17,9 +17,10 @@ import { LIKE_NSID } from './likes.js';
  * sign back in"; the garden is never affected.
  */
 
-// Granular scope: create/delete on the explorer's like + follow collections ONLY.
-// The exact atproto scope syntax is a verify-in-run item; this is the intent.
-export const EXPLORER_SCOPE = `atproto repo:${LIKE_NSID} repo:ing.croft.skylite.follow`;
+// Granular scope: create/delete on the explorer's like + follow + (encrypted)
+// search-history collections ONLY. The exact atproto scope syntax is a
+// verify-in-run item; this is the intent.
+export const EXPLORER_SCOPE = `atproto repo:${LIKE_NSID} repo:ing.croft.skylite.follow repo:ing.croft.skylite.search`;
 
 const KEY_PENDING = 'skylite.explorer.oauth.pending';
 const KEY_SESSION = 'skylite.explorer.oauth.session';

@@ -156,7 +156,8 @@
         "allowlistExtra": { "type": "array", "items": { "type": "string" }, "description": "Sponsor additions to the seeded topic allowlist." },
         "useBlocklist": { "type": "boolean", "description": "Negative gate: queries with a blocked term are refused. Default true." },
         "blocklistExtra": { "type": "array", "items": { "type": "string" }, "description": "Sponsor additions to the seeded blocklist." },
-        "logHistory": { "type": "boolean", "description": "Search history visible to the sponsor (accountability). Default true." }
+        "logHistory": { "type": "boolean", "description": "Search history visible to the sponsor (accountability). Default true." },
+        "auditPubKeyJwk": { "type": "unknown", "description": "When set, the sponsor's audit PUBLIC key (EC P-256 JWK) for the encrypted search-history archive. Present ⇒ the explorer device seals each search to it (ing.croft.skylite.search); absent ⇒ history stays on-device. Never a private key." }
       }
     }
   }

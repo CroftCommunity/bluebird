@@ -74,6 +74,15 @@ function stringList(v: unknown): string[] {
   return Array.isArray(v) ? v.filter((s): s is string => typeof s === 'string' && s.trim() !== '') : [];
 }
 
+/** A well-formed EC P-256 PUBLIC JWK (never a private key: `d` must be absent). */
+function parseAuditPubKey(v: unknown): JsonWebKey | undefined {
+  if (!isObj(v)) return undefined;
+  if (v.kty !== 'EC' || v.crv !== 'P-256') return undefined;
+  if (typeof v.x !== 'string' || typeof v.y !== 'string') return undefined;
+  if ('d' in v) return undefined; // reject anything carrying a private scalar
+  return { kty: 'EC', crv: 'P-256', x: v.x, y: v.y };
+}
+
 /**
  * Parse the search block. Legacy migration: a v2 record with the old boolean
  * `telescope` (no `search`) becomes `tier: 'open'` when it was true, else `off` —
@@ -83,6 +92,7 @@ function parseSearch(v: unknown, legacyTelescope: unknown): SkyliteSearch {
   if (!isObj(v)) {
     return { ...SEARCH_DEFAULTS, tier: legacyTelescope === true ? 'open' : 'off' };
   }
+  const auditPubKeyJwk = parseAuditPubKey(v.auditPubKeyJwk);
   return {
     tier: parseTier(v.tier),
     useAllowlist: typeof v.useAllowlist === 'boolean' ? v.useAllowlist : SEARCH_DEFAULTS.useAllowlist,
@@ -90,6 +100,7 @@ function parseSearch(v: unknown, legacyTelescope: unknown): SkyliteSearch {
     useBlocklist: typeof v.useBlocklist === 'boolean' ? v.useBlocklist : SEARCH_DEFAULTS.useBlocklist,
     blocklistExtra: stringList(v.blocklistExtra),
     logHistory: typeof v.logHistory === 'boolean' ? v.logHistory : SEARCH_DEFAULTS.logHistory,
+    ...(auditPubKeyJwk ? { auditPubKeyJwk } : {}),
   };
 }
 
