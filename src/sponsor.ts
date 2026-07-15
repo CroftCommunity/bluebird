@@ -334,6 +334,11 @@ function renderExplorerCard(rkey: string, config: SkyliteConfig, identity: Spons
           ])
         : el('p', { class: 'g-msg' }, ['Set your sponsor DID above to make a device link.']),
       field(`Record body (store as ${SKYLITE_CONFIG_NSID}/${rkey})`, jsonArea),
+      el('p', {}, [
+        el('a', { class: 'g-btn g-btn--ghost', href: `/audit.html?r=${encodeURIComponent(rkey)}`, 'data-audit-link': rkey }, [
+          'See what the garden hid, and why',
+        ]),
+      ]),
     ]),
   ]);
 }

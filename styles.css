@@ -1176,3 +1176,58 @@ body {
   color: var(--moon);
   word-break: break-all;
 }
+
+/* --- S7 label audit --- */
+.audit__title {
+  max-width: 46rem;
+  margin: 0.5rem auto 0;
+}
+.audit__table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.92rem;
+}
+.audit__table th,
+.audit__table td {
+  text-align: left;
+  padding: 0.4rem 0.5rem;
+  border-bottom: 1px solid var(--sky-indigo-soft);
+  vertical-align: top;
+}
+.audit__label {
+  font-family: ui-monospace, "SF Mono", Menlo, monospace;
+  color: var(--moon);
+  white-space: nowrap;
+}
+.audit__account {
+  padding: 0.7rem 0;
+  border-top: 1px solid var(--sky-indigo-soft);
+}
+.audit__account-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.6rem;
+  align-items: baseline;
+}
+.audit__account-name {
+  font-weight: 700;
+}
+.audit__account-count {
+  color: var(--moon);
+  font-size: 0.9rem;
+  white-space: nowrap;
+}
+.audit__example {
+  padding: 0.4rem 0.6rem;
+  margin: 0.35rem 0;
+  background: var(--sky-indigo);
+  border-radius: 10px;
+}
+.audit__example-labels {
+  color: var(--moon);
+  font-size: 0.8rem;
+}
+.audit__example-text {
+  margin: 0.2rem 0 0;
+  color: var(--ink-dim);
+}
