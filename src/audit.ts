@@ -2,9 +2,12 @@ import { installTheme } from './brand/theme.js';
 import { skyliteVersion } from './version.js';
 import { el, clear } from './render/dom.js';
 import { registerServiceWorker } from './pwa/register.js';
-import { listExplorers } from './sponsor/store.js';
+import { listExplorers, getExplorerHandle, setExplorerHandle, type ExplorerEntry } from './sponsor/store.js';
 import { effectiveInclusion } from './config/inclusion.js';
 import { fetchAudit, LABEL_MEANINGS, type AccountAudit, type AuditResult } from './audit/audit.js';
+import { unlockAuditKey } from './sponsor/audit-key.js';
+import { resolveHandleToDid, fetchSealedHistory, decryptHistory } from './search/audit-read.js';
+import { relativeTime } from './render/time.js';
 
 /**
  * S7 sponsor label-audit page. (a) Meanings: what Skylite does with each label
@@ -88,6 +91,90 @@ function effectivenessSection(result: AuditResult): HTMLElement {
   ]);
 }
 
+/**
+ * §Phase 3B — the encrypted search-history section. Reads the explorer's sealed
+ * records (public listRecords), unlocks the sponsor's audit key on THIS device,
+ * and decrypts locally. Only this device can read them.
+ */
+function searchHistorySection(explorer: ExplorerEntry): HTMLElement | null {
+  if (!explorer.config.search.auditPubKeyJwk) return null; // archive not on for this explorer
+
+  const handleInput = el('input', {
+    type: 'text',
+    class: 'g-input',
+    placeholder: 'explorer’s handle, e.g. kid.bsky.social',
+    'data-history-handle': 'true',
+  });
+  handleInput.value = getExplorerHandle(explorer.rkey) ?? '';
+  handleInput.addEventListener('input', () => setExplorerHandle(explorer.rkey, handleInput.value));
+
+  const pass = el('input', {
+    type: 'password',
+    class: 'g-input',
+    placeholder: 'your history passphrase',
+    'data-history-pass': 'true',
+  });
+
+  const msg = el('span', { class: 'g-msg', role: 'status', 'data-history-msg': 'true' });
+  const list = el('div', { class: 'audit__history', 'data-history-list': 'true' });
+
+  const show = el('button', { type: 'button', class: 'g-btn g-btn--primary', 'data-history-show': 'true' }, [
+    'Show search history',
+  ]);
+  show.addEventListener('click', () => {
+    const handle = handleInput.value.trim();
+    if (!handle) {
+      msg.textContent = 'Enter the explorer’s handle.';
+      return;
+    }
+    msg.textContent = 'Unlocking and reading…';
+    clear(list);
+    void (async () => {
+      let priv: JsonWebKey;
+      try {
+        priv = await unlockAuditKey({ passphrase: pass.value });
+      } catch {
+        msg.textContent = 'That passphrase didn’t work on this device.';
+        return;
+      }
+      try {
+        const did = await resolveHandleToDid(handle);
+        const sealed = await fetchSealedHistory(did);
+        const entries = await decryptHistory(sealed, priv);
+        msg.textContent = '';
+        if (entries.length === 0) {
+          list.append(el('p', { class: 'g-hint' }, ['No search history yet.']));
+          return;
+        }
+        for (const e of entries) {
+          list.append(
+            el('div', { class: 'audit__history-row', ...(e.blocked ? { 'data-blocked': 'true' } : {}) }, [
+              el('span', { class: 'audit__history-q' }, [e.q]),
+              el('span', { class: 'g-hint' }, [
+                `${e.blocked ? 'blocked · ' : ''}${e.tier} · ${relativeTime(e.at)}`,
+              ]),
+            ]),
+          );
+        }
+      } catch {
+        msg.textContent = 'Couldn’t read the history (is the handle right, and are they online?).';
+      }
+    })();
+  });
+
+  return el('section', { class: 'g-card', 'data-history-section': 'true' }, [
+    el('h2', {}, ['Search history (encrypted)']),
+    el('p', { class: 'g-hint' }, [
+      'Only this device can read these — they are stored scrambled everywhere else. Enter the explorer’s handle and your history passphrase.',
+    ]),
+    el('label', { class: 'g-field' }, [el('span', { class: 'g-field__label' }, ['Explorer’s handle']), handleInput]),
+    el('label', { class: 'g-field' }, [el('span', { class: 'g-field__label' }, ['History passphrase']), pass]),
+    show,
+    msg,
+    list,
+  ]);
+}
+
 async function render(): Promise<void> {
   if (!root) return;
   const rkey = new URLSearchParams(window.location.search).get('r') ?? '';
@@ -113,6 +200,9 @@ async function render(): Promise<void> {
       el('p', { class: 'garden__status' }, ['Replaying the garden…']),
     ]),
   );
+
+  const history = searchHistorySection(explorer);
+  if (history) root.append(history);
 
   const inclusion = effectiveInclusion(explorer.config);
   try {
