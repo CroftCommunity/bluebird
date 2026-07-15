@@ -1,5 +1,6 @@
 import { el, clear } from './render/dom.js';
 import { parseProvisioning, setBinding } from './config/binding.js';
+import { wordmark } from './brand/wordmark.js';
 
 /**
  * S1 landing + role funnel. Shown at `/` ONLY when the device is not yet set up
@@ -84,8 +85,8 @@ export function renderLanding(container: HTMLElement): void {
 
   container.append(
     el('section', { class: 'landing__hero' }, [
-      el('span', { class: 'landing__moon', 'aria-hidden': 'true' }),
-      el('h1', { class: 'landing__title' }, ['Skylite']),
+      el('span', { class: 'landing__mark', 'aria-hidden': 'true' }),
+      el('h1', { class: 'landing__title' }, [wordmark()]),
       el('p', { class: 'landing__subtitle' }, ['A window to the stars.']),
     ]),
 

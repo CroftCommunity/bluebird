@@ -1,3 +1,4 @@
+import { installTheme } from './brand/theme.js';
 import { skyliteVersion } from './version.js';
 import { el, clear } from './render/dom.js';
 import { registerServiceWorker } from './pwa/register.js';
@@ -128,6 +129,7 @@ async function render(): Promise<void> {
 }
 
 function boot(): void {
+  installTheme();
   const stamp = document.querySelector<HTMLElement>('[data-version-stamp]');
   if (stamp) stamp.textContent = skyliteVersion();
   registerServiceWorker();

@@ -1,3 +1,4 @@
+import { installTheme } from './brand/theme.js';
 import { skyliteVersion } from './version.js';
 import { registerServiceWorker } from './pwa/register.js';
 import { getCachedConfig, getLocalConfig } from './config/binding.js';
@@ -9,6 +10,7 @@ function helpContact(): HelpContact {
 }
 
 function boot(): void {
+  installTheme();
   const stamp = document.querySelector<HTMLElement>('[data-version-stamp]');
   if (stamp) stamp.textContent = skyliteVersion();
   registerServiceWorker();

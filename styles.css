@@ -1,17 +1,18 @@
-/* Skylite — night-sky palette (CONCEPT.md §4): deep indigo, warm yellow, white.
-   Big, bright, high-contrast, large text, no counts, no chrome. */
+/* Skylite — brand tokens live in tokens.css (the only place raw hex is allowed).
+   The legacy night-sky variable names below are now ALIASES onto the semantic
+   tokens, so every existing rule re-themes for free (light/dark) with no hex
+   here. RUN-BRAND P4 replaces these aliases with direct token usage. */
 :root {
-  --sky-deep: #0d0e2b;
-  --sky-indigo: #14164b;
-  --sky-indigo-soft: #23276e;
-  --card: #1b1e57;
-  --card-soft: #262a6e;
-  --moon: #ffd65c;
-  --star: #ffffff;
-  --ink: #eef0ff;
-  --ink-dim: #a9adde;
-  --link: #8fd3ff;
-  --radius: 20px;
+  --sky-deep: var(--bg);
+  --sky-indigo: var(--bg);
+  --sky-indigo-soft: var(--border);
+  --card: var(--bg-raised);
+  --card-soft: var(--bg-sunken);
+  --moon: var(--highlight);
+  --star: var(--ink);
+  --ink-dim: var(--ink-muted);
+  --link: var(--accent);
+  /* --ink, --radius come from tokens.css */
 }
 
 * {
@@ -48,25 +49,35 @@ body {
   backdrop-filter: blur(6px);
 }
 
-.topbar__moon {
-  width: 1.6rem;
-  height: 1.6rem;
-  border-radius: 50%;
-  background: var(--moon);
-  box-shadow: 0.5rem -0.1rem 0 0 var(--sky-deep) inset;
+/* Theme-swapping header mark: day-window in light, constellation in dark. The
+   --header-mark token flips with the theme; CSS rounding hides the source's
+   white corners over any background. */
+.topbar__mark {
+  width: 2.1rem;
+  height: 2.1rem;
   flex: none;
+  border-radius: 28%;
+  background: var(--header-mark) center / cover no-repeat;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.25);
 }
 
 .topbar__wordmark {
   margin: 0;
-  font-size: 1.5rem;
-  font-weight: 800;
+  display: flex;
+  align-items: center;
+}
+
+.wordmark {
+  display: block;
+  height: 1.5rem;
+  width: auto;
+  color: var(--ink);
 }
 
 .topbar__tagline {
   margin: 0;
   margin-left: auto;
-  color: var(--moon);
+  color: var(--accent);
   font-size: 0.85rem;
 }
 
@@ -89,7 +100,7 @@ body {
 .topbar__help {
   margin-left: 0.8rem;
   background: var(--moon);
-  color: var(--sky-deep);
+  color: var(--highlight-ink);
   border: none;
   border-radius: 999px;
   padding: 0.45rem 0.9rem;
@@ -160,7 +171,7 @@ body {
   display: grid;
   place-items: center;
   font-weight: 700;
-  color: var(--moon);
+  color: var(--accent);
 }
 
 .post__id {
@@ -209,7 +220,7 @@ body {
 }
 
 .seg--tag {
-  color: var(--moon);
+  color: var(--accent);
 }
 
 .seg--mention {
@@ -381,7 +392,7 @@ body {
 
 .leave__go {
   background: var(--moon);
-  color: var(--sky-deep);
+  color: var(--highlight-ink);
 }
 
 /* --- lock screens + offline banner --- */
@@ -541,7 +552,7 @@ body {
 .g-check {
   width: 1.3rem;
   height: 1.3rem;
-  accent-color: var(--moon);
+  accent-color: var(--accent);
 }
 
 .g-btn {
@@ -556,8 +567,9 @@ body {
 }
 
 .g-btn--primary {
-  background: var(--moon);
-  color: var(--sky-deep);
+  background: var(--cta);
+  color: var(--cta-ink);
+  font-weight: 700;
 }
 
 .g-btn--ghost {
@@ -581,7 +593,7 @@ body {
 }
 
 .g-msg {
-  color: var(--moon);
+  color: var(--accent);
   font-size: 0.9rem;
 }
 
@@ -604,7 +616,7 @@ body {
 
 .post__save--on {
   background: var(--moon);
-  color: var(--sky-deep);
+  color: var(--highlight-ink);
 }
 
 /* --- saves --- */
@@ -692,7 +704,7 @@ body {
 .explain__card h2 {
   margin: 0 0 0.5rem;
   font-size: 1.25rem;
-  color: var(--moon);
+  color: var(--accent);
 }
 
 .explain__card p {
@@ -752,7 +764,7 @@ body {
   display: inline-block;
   width: 100%;
   background: var(--moon);
-  color: var(--sky-deep);
+  color: var(--highlight-ink);
   text-decoration: none;
   font-weight: 700;
   padding: 0.85rem 1rem;
@@ -817,7 +829,7 @@ body {
 }
 
 .pinlock__err {
-  color: #ff9a9a;
+  color: var(--danger);
   min-height: 1.2em;
   font-size: 0.95rem;
 }
@@ -828,7 +840,7 @@ body {
   border: none;
   border-radius: 12px;
   background: var(--moon);
-  color: var(--sky-deep);
+  color: var(--highlight-ink);
   font: inherit;
   font-weight: 700;
   cursor: pointer;
@@ -900,7 +912,7 @@ body {
 .landing__subtitle {
   margin: 0;
   font-size: 1.3rem;
-  color: var(--moon);
+  color: var(--accent);
 }
 
 .landing__lede {
@@ -956,9 +968,9 @@ body {
 }
 
 .landing__door[data-door='sponsor'] {
-  background: var(--moon);
-  color: var(--sky-deep);
-  border-color: var(--moon);
+  background: var(--cta);
+  color: var(--cta-ink);
+  border-color: var(--cta);
 }
 
 .landing__door:hover,
@@ -1000,14 +1012,14 @@ body {
   border-radius: 12px;
   border: none;
   background: var(--link);
-  color: var(--sky-deep);
+  color: var(--accent-ink);
   cursor: pointer;
 }
 
 .landing__paste-msg {
   flex-basis: 100%;
   font-size: 0.95rem;
-  color: var(--moon);
+  color: var(--accent);
   min-height: 1.2em;
 }
 
@@ -1121,7 +1133,7 @@ body {
   height: 1.4rem;
   border-radius: 50%;
   border: 3px solid var(--sky-indigo-soft);
-  border-top-color: var(--moon);
+  border-top-color: var(--accent);
   opacity: 0.6;
 }
 
@@ -1173,7 +1185,7 @@ body {
 
 .g-provision code {
   font-family: ui-monospace, "SF Mono", Menlo, monospace;
-  color: var(--moon);
+  color: var(--accent);
   word-break: break-all;
 }
 
@@ -1196,7 +1208,7 @@ body {
 }
 .audit__label {
   font-family: ui-monospace, "SF Mono", Menlo, monospace;
-  color: var(--moon);
+  color: var(--accent);
   white-space: nowrap;
 }
 .audit__account {
@@ -1213,7 +1225,7 @@ body {
   font-weight: 700;
 }
 .audit__account-count {
-  color: var(--moon);
+  color: var(--accent);
   font-size: 0.9rem;
   white-space: nowrap;
 }
@@ -1224,7 +1236,7 @@ body {
   border-radius: 10px;
 }
 .audit__example-labels {
-  color: var(--moon);
+  color: var(--accent);
   font-size: 0.8rem;
 }
 .audit__example-text {
@@ -1259,8 +1271,8 @@ body {
 
 .post__like--on {
   background: rgba(255, 214, 92, 0.18);
-  color: var(--moon);
-  border-color: var(--moon);
+  color: var(--accent);
+  border-color: var(--accent);
 }
 
 .post__like[data-like-signedout] {
@@ -1308,12 +1320,53 @@ body {
   border-radius: 12px;
   border: none;
   background: var(--moon);
-  color: var(--sky-deep);
+  color: var(--highlight-ink);
   cursor: pointer;
 }
 
 .signin__msg {
-  color: var(--moon);
+  color: var(--accent);
   font-size: 0.9rem;
   min-height: 1.1em;
+}
+
+/* --- P4 theme toggle + landing brand mark --- */
+.topbar__theme {
+  flex: none;
+  width: 2.2rem;
+  height: 2.2rem;
+  border-radius: 50%;
+  border: 1px solid var(--border);
+  background: var(--bg-raised);
+  color: var(--ink);
+  font-size: 1rem;
+  line-height: 1;
+  cursor: pointer;
+  display: grid;
+  place-items: center;
+}
+
+.topbar__theme:focus-visible {
+  outline: 3px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.landing__mark {
+  width: 4.2rem;
+  height: 4.2rem;
+  border-radius: 26%;
+  background: var(--header-mark) center / cover no-repeat;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.28);
+  margin-bottom: 0.4rem;
+}
+
+.landing__title {
+  display: flex;
+  justify-content: center;
+}
+
+.landing__title .wordmark {
+  height: 2.8rem;
+  width: auto;
+  color: var(--ink);
 }
