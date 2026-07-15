@@ -19,6 +19,7 @@ import {
   persistExplorerSession,
 } from './social/explorer-auth.js';
 import { makeLikeUi, explorerSignInBanner } from './social/like-ui.js';
+import { installTheme } from './brand/theme.js';
 
 /** The explorer's scoped OAuth session (B1), or null in localOnly / lapsed states. */
 let explorerSession: OAuthSession | null = null;
@@ -98,6 +99,8 @@ async function openGarden(container: HTMLElement): Promise<void> {
  * dev fixture is only the unprovisioned fallback.
  */
 async function start(): Promise<void> {
+  installTheme(); // device-local theme (P2) — before anything paints branded chrome
+
   const stamp = document.querySelector<HTMLElement>('[data-version-stamp]');
   if (stamp) stamp.textContent = skyliteVersion();
 
