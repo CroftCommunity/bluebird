@@ -1,9 +1,10 @@
 import { describe, it, expect } from 'vitest';
 import { effectiveInclusion } from '../../src/config/inclusion.js';
+import { newExplorerConfig } from '../../src/config/parse.js';
 import type { SkyliteConfig } from '../../src/config/types.js';
 
 function cfg(channels: SkyliteConfig['channels']): SkyliteConfig {
-  return { version: 1, paused: false, updatedAt: '', channels };
+  return { ...newExplorerConfig(), channels };
 }
 
 describe('effectiveInclusion', () => {

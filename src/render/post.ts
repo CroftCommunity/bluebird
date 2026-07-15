@@ -3,6 +3,7 @@ import { segmentRichText, type Segment } from '../feed/richtext.js';
 import { el } from './dom.js';
 import { relativeTime } from './time.js';
 import { showLeaveInterstitial } from './interstitial.js';
+import { recordEmbedHidden } from '../feed/labels.js';
 import { clipFromPost } from '../scrapbook/clip.js';
 import { saveClip, removeClip } from '../scrapbook/store.js';
 
@@ -108,12 +109,21 @@ function renderExternal(uri: string, title: string, description: string): HTMLEl
 }
 
 function renderQuoted(rec: RecordEmbedView): HTMLElement | null {
+  // Label floor on embeds (§3): a label-bearing quoted record never renders —
+  // the labeled-embed-never-renders invariant. Drop the whole quote block.
+  if (recordEmbedHidden(rec)) return null;
   const author = rec.author;
   const text = rec.value?.text;
   if (!author && !text) return null;
-  return el('div', { class: 'post__quote' }, [
+  // The navigation wall (§3): a quote renders INLINE but is never a door into
+  // casual browsing of the outside author's feed. The author label is inert
+  // text (a <span>, never a link/button) — the only deliberate path in is
+  // follow-to-My-Sky, added in RUN-DISCOVER.
+  return el('div', { class: 'post__quote', 'data-quote': 'true' }, [
     author
-      ? el('span', { class: 'post__quote-author' }, [author.displayName || `@${author.handle}`])
+      ? el('span', { class: 'post__quote-author', 'data-quote-author': 'true' }, [
+          author.displayName || `@${author.handle}`,
+        ])
       : null,
     text ? el('p', { class: 'post__quote-text' }, [text]) : null,
   ]);

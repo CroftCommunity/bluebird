@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { WriteClient, WriteError } from '../../src/atproto/write.js';
+import { newExplorerConfig } from '../../src/config/parse.js';
 import type { SkyliteConfig } from '../../src/config/types.js';
 
 function json(body: unknown, status = 200): Response {
@@ -22,7 +23,7 @@ const SESSION_OK = {
   },
 };
 
-const config: SkyliteConfig = { version: 1, paused: false, updatedAt: '2026-07-14T00:00:00Z', channels: [] };
+const config: SkyliteConfig = { ...newExplorerConfig(), updatedAt: '2026-07-14T00:00:00Z' };
 
 describe('WriteClient.createSession', () => {
   it('posts identifier+password and resolves the PDS from the didDoc', async () => {

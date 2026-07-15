@@ -3,7 +3,7 @@ import { DEV_INCLUSION } from '../feed/inclusion.js';
 import { RepoClient } from '../atproto/repo.js';
 import { SKYLITE_CONFIG_NSID } from './types.js';
 import type { SkyliteConfig } from './types.js';
-import { parseConfig } from './parse.js';
+import { parseConfig, newExplorerConfig } from './parse.js';
 import { effectiveInclusion } from './inclusion.js';
 import {
   getBinding,
@@ -13,6 +13,7 @@ import {
   type Binding,
 } from './binding.js';
 import {
+  DEFAULT_STALE_HOURS,
   resolveLocalGate,
   resolvePdsGate,
   type CachedConfig,
@@ -41,9 +42,11 @@ export interface ResolvedGarden {
 /** Wrap the Phase-1 dev inclusion list as a config for the unprovisioned demo. */
 export function devConfig(): SkyliteConfig {
   return {
-    version: 1,
-    paused: false,
-    updatedAt: '',
+    ...newExplorerConfig('Skylite demo'),
+    // The public demo keeps the tightest possible ceiling — only the included
+    // accounts, no injected outside reposts. The showReposts switch itself
+    // defaults true for real explorers (§2); this is just the demo's choice.
+    showReposts: false,
     channels: [
       { id: 'dev', name: 'Skylite demo', enabled: true, accounts: DEV_INCLUSION.entries.map((e) => ({ actor: e.actor, displayName: e.displayName })) },
     ],
@@ -80,7 +83,11 @@ export async function resolveGarden(deps: ProviderDeps = {}): Promise<ResolvedGa
       const cache: CachedConfig = { config: poll.config, fetchedAt: now };
       setCachedConfig(cache);
     }
-    const gate = resolvePdsGate(poll, getCachedConfig(), now, deps.staleHours);
+    const cached = getCachedConfig();
+    // Per-explorer staleness window (§2, default 72h). Prefer an explicit dep,
+    // else the freshest config we hold (poll result was just cached above).
+    const staleHours = deps.staleHours ?? cached?.config.staleHours ?? DEFAULT_STALE_HOURS;
+    const gate = resolvePdsGate(poll, cached, now, staleHours);
     return { gate, inclusion: inclusionFor(gate) };
   }
 

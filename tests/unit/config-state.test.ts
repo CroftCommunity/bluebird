@@ -1,9 +1,10 @@
 import { describe, it, expect } from 'vitest';
 import { resolvePdsGate, resolveLocalGate, type CachedConfig } from '../../src/config/state.js';
+import { newExplorerConfig } from '../../src/config/parse.js';
 import type { SkyliteConfig } from '../../src/config/types.js';
 
 function cfg(paused: boolean): SkyliteConfig {
-  return { version: 1, paused, updatedAt: '', channels: [] };
+  return { ...newExplorerConfig(), paused };
 }
 
 const NOW = Date.parse('2026-07-14T12:00:00Z');

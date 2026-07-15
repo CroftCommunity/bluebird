@@ -1,8 +1,8 @@
 import { skyliteVersion } from './version.js';
 import { el, clear } from './render/dom.js';
-import { SKYLITE_CONFIG_NSID, SKYLITE_CONFIG_RKEY } from './config/types.js';
+import { SKYLITE_CONFIG_NSID, SKYLITE_CONFIG_RKEY_LEGACY } from './config/types.js';
 import type { SkyliteChannel, SkyliteConfig } from './config/types.js';
-import { parseConfig } from './config/parse.js';
+import { parseConfig, newExplorerConfig } from './config/parse.js';
 import { provisioningUrl, setLocalConfig, getLocalConfig } from './config/binding.js';
 import { registerServiceWorker } from './pwa/register.js';
 import { hasPin, setPin, clearPin } from './lock/pin.js';
@@ -18,9 +18,7 @@ import { WriteClient } from './atproto/write.js';
 
 function starterConfig(): SkyliteConfig {
   return {
-    version: 1,
-    paused: false,
-    updatedAt: '',
+    ...newExplorerConfig(),
     channels: [{ id: 'channel-1', name: 'My channel', enabled: true, accounts: [{ actor: '' }] }],
   };
 }
@@ -150,7 +148,7 @@ function render(): void {
 
     el('div', { class: 'g-card' }, [
       el('h2', {}, ['3 · Use it']),
-      el('p', { class: 'g-hint' }, ['Save to this device to run Skylite locally (no account needed), or copy the JSON to store as your ', el('code', {}, [`${SKYLITE_CONFIG_NSID}/${SKYLITE_CONFIG_RKEY}`]), ' record.']),
+      el('p', { class: 'g-hint' }, ['Save to this device to run Skylite locally (no account needed), or copy the JSON to store as your ', el('code', {}, [`${SKYLITE_CONFIG_NSID}/${SKYLITE_CONFIG_RKEY_LEGACY}`]), ' record.']),
       el('div', { class: 'g-row' }, [
         button('Save to this device', 'g-btn g-btn--primary', () => {
           setLocalConfig(withType(config));
@@ -165,7 +163,7 @@ function render(): void {
       el('h2', {}, ['Publish to your Bluesky account (optional)']),
       el('p', { class: 'g-hint' }, [
         'Sign in and Skylite will save the config into your own repo as ',
-        el('code', {}, [`${SKYLITE_CONFIG_NSID}/${SKYLITE_CONFIG_RKEY}`]),
+        el('code', {}, [`${SKYLITE_CONFIG_NSID}/${SKYLITE_CONFIG_RKEY_LEGACY}`]),
         '. Use an ',
         el('strong', {}, ['App Password']),
         ' (Bluesky → Settings → App Passwords), not your main password. Your password is used only to sign in and is never stored.',
@@ -212,7 +210,7 @@ function render(): void {
           const origin = `${window.location.origin}/`;
           linkOut.value = provisioningUrl(origin, {
             guardianDid: did,
-            rkey: SKYLITE_CONFIG_RKEY,
+            rkey: SKYLITE_CONFIG_RKEY_LEGACY,
             ...(pdsInput.value.trim() ? { pdsHost: pdsInput.value.trim() } : {}),
           });
         }),

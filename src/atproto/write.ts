@@ -1,5 +1,5 @@
 import type { SkyliteConfig } from '../config/types.js';
-import { SKYLITE_CONFIG_NSID, SKYLITE_CONFIG_RKEY } from '../config/types.js';
+import { SKYLITE_CONFIG_NSID, SKYLITE_CONFIG_RKEY_LEGACY } from '../config/types.js';
 import { pdsEndpointFromDoc, type DidDocument } from './repo.js';
 
 /**
@@ -118,7 +118,7 @@ export class WriteClient {
     const record = { ...config, $type: SKYLITE_CONFIG_NSID, updatedAt: config.updatedAt || new Date().toISOString() };
     const { uri } = await this.putRecord(session, {
       collection: SKYLITE_CONFIG_NSID,
-      rkey: SKYLITE_CONFIG_RKEY,
+      rkey: SKYLITE_CONFIG_RKEY_LEGACY,
       record,
     });
     return { session, uri };

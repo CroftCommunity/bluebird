@@ -48,7 +48,13 @@ async function start(): Promise<void> {
       // Show the "saved posts, offline" banner either when serving a cached
       // config (D5) or when the device itself is offline.
       const offline = gate.offline || !navigator.onLine;
-      await mountGarden(container, { version: 1, entries: inclusion }, { offline });
+      // §3: reposts inject whole outside posts — honor the sponsor's showReposts
+      // switch (default true), still under the label floor.
+      await mountGarden(
+        container,
+        { version: 1, entries: inclusion },
+        { offline, includeReposts: gate.config.showReposts },
+      );
     }
   }
 }

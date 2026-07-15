@@ -18,6 +18,14 @@ export interface GardenOptions {
   client?: AuthorFeedClient;
   perAuthor?: number;
   limit?: number;
+  /**
+   * Whether reposts (whole outside posts, injected by a garden author's act) are
+   * shown. Mirrors config.showReposts (default true). Reposts are label-floored
+   * identically to any other post — the label floor is the only safety layer for
+   * outside authors (§3). Defaults to false at this layer so a caller that omits
+   * it gets the tight inclusion ceiling.
+   */
+  includeReposts?: boolean;
 }
 
 export interface GardenResult {
@@ -45,7 +53,10 @@ export async function fetchGarden(
     else if (entry) failedActors.push(entry.actor);
   }
 
-  const merged = mergeFeeds(feeds, opts.limit !== undefined ? { limit: opts.limit } : {});
+  const merged = mergeFeeds(feeds, {
+    includeReposts: opts.includeReposts ?? false,
+    ...(opts.limit !== undefined ? { limit: opts.limit } : {}),
+  });
   const posts = filterByLabels(merged);
   return { posts, failedActors };
 }
