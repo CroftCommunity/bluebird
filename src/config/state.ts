@@ -9,7 +9,7 @@ import type { ConfigSource, SkyliteConfig } from './types.js';
  *  - Offline **fails open for cached content** — anything cached already passed
  *    the inclusion ceiling, so showing it (with a banner) is safe.
  *  - Offline **fails closed for staleness** — if the config has not been reachable
- *    for N hours (default 72) the garden locks until it is, so a guardian's pause
+ *    for N hours (default 72) the garden locks until it is, so a sponsor's pause
  *    or list change can't be indefinitely outrun by staying offline.
  */
 

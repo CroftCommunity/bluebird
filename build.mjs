@@ -29,8 +29,9 @@ const version = computeVersion();
 // template uses for the hashed script src (arecipe page-per-destination shape).
 const PAGES = [
   { html: 'index.html', entry: 'src/main.ts', token: '%MAIN_JS%' },
-  { html: 'guardian.html', entry: 'src/guardian.ts', token: '%GUARDIAN_JS%' },
-  { html: 'scrapbook.html', entry: 'src/scrapbook/page.ts', token: '%SCRAPBOOK_JS%' },
+  { html: 'sponsor.html', entry: 'src/sponsor.ts', token: '%SPONSOR_JS%' },
+  { html: 'audit.html', entry: 'src/audit.ts', token: '%AUDIT_JS%' },
+  { html: 'saves.html', entry: 'src/saves/page.ts', token: '%SAVES_JS%' },
   { html: 'help.html', entry: 'src/help.ts', token: '%HELP_JS%' },
 ];
 
@@ -64,7 +65,7 @@ function entryHref(srcEntry) {
 const pageHrefs = Object.fromEntries(PAGES.map((p) => [p.entry, entryHref(p.entry)]));
 
 // Static assets copied verbatim into dist.
-for (const asset of ['manifest.webmanifest', 'styles.css', 'CNAME', 'icons', '.nojekyll']) {
+for (const asset of ['manifest.webmanifest', 'styles.css', 'CNAME', 'icons', '.nojekyll', 'LICENSE']) {
   const from = join(root, asset);
   if (existsSync(from)) {
     cpSync(from, join(dist, asset), { recursive: true });

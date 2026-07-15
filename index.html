@@ -6,9 +6,9 @@
     <!--
       CSP allowlist (build-plan §4): runtime origins are the public AppView
       (feed reads), the Bluesky blob CDN (images), the PLC directory (DID→PDS
-      resolution), and bsky-network PDS hosts (guardian config getRecord). Other
+      resolution), and bsky-network PDS hosts (sponsor config getRecord). Other
       PDS hosts are not statically allowlistable; the local-only config fallback
-      covers guardians off bsky-network. No inline script/style — all 'self'.
+      covers sponsors off bsky-network. No inline script/style — all 'self'.
     -->
     <meta
       http-equiv="Content-Security-Policy"
@@ -44,9 +44,12 @@
       <span class="topbar__moon" aria-hidden="true"></span>
       <h1 class="topbar__wordmark">Skylite</h1>
       <nav class="topbar__nav">
-        <a href="/scrapbook.html">Scrapbook</a>
+        <a href="/saves.html">Saves</a>
         <a href="/help.html">How it works</a>
       </nav>
+      <button type="button" class="topbar__refresh" data-refresh hidden aria-label="Refresh the garden">
+        <span class="topbar__refresh-icon" aria-hidden="true">⟳</span>
+      </button>
       <button type="button" class="topbar__help" data-help-btn>Get help</button>
     </header>
     <main class="garden" data-garden aria-live="polite">

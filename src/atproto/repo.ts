@@ -1,5 +1,5 @@
 // Public, unauthenticated repo reads: resolve a DID to its PDS, then fetch a
-// record with com.atproto.repo.getRecord. This is the transport for the guardian
+// record with com.atproto.repo.getRecord. This is the transport for the sponsor
 // config (build plan §1: "PDS getRecord is a stable public unauthenticated read
 // with a JSON envelope"). No auth, same read-only posture as the garden.
 

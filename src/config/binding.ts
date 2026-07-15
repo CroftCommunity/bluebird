@@ -2,17 +2,17 @@ import type { CachedConfig } from './state.js';
 import type { SkyliteConfig } from './types.js';
 
 /**
- * Device provisioning + local persistence. A child's device is bound once to a
- * guardian's config record (via a provisioning link carrying the guardian DID +
+ * Device provisioning + local persistence. A explorer's device is bound once to a
+ * sponsor's config record (via a provisioning link carrying the sponsor DID +
  * rkey), then remembers it. Also holds the last-good config cache (D5) and the
- * local-only config (D2 fallback for guardians without a Bluesky account).
+ * local-only config (D2 fallback for sponsors without a Bluesky account).
  *
  * All storage access is defensive — private-mode / disabled storage must degrade
  * to "unprovisioned", never throw.
  */
 
 export interface Binding {
-  guardianDid: string;
+  sponsorDid: string;
   rkey: string;
   pdsHost?: string;
 }
@@ -20,20 +20,24 @@ export interface Binding {
 const KEY_BINDING = 'skylite.binding';
 const KEY_CACHE = 'skylite.config.cache';
 const KEY_LOCAL = 'skylite.config.local';
+const KEY_FOLLOWS = 'skylite.follows';
 
-/** Parse provisioning params (?g=<did>&r=<rkey>&pds=<host>) into a Binding. */
+/**
+ * Parse provisioning params (?s=<sponsorDid>&r=<rkey>&pds=<host>) into a Binding.
+ * `g` is accepted as a legacy alias for `s` (links issued before the rename).
+ */
 export function parseProvisioning(params: URLSearchParams): Binding | null {
-  const did = params.get('g')?.trim();
+  const did = (params.get('s') ?? params.get('g'))?.trim();
   if (!did || !did.startsWith('did:')) return null;
   const rkey = params.get('r')?.trim() || 'self';
   const pds = params.get('pds')?.trim();
-  return { guardianDid: did, rkey, ...(pds ? { pdsHost: pds } : {}) };
+  return { sponsorDid: did, rkey, ...(pds ? { pdsHost: pds } : {}) };
 }
 
-/** Build a provisioning URL a guardian can send to the child's device. */
+/** Build a provisioning URL a sponsor can send to the explorer's device. */
 export function provisioningUrl(origin: string, binding: Binding): string {
   const url = new URL(origin);
-  url.searchParams.set('g', binding.guardianDid);
+  url.searchParams.set('s', binding.sponsorDid);
   if (binding.rkey && binding.rkey !== 'self') url.searchParams.set('r', binding.rkey);
   if (binding.pdsHost) url.searchParams.set('pds', binding.pdsHost);
   return url.toString();
@@ -88,6 +92,17 @@ export function getLocalConfig(): SkyliteConfig | null {
 export function setLocalConfig(c: SkyliteConfig): void {
   writeJson(KEY_LOCAL, c);
 }
+/**
+ * The explorer's device-local follows (My Sky, RUN-DISCOVER D1) — DIDs. The slot
+ * exists now so S5 backup/restore round-trips it; D1 fills it in.
+ */
+export function getLocalFollows(): string[] {
+  const list = readJson<unknown>(KEY_FOLLOWS);
+  return Array.isArray(list) ? list.filter((d): d is string => typeof d === 'string') : [];
+}
+export function setLocalFollows(dids: string[]): void {
+  writeJson(KEY_FOLLOWS, dids);
+}
 
 /**
  * If the current URL carries provisioning params, persist the binding and return
@@ -99,6 +114,7 @@ export function ingestProvisioningFromLocation(loc: Location, history: History):
   const binding = parseProvisioning(url.searchParams);
   if (!binding) return null;
   setBinding(binding);
+  url.searchParams.delete('s');
   url.searchParams.delete('g');
   url.searchParams.delete('r');
   url.searchParams.delete('pds');

@@ -3,8 +3,9 @@ import { segmentRichText, type Segment } from '../feed/richtext.js';
 import { el } from './dom.js';
 import { relativeTime } from './time.js';
 import { showLeaveInterstitial } from './interstitial.js';
-import { clipFromPost } from '../scrapbook/clip.js';
-import { saveClip, removeClip } from '../scrapbook/store.js';
+import { recordEmbedHidden } from '../feed/labels.js';
+import { clipFromPost } from '../saves/clip.js';
+import { saveClip, removeClip } from '../saves/store.js';
 
 function setSaveState(btn: HTMLButtonElement, saved: boolean): void {
   btn.setAttribute('aria-pressed', saved ? 'true' : 'false');
@@ -23,7 +24,7 @@ async function toggleSave(post: PostView, btn: HTMLButtonElement): Promise<void>
   }
 }
 
-/** Reflect which posts are already in the Scrapbook onto their Save buttons. */
+/** Reflect which posts are already in the Saves onto their Save buttons. */
 export function markSavedPosts(root: ParentNode, saved: Set<string>): void {
   root.querySelectorAll<HTMLButtonElement>('[data-save-btn]').forEach((btn) => {
     const uri = btn.getAttribute('data-save-btn');
@@ -108,12 +109,21 @@ function renderExternal(uri: string, title: string, description: string): HTMLEl
 }
 
 function renderQuoted(rec: RecordEmbedView): HTMLElement | null {
+  // Label floor on embeds (§3): a label-bearing quoted record never renders —
+  // the labeled-embed-never-renders invariant. Drop the whole quote block.
+  if (recordEmbedHidden(rec)) return null;
   const author = rec.author;
   const text = rec.value?.text;
   if (!author && !text) return null;
-  return el('div', { class: 'post__quote' }, [
+  // The navigation wall (§3): a quote renders INLINE but is never a door into
+  // casual browsing of the outside author's feed. The author label is inert
+  // text (a <span>, never a link/button) — the only deliberate path in is
+  // follow-to-My-Sky, added in RUN-DISCOVER.
+  return el('div', { class: 'post__quote', 'data-quote': 'true' }, [
     author
-      ? el('span', { class: 'post__quote-author' }, [author.displayName || `@${author.handle}`])
+      ? el('span', { class: 'post__quote-author', 'data-quote-author': 'true' }, [
+          author.displayName || `@${author.handle}`,
+        ])
       : null,
     text ? el('p', { class: 'post__quote-text' }, [text]) : null,
   ]);
@@ -179,14 +189,14 @@ export function renderPost(post: PostView): HTMLElement {
   const embed = renderEmbed(post.embed);
   if (embed) article.append(embed);
 
-  // Save to Scrapbook (D4) — the only "interaction" in the garden, and it's
+  // Save to Saves (D4) — the only "interaction" in the garden, and it's
   // private and local. No like/repost/reply, by construction.
   const saveBtn = el('button', {
     class: 'post__save',
     type: 'button',
     'data-save-btn': post.uri,
     'aria-pressed': 'false',
-    'aria-label': 'Save to scrapbook',
+    'aria-label': 'Save to saves',
   });
   setSaveState(saveBtn, false);
   saveBtn.addEventListener('click', () => void toggleSave(post, saveBtn));

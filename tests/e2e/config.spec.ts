@@ -1,10 +1,10 @@
 import { test, expect, type Page, type Route } from '@playwright/test';
 
-// Hermetic Phase 2: guardian config is served from local fixtures. Covers
+// Hermetic Phase 2: sponsor config is served from local fixtures. Covers
 // provisioning, pause enforcement, channel toggles, and the D5 offline/staleness
 // gates — all without touching the network.
 
-const DID = 'did:plc:testguardian';
+const DID = 'did:plc:testsponsor';
 const PDS = 'https://pds.host.bsky.network'; // within CSP connect-src (*.host.bsky.network)
 
 interface Chan {
@@ -47,7 +47,7 @@ async function mockFeeds(page: Page, feeds: Record<string, unknown>): Promise<vo
   });
 }
 
-test.describe('Phase 2 guardian config (hermetic)', () => {
+test.describe('Phase 2 sponsor config (hermetic)', () => {
   test('pause flag in the record locks the device on poll', async ({ page }) => {
     await mockResolution(page, config(true, [{ id: 'c', name: 'C', enabled: true, accounts: [{ actor: 'a.test' }] }]));
     await mockFeeds(page, {});
@@ -82,7 +82,7 @@ test.describe('Phase 2 guardian config (hermetic)', () => {
 
   test('D5: stale cache while offline locks the garden', async ({ page }) => {
     await page.addInitScript((did) => {
-      localStorage.setItem('skylite.binding', JSON.stringify({ guardianDid: did, rkey: 'self' }));
+      localStorage.setItem('skylite.binding', JSON.stringify({ sponsorDid: did, rkey: 'self' }));
       localStorage.setItem(
         'skylite.config.cache',
         JSON.stringify({
@@ -99,7 +99,7 @@ test.describe('Phase 2 guardian config (hermetic)', () => {
 
   test('D5: fresh cache while offline shows the garden with an offline banner', async ({ page }) => {
     await page.addInitScript((did) => {
-      localStorage.setItem('skylite.binding', JSON.stringify({ guardianDid: did, rkey: 'self' }));
+      localStorage.setItem('skylite.binding', JSON.stringify({ sponsorDid: did, rkey: 'self' }));
       localStorage.setItem(
         'skylite.config.cache',
         JSON.stringify({

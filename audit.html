@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <!--
+      The audit page makes public getAuthorFeed reads only (the AppView) to
+      replay the garden filter; no explorer-device data is ever touched.
+    -->
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data: https://cdn.bsky.app https://*.cdn.bsky.app; connect-src 'self' https://public.api.bsky.app; manifest-src 'self'; base-uri 'none'; object-src 'none'; form-action 'none'; frame-ancestors 'none'"
+    />
+    <title>Skylite — Label audit</title>
+    <meta name="description" content="What the garden hid, and why — a public-data audit of the label floor." />
+    <link rel="stylesheet" href="%STYLES%" />
+    <meta name="theme-color" content="#14164b" />
+    <meta name="color-scheme" content="dark" />
+    <link rel="icon" type="image/png" sizes="192x192" href="/icons/icon-192.png" />
+    <link rel="apple-touch-icon" href="/icons/apple-touch-icon-180.png" />
+  </head>
+  <body class="sponsor-page">
+    <header class="topbar">
+      <span class="topbar__moon" aria-hidden="true"></span>
+      <h1 class="topbar__wordmark">Skylite</h1>
+      <p class="topbar__tagline">Label audit</p>
+    </header>
+    <main class="sponsor" data-audit></main>
+    <footer class="build">
+      <span class="build__label">build</span>
+      <code data-version-stamp>%VERSION%</code>
+    </footer>
+    <script type="module" src="%AUDIT_JS%"></script>
+  </body>
+</html>

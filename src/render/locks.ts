@@ -2,10 +2,10 @@ import { el, clear } from './dom.js';
 
 /**
  * Calm, honest lock screens. Skylite is a safety tool, so these are gentle and
- * age-appropriate — never alarming, never blaming the child.
+ * age-appropriate — never alarming, never blaming the explorer.
  */
 
-/** Pause switch (D2/D5): the guardian has paused the garden. */
+/** Pause switch (D2/D5): the sponsor has paused the garden. */
 export function renderPausedLock(container: HTMLElement): void {
   clear(container);
   container.append(
@@ -34,5 +34,17 @@ export function offlineBanner(): HTMLElement {
   return el('div', { class: 'banner', 'data-offline-banner': 'true' }, [
     el('span', { class: 'banner__glyph', 'aria-hidden': 'true' }, ['✈️']),
     el('span', {}, ["Showing saved posts — you're offline."]),
+  ]);
+}
+
+/**
+ * §3 garden-change notice — a plain, always-on banner naming what the last
+ * config poll changed ("3 accounts were added to your garden."). Honesty toward
+ * the explorer and the sponsor-account-compromise tripwire.
+ */
+export function changeNotice(text: string): HTMLElement {
+  return el('div', { class: 'banner banner--change', 'data-change-notice': 'true' }, [
+    el('span', { class: 'banner__glyph', 'aria-hidden': 'true' }, ['🌱']),
+    el('span', {}, [text]),
   ]);
 }

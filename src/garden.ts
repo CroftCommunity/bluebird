@@ -5,8 +5,8 @@ import { mergeFeeds } from './feed/merge.js';
 import { filterByLabels } from './feed/labels.js';
 import { renderPost, markSavedPosts } from './render/post.js';
 import { el, clear } from './render/dom.js';
-import { offlineBanner } from './render/locks.js';
-import { savedUris } from './scrapbook/store.js';
+import { offlineBanner, changeNotice } from './render/locks.js';
+import { savedUris } from './saves/store.js';
 
 /**
  * Orchestrates the read path: pull each included author's feed, merge them
@@ -18,6 +18,14 @@ export interface GardenOptions {
   client?: AuthorFeedClient;
   perAuthor?: number;
   limit?: number;
+  /**
+   * Whether reposts (whole outside posts, injected by a garden author's act) are
+   * shown. Mirrors config.showReposts (default true). Reposts are label-floored
+   * identically to any other post — the label floor is the only safety layer for
+   * outside authors (§3). Defaults to false at this layer so a caller that omits
+   * it gets the tight inclusion ceiling.
+   */
+  includeReposts?: boolean;
 }
 
 export interface GardenResult {
@@ -45,7 +53,10 @@ export async function fetchGarden(
     else if (entry) failedActors.push(entry.actor);
   }
 
-  const merged = mergeFeeds(feeds, opts.limit !== undefined ? { limit: opts.limit } : {});
+  const merged = mergeFeeds(feeds, {
+    includeReposts: opts.includeReposts ?? false,
+    ...(opts.limit !== undefined ? { limit: opts.limit } : {}),
+  });
   const posts = filterByLabels(merged);
   return { posts, failedActors };
 }
@@ -69,9 +80,10 @@ export function renderGardenInto(
   container: HTMLElement,
   result: GardenResult,
   status: Status,
-  opts: { offline?: boolean } = {},
+  opts: { offline?: boolean; changeNotice?: string } = {},
 ): void {
   clear(container);
+  if (opts.changeNotice) container.append(changeNotice(opts.changeNotice));
   if (opts.offline) container.append(offlineBanner());
   if (status !== 'ready') {
     container.append(el('p', { class: 'garden__status', 'data-garden-status': status }, [statusMessage(status)]));
@@ -86,14 +98,17 @@ export function renderGardenInto(
 export async function mountGarden(
   container: HTMLElement,
   inclusion: InclusionList,
-  opts: GardenOptions & { offline?: boolean } = {},
+  opts: GardenOptions & { offline?: boolean; changeNotice?: string } = {},
 ): Promise<void> {
   renderGardenInto(container, { posts: [], failedActors: [] }, 'loading');
   try {
     const result = await fetchGarden(inclusion, opts);
     const status: Status =
       result.posts.length > 0 ? 'ready' : result.failedActors.length > 0 ? 'error' : 'empty';
-    renderGardenInto(container, result, status, { offline: opts.offline ?? false });
+    renderGardenInto(container, result, status, {
+      offline: opts.offline ?? false,
+      ...(opts.changeNotice ? { changeNotice: opts.changeNotice } : {}),
+    });
     if (status === 'ready') void savedUris().then((set) => markSavedPosts(container, set));
   } catch {
     renderGardenInto(container, { posts: [], failedActors: [] }, 'error');

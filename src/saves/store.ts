@@ -1,13 +1,13 @@
 import type { Clip } from './clip.js';
 
 /**
- * IndexedDB-backed Scrapbook store (D4). Local only — survives offline, lost if
+ * IndexedDB-backed Saves store (D4). Local only — survives offline, lost if
  * the PWA is deleted (the UI says so; anti-decoy stance). All methods degrade
  * gracefully to empty/no-op if IndexedDB is unavailable, so nothing here can
- * throw into the child's UI.
+ * throw into the explorer's UI.
  */
 
-const DB_NAME = 'skylite-scrapbook';
+const DB_NAME = 'skylite-saves';
 const STORE = 'clips';
 const VERSION = 1;
 

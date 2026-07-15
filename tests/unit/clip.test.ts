@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { clipFromPost } from '../../src/scrapbook/clip.js';
+import { clipFromPost } from '../../src/saves/clip.js';
 import type { PostView } from '../../src/atproto/types.js';
 
 function post(extra: Partial<PostView> = {}): PostView {

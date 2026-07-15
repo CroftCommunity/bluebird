@@ -3,8 +3,9 @@ import { DEV_INCLUSION } from '../feed/inclusion.js';
 import { RepoClient } from '../atproto/repo.js';
 import { SKYLITE_CONFIG_NSID } from './types.js';
 import type { SkyliteConfig } from './types.js';
-import { parseConfig } from './parse.js';
+import { parseConfig, newExplorerConfig } from './parse.js';
 import { effectiveInclusion } from './inclusion.js';
+import { diffInclusion, hasChanges, type InclusionChange } from './diff.js';
 import {
   getBinding,
   getCachedConfig,
@@ -13,9 +14,9 @@ import {
   type Binding,
 } from './binding.js';
 import {
+  DEFAULT_STALE_HOURS,
   resolveLocalGate,
   resolvePdsGate,
-  type CachedConfig,
   type Gate,
   type PollResult,
 } from './state.js';
@@ -36,14 +37,18 @@ export interface ProviderDeps {
 export interface ResolvedGarden {
   gate: Gate;
   inclusion: InclusionEntry[];
+  /** §3 garden-change transparency: what this poll changed vs. the last one. */
+  changes?: InclusionChange;
 }
 
 /** Wrap the Phase-1 dev inclusion list as a config for the unprovisioned demo. */
 export function devConfig(): SkyliteConfig {
   return {
-    version: 1,
-    paused: false,
-    updatedAt: '',
+    ...newExplorerConfig('Skylite demo'),
+    // The public demo keeps the tightest possible ceiling — only the included
+    // accounts, no injected outside reposts. The showReposts switch itself
+    // defaults true for real explorers (§2); this is just the demo's choice.
+    showReposts: false,
     channels: [
       { id: 'dev', name: 'Skylite demo', enabled: true, accounts: DEV_INCLUSION.entries.map((e) => ({ actor: e.actor, displayName: e.displayName })) },
     ],
@@ -56,9 +61,9 @@ function inclusionFor(gate: Gate): InclusionEntry[] {
 
 async function pollPds(repo: RepoClient, binding: Binding): Promise<PollResult> {
   try {
-    const pdsHost = binding.pdsHost ?? (await repo.resolvePds(binding.guardianDid));
+    const pdsHost = binding.pdsHost ?? (await repo.resolvePds(binding.sponsorDid));
     const rec = await repo.getRecord(pdsHost, {
-      repo: binding.guardianDid,
+      repo: binding.sponsorDid,
       collection: SKYLITE_CONFIG_NSID,
       rkey: binding.rkey,
     });
@@ -75,13 +80,23 @@ export async function resolveGarden(deps: ProviderDeps = {}): Promise<ResolvedGa
 
   if (binding) {
     const repo = deps.repo ?? new RepoClient();
+    // Read the prior cache BEFORE the poll overwrites it, to diff the garden.
+    const prior = getCachedConfig();
     const poll = await pollPds(repo, binding);
+    let changes: InclusionChange | undefined;
     if (poll.status === 'ok') {
-      const cache: CachedConfig = { config: poll.config, fetchedAt: now };
-      setCachedConfig(cache);
+      if (prior) {
+        const diff = diffInclusion(effectiveInclusion(prior.config), effectiveInclusion(poll.config));
+        if (hasChanges(diff)) changes = diff;
+      }
+      setCachedConfig({ config: poll.config, fetchedAt: now });
     }
-    const gate = resolvePdsGate(poll, getCachedConfig(), now, deps.staleHours);
-    return { gate, inclusion: inclusionFor(gate) };
+    const cached = getCachedConfig();
+    // Per-explorer staleness window (§2, default 72h). Prefer an explicit dep,
+    // else the freshest config we hold (poll result was just cached above).
+    const staleHours = deps.staleHours ?? cached?.config.staleHours ?? DEFAULT_STALE_HOURS;
+    const gate = resolvePdsGate(poll, cached, now, staleHours);
+    return { gate, inclusion: inclusionFor(gate), ...(changes ? { changes } : {}) };
   }
 
   const local = getLocalConfig();

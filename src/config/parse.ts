@@ -1,8 +1,21 @@
-import type { SkyliteAccount, SkyliteChannel, SkyliteConfig, SkyliteHelp } from './types.js';
+import type {
+  SkyliteAccount,
+  SkyliteApprovedFeed,
+  SkyliteChannel,
+  SkyliteConfig,
+  SkyliteFriend,
+  SkyliteHelp,
+  Skin,
+} from './types.js';
+import { CONFIG_DEFAULTS, SKYLITE_CONFIG_VERSION } from './types.js';
 
 // Defensive parsing of an untrusted config record. The record comes off a public
-// PDS read (or local import) and must never be trusted structurally — a
-// malformed field should degrade gracefully, never throw into the child's UI.
+// PDS read (or local import) and must never be trusted structurally — a malformed
+// field degrades to its default, never throws into the explorer's UI.
+//
+// Applying CONFIG_DEFAULTS for every missing field IS the v1->v2 migration: a
+// legacy single-explorer record (paused + channels + help, no switches) parses into
+// the canonical two-switch shape with localOnly=true, skin=simple, etc.
 
 function isObj(v: unknown): v is Record<string, unknown> {
   return typeof v === 'object' && v !== null;
@@ -30,26 +43,24 @@ function parseChannel(v: unknown): SkyliteChannel | null {
   };
 }
 
-/**
- * Parse an unknown value into a SkyliteConfig, or return null if it is not
- * recognizably a config. Unknown/extra fields are ignored; bad channels/accounts
- * are dropped rather than failing the whole record.
- */
-export function parseConfig(v: unknown): SkyliteConfig | null {
-  if (!isObj(v)) return null;
-  if (typeof v.paused !== 'boolean') return null;
-  const version = typeof v.version === 'number' && v.version >= 1 ? v.version : 1;
-  const channels = Array.isArray(v.channels)
-    ? v.channels.map(parseChannel).filter((c): c is SkyliteChannel => c !== null)
-    : [];
-  const help = parseHelp(v.help);
+function parseFriend(v: unknown): SkyliteFriend | null {
+  if (!isObj(v) || typeof v.did !== 'string' || !v.did.startsWith('did:')) return null;
   return {
-    version,
-    paused: v.paused,
-    updatedAt: typeof v.updatedAt === 'string' ? v.updatedAt : '',
-    channels,
-    ...(help ? { help } : {}),
+    did: v.did.trim(),
+    ...(typeof v.displayName === 'string' && v.displayName.trim() ? { displayName: v.displayName } : {}),
   };
+}
+
+function parseApprovedFeed(v: unknown): SkyliteApprovedFeed | null {
+  if (!isObj(v) || typeof v.uri !== 'string' || v.uri.trim() === '') return null;
+  return {
+    uri: v.uri.trim(),
+    name: typeof v.name === 'string' && v.name.trim() ? v.name : v.uri.trim(),
+  };
+}
+
+function parseSkin(v: unknown): Skin {
+  return v === 'full' ? 'full' : 'simple';
 }
 
 function parseHelp(v: unknown): SkyliteHelp | null {
@@ -58,4 +69,68 @@ function parseHelp(v: unknown): SkyliteHelp | null {
   if (typeof v.contactName === 'string' && v.contactName.trim()) help.contactName = v.contactName;
   if (typeof v.contactEmail === 'string' && v.contactEmail.trim()) help.contactEmail = v.contactEmail;
   return help.contactName || help.contactEmail ? help : null;
+}
+
+/**
+ * Parse an unknown value into a canonical SkyliteConfig, or return null if it is
+ * not recognizably a config. Both v1 (legacy) and v2 records parse here: missing
+ * switches fall back to CONFIG_DEFAULTS. The only structural requirement is a
+ * boolean `paused` (present in every version) OR the presence of `channels`.
+ */
+export function parseConfig(v: unknown): SkyliteConfig | null {
+  if (!isObj(v)) return null;
+  // A config is recognizable if it has the pause switch or a channels array.
+  const looksLikeConfig = typeof v.paused === 'boolean' || Array.isArray(v.channels);
+  if (!looksLikeConfig) return null;
+
+  const version = typeof v.version === 'number' && v.version >= 1 ? v.version : SKYLITE_CONFIG_VERSION;
+  const channels = Array.isArray(v.channels)
+    ? v.channels.map(parseChannel).filter((c): c is SkyliteChannel => c !== null)
+    : [];
+  const friends = Array.isArray(v.friends)
+    ? v.friends.map(parseFriend).filter((f): f is SkyliteFriend => f !== null)
+    : [];
+  const approvedFeeds = Array.isArray(v.approvedFeeds)
+    ? v.approvedFeeds.map(parseApprovedFeed).filter((f): f is SkyliteApprovedFeed => f !== null)
+    : [];
+  const help = parseHelp(v.help);
+  const staleHours =
+    typeof v.staleHours === 'number' && v.staleHours > 0 ? v.staleHours : CONFIG_DEFAULTS.staleHours;
+
+  return {
+    version,
+    displayName: typeof v.displayName === 'string' ? v.displayName : '',
+    localOnly: typeof v.localOnly === 'boolean' ? v.localOnly : CONFIG_DEFAULTS.localOnly,
+    skin: parseSkin(v.skin),
+    paused: v.paused === true,
+    updatedAt: typeof v.updatedAt === 'string' ? v.updatedAt : '',
+    channels,
+    friends,
+    showFriendsHearts:
+      typeof v.showFriendsHearts === 'boolean' ? v.showFriendsHearts : CONFIG_DEFAULTS.showFriendsHearts,
+    approvedFeeds,
+    telescope: typeof v.telescope === 'boolean' ? v.telescope : CONFIG_DEFAULTS.telescope,
+    showReposts: typeof v.showReposts === 'boolean' ? v.showReposts : CONFIG_DEFAULTS.showReposts,
+    staleHours,
+    ...(help ? { help } : {}),
+  };
+}
+
+/** A fresh, fully-defaulted config for a new explorer (sponsor authoring). */
+export function newExplorerConfig(displayName = ''): SkyliteConfig {
+  return {
+    version: SKYLITE_CONFIG_VERSION,
+    displayName,
+    localOnly: CONFIG_DEFAULTS.localOnly,
+    skin: CONFIG_DEFAULTS.skin,
+    paused: CONFIG_DEFAULTS.paused,
+    updatedAt: '',
+    channels: [],
+    friends: [],
+    showFriendsHearts: CONFIG_DEFAULTS.showFriendsHearts,
+    approvedFeeds: [],
+    telescope: CONFIG_DEFAULTS.telescope,
+    showReposts: CONFIG_DEFAULTS.showReposts,
+    staleHours: CONFIG_DEFAULTS.staleHours,
+  };
 }

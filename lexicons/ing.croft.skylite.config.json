@@ -1,33 +1,74 @@
 {
   "lexicon": 1,
   "id": "ing.croft.skylite.config",
-  "description": "Guardian-authored control record for a single Skylite child device. Lives in the guardian's own ATProto repo and is read publicly (unauthenticated com.atproto.repo.getRecord) by the child's device. Carries the pause switch, the curated inclusion list grouped into toggleable channels, and a settings version. Contains no data about the child and nothing private.",
+  "description": "Sponsor-authored control record for a single Skylite explorer device. One record per explorer, at a RANDOM record key (never the explorer's name). Lives in the sponsor's own ATProto repo and is read publicly (unauthenticated com.atproto.repo.getRecord) by the explorer's device. Carries the two switches (localOnly, skin), the pause switch, the curated inclusion list grouped into toggleable channels, curated friends, approved discovery feeds, and per-explorer switches. Contains NO age, birthday, school, or location and nothing private. Follows are NOT in this record; they belong to the explorer.",
   "defs": {
     "main": {
       "type": "record",
-      "key": "literal:self",
+      "key": "tid",
       "record": {
         "type": "object",
-        "required": ["version", "paused", "updatedAt", "channels"],
+        "required": ["version", "localOnly", "skin", "paused", "updatedAt", "channels"],
         "properties": {
           "version": {
             "type": "integer",
             "minimum": 1,
-            "description": "Config schema version. 1 for v1."
+            "description": "Config schema version. 2 for the two-switch model."
+          },
+          "displayName": {
+            "type": "string",
+            "maxLength": 120,
+            "description": "The explorer's nickname — never a real or legal name. Guidance is enforced in the sponsor UI; this field is public like the whole record."
+          },
+          "localOnly": {
+            "type": "boolean",
+            "description": "Switch 1. Default true: no account, the device makes only anonymous public GETs. False: the explorer has an account and likes/follows exist."
+          },
+          "skin": {
+            "type": "string",
+            "enum": ["simple", "full"],
+            "description": "Switch 2. Purely cosmetic. No capability ever keys on skin."
           },
           "paused": {
             "type": "boolean",
-            "description": "The pause switch / kill switch. When true the child's device locks the garden on its next successful poll."
+            "description": "The pause switch / kill switch. When true the explorer's device locks the garden on its next successful poll."
           },
           "updatedAt": {
             "type": "string",
             "format": "datetime",
-            "description": "When the guardian last changed this config."
+            "description": "When the sponsor last changed this config."
           },
           "channels": {
             "type": "array",
-            "description": "Named, individually toggleable groupings of accounts. The child's effective inclusion list is the union of accounts across enabled channels.",
+            "description": "Named, individually toggleable groupings of accounts. The explorer's effective inclusion list is the union of accounts across enabled channels.",
             "items": { "type": "ref", "ref": "#channel" }
+          },
+          "friends": {
+            "type": "array",
+            "description": "Reciprocal, sponsor-curated friends (by DID) whose hearts may be shown among friends.",
+            "items": { "type": "ref", "ref": "#friend" }
+          },
+          "showFriendsHearts": {
+            "type": "boolean",
+            "description": "Let a localOnly explorer see friends' hearts via anonymous reads (see-but-not-be-seen). Default false."
+          },
+          "approvedFeeds": {
+            "type": "array",
+            "description": "Approved discovery feeds (Telescope rung 1).",
+            "items": { "type": "ref", "ref": "#approvedFeed" }
+          },
+          "telescope": {
+            "type": "boolean",
+            "description": "Open search (Telescope rung 2). Default false."
+          },
+          "showReposts": {
+            "type": "boolean",
+            "description": "Whether reposts (whole outside posts) are injected into the garden. Default true."
+          },
+          "staleHours": {
+            "type": "integer",
+            "minimum": 1,
+            "description": "Hours the config may be unreachable before the garden locks. Default 72."
           },
           "help": {
             "type": "ref",
@@ -60,7 +101,7 @@
         },
         "enabled": {
           "type": "boolean",
-          "description": "Whether this channel is currently shown to the child."
+          "description": "Whether this channel is currently shown to the explorer."
         },
         "accounts": {
           "type": "array",
@@ -80,8 +121,24 @@
         "displayName": {
           "type": "string",
           "maxLength": 120,
-          "description": "Optional guardian-facing label."
+          "description": "Optional sponsor-facing label."
         }
+      }
+    },
+    "friend": {
+      "type": "object",
+      "required": ["did"],
+      "properties": {
+        "did": { "type": "string", "format": "did", "description": "The friend's DID." },
+        "displayName": { "type": "string", "maxLength": 120, "description": "Optional sponsor-facing label." }
+      }
+    },
+    "approvedFeed": {
+      "type": "object",
+      "required": ["uri", "name"],
+      "properties": {
+        "uri": { "type": "string", "format": "at-uri", "description": "The feed generator's at:// URI." },
+        "name": { "type": "string", "maxLength": 120, "description": "Sponsor-cached display name at approval time." }
       }
     }
   }
