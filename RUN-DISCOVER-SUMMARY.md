@@ -56,6 +56,19 @@ floor, no counts, gated links.
   (read by DID, **no account**); empty state; unfollow in My Sky drops the
   author. `getAuthorFeed` is served from fixtures for both handle and DID actors.
 
+## D1 adjustments (owner-requested, shipped)
+
+- **Friendly names in My Sky:** the author's name is captured at follow time
+  (`did → name` store) so My Sky reads by name — a count-free "In your sky:
+  A, B and C" header, and the inclusion display name — never a raw DID. Falls
+  back to the DID when no name was captured; forgotten on unfollow.
+- **Follow-from-quoted:** the inert quoted/outside author in an embed now carries
+  a follow-to-My-Sky control (the `renderQuoted` navigation-wall path the code
+  always anticipated). It records a device-local follow only — it opens no feed
+  here; the (label-floored) My Sky page reads it. The navigation-wall e2e was
+  tightened, not loosened: still zero anchors and the ONLY button is that follow
+  control, which navigates nowhere.
+
 ## Staged — the rest of RUN-DISCOVER
 
 - **D2 persisted-follow verify-in-run:** the `followActor` record write path is
@@ -63,10 +76,4 @@ floor, no counts, gated links.
   (can't be hermetic) — same verify-in-run status as likes.
 - **Telescope (approved feeds):** the config already carries `approvedFeeds` and
   the `telescope` switch; the discovery-rung UI that browses approved feeds under
-  the navigation wall is the next slice, not built here.
-- **Follow-to-My-Sky from a quoted/outside author:** the follow control currently
-  rides the post action row (garden authors). Surfacing it on an inert quoted
-  author (the `renderQuoted` navigation-wall path) is a small follow-up.
-- **My Sky display names:** My Sky addresses follows by DID (the feed hydrates
-  the author per post); persisting a friendly name at follow time is optional
-  polish.
+  the navigation wall is the next slice.

@@ -79,9 +79,34 @@ export function setLikeState(btn: HTMLButtonElement, liked: boolean): void {
  * (capabilities.canFollowLocally is always true): device-local always, and a
  * persisted follow record too when the explorer has an account. No counts.
  */
+/** Who a follow control acts on: the actor DID plus the best name we can show. */
+export interface FollowTarget {
+  did: string;
+  name: string;
+}
+
 export interface FollowUi {
   isFollowed: (did: string) => boolean;
-  onToggle: (did: string, btn: HTMLButtonElement) => void;
+  onToggle: (target: FollowTarget, btn: HTMLButtonElement) => void;
+}
+
+/** A person's display name for a follow control (display name, else @handle). */
+function personName(p: { displayName?: string; handle: string }): string {
+  return p.displayName?.trim() || `@${p.handle}`;
+}
+
+/** Build a follow toggle button for an actor. Shared by garden posts and the
+ *  quoted-author navigation-wall path (§D1 follow-from-quoted). */
+function followButton(target: FollowTarget, follow: FollowUi, extraClass = ''): HTMLButtonElement {
+  const btn = el('button', {
+    class: `post__follow${extraClass ? ' ' + extraClass : ''}`,
+    type: 'button',
+    'data-follow-btn': target.did,
+    'aria-label': `Follow ${target.name} into My Sky`,
+  });
+  setFollowState(btn, follow.isFollowed(target.did));
+  btn.addEventListener('click', () => follow.onToggle(target, btn));
+  return btn;
 }
 
 export function setFollowState(btn: HTMLButtonElement, followed: boolean): void {
@@ -207,7 +232,7 @@ function renderExternal(uri: string, title: string, description: string): HTMLEl
   return card;
 }
 
-function renderQuoted(rec: RecordEmbedView): HTMLElement | null {
+function renderQuoted(rec: RecordEmbedView, follow?: FollowUi): HTMLElement | null {
   // Label floor on embeds (§3): a label-bearing quoted record never renders —
   // the labeled-embed-never-renders invariant. Drop the whole quote block.
   if (recordEmbedHidden(rec)) return null;
@@ -216,19 +241,30 @@ function renderQuoted(rec: RecordEmbedView): HTMLElement | null {
   if (!author && !text) return null;
   // The navigation wall (§3): a quote renders INLINE but is never a door into
   // casual browsing of the outside author's feed. The author label is inert
-  // text (a <span>, never a link/button) — the only deliberate path in is
-  // follow-to-My-Sky, added in RUN-DISCOVER.
-  return el('div', { class: 'post__quote', 'data-quote': 'true' }, [
-    author
-      ? el('span', { class: 'post__quote-author', 'data-quote-author': 'true' }, [
-          author.displayName || `@${author.handle}`,
+  // text (a <span>, never a link/button) — the ONLY deliberate path in is
+  // follow-to-My-Sky (§D1): a follow control that adds the quoted author to the
+  // explorer's own My Sky. It opens no feed here; it only records a device-local
+  // follow, which the (label-floored) My Sky page then reads.
+  const authorRow =
+    author && author.did && follow
+      ? el('div', { class: 'post__quote-authorrow' }, [
+          el('span', { class: 'post__quote-author', 'data-quote-author': 'true' }, [personName(author)]),
+          followButton(
+            { did: author.did, name: personName(author) },
+            follow,
+            'post__follow--quote',
+          ),
         ])
-      : null,
+      : author
+        ? el('span', { class: 'post__quote-author', 'data-quote-author': 'true' }, [personName(author)])
+        : null;
+  return el('div', { class: 'post__quote', 'data-quote': 'true' }, [
+    authorRow,
     text ? el('p', { class: 'post__quote-text' }, [text]) : null,
   ]);
 }
 
-function renderEmbed(embed: EmbedView | undefined): Node | null {
+function renderEmbed(embed: EmbedView | undefined, follow?: FollowUi): Node | null {
   if (!embed) return null;
   switch (embed.$type) {
     case 'app.bsky.embed.images#view':
@@ -243,14 +279,14 @@ function renderEmbed(embed: EmbedView | undefined): Node | null {
     }
     case 'app.bsky.embed.record#view': {
       const r = embed as Extract<EmbedView, { $type: 'app.bsky.embed.record#view' }>;
-      return renderQuoted(r.record);
+      return renderQuoted(r.record, follow);
     }
     case 'app.bsky.embed.recordWithMedia#view': {
       const rm = embed as Extract<EmbedView, { $type: 'app.bsky.embed.recordWithMedia#view' }>;
       const frag = document.createDocumentFragment();
-      const media = renderEmbed(rm.media);
+      const media = renderEmbed(rm.media, follow);
       if (media) frag.append(media);
-      const quoted = renderQuoted(rm.record.record);
+      const quoted = renderQuoted(rm.record.record, follow);
       if (quoted) frag.append(quoted);
       return frag.childNodes.length ? frag : null;
     }
@@ -288,7 +324,7 @@ export function renderPost(
   const text = renderText(post);
   if (text) article.append(text);
 
-  const embed = renderEmbed(post.embed);
+  const embed = renderEmbed(post.embed, opts.follow);
   if (embed) article.append(embed);
 
   // B2 friends' hearts — a relational, count-free "Liked by <friends>" line.
@@ -318,16 +354,7 @@ export function renderPost(
   // D1 follow — add the author to My Sky. Every mode (device-local always).
   const follow = opts.follow;
   if (follow) {
-    const did = post.author.did;
-    const followBtn = el('button', {
-      class: 'post__follow',
-      type: 'button',
-      'data-follow-btn': did,
-      'aria-label': 'Follow into My Sky',
-    });
-    setFollowState(followBtn, follow.isFollowed(did));
-    followBtn.addEventListener('click', () => follow.onToggle(did, followBtn));
-    actions.push(followBtn);
+    actions.push(followButton({ did: post.author.did, name: personName(post.author) }, follow));
   }
 
   // B1/B2 heart — only for an account-holding explorer; no counts.

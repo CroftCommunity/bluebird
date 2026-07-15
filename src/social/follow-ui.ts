@@ -1,5 +1,5 @@
 import { followActor, unfollowActor, isFollowedLocally } from './follows.js';
-import { setFollowState, type FollowUi } from '../render/post.js';
+import { setFollowState, type FollowUi, type FollowTarget } from '../render/post.js';
 import type { OAuthSession } from '../atproto/oauth/client.js';
 
 /**
@@ -17,17 +17,18 @@ export interface FollowUiDeps {
   onChange?: () => void;
 }
 
-async function toggle(did: string, btn: HTMLButtonElement, deps: FollowUiDeps): Promise<void> {
+async function toggle(target: FollowTarget, btn: HTMLButtonElement, deps: FollowUiDeps): Promise<void> {
   const wasFollowed = btn.getAttribute('aria-pressed') === 'true';
   setFollowState(btn, !wasFollowed); // optimistic
   const session = deps.getSession();
   try {
     if (wasFollowed) {
-      const next = await unfollowActor(did, session);
+      const next = await unfollowActor(target.did, session);
       if (next) deps.setSession(next);
     } else {
       const now = deps.nowIso ? deps.nowIso() : new Date().toISOString();
-      const next = await followActor(did, session, now);
+      // Capture the author's name at follow time so My Sky reads by name.
+      const next = await followActor(target.did, session, now, { name: target.name });
       if (next) deps.setSession(next);
     }
     deps.onChange?.();
@@ -39,6 +40,6 @@ async function toggle(did: string, btn: HTMLButtonElement, deps: FollowUiDeps): 
 export function makeFollowUi(deps: FollowUiDeps): FollowUi {
   return {
     isFollowed: (did) => isFollowedLocally(did),
-    onToggle: (did, btn) => void toggle(did, btn, deps),
+    onToggle: (target, btn) => void toggle(target, btn, deps),
   };
 }

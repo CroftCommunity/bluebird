@@ -46,9 +46,12 @@ test.describe('§3 embed invariants (hermetic)', () => {
     await expect(author).toHaveText(/Outside Author/);
     expect(await author.evaluate((el) => el.tagName)).toBe('SPAN');
 
-    // No element anywhere inside the quote is a link or button (no door out to
-    // the outside author's feed). The only deliberate path in is follow-to-My-Sky.
+    // No anchor anywhere in the quote, and the ONLY button is the deliberate
+    // follow-to-My-Sky control (§D1) — which navigates nowhere: it records a
+    // device-local follow, never a door into the outside author's feed.
     await expect(quote.locator('a')).toHaveCount(0);
-    await expect(quote.locator('button')).toHaveCount(0);
+    const buttons = quote.locator('button');
+    await expect(buttons).toHaveCount(1);
+    await expect(buttons.first()).toHaveAttribute('data-follow-btn', /.+/);
   });
 });

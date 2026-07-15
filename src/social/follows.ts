@@ -67,6 +67,51 @@ export function followRecordUriFor(did: string): string | undefined {
   return readIndex()[did];
 }
 
+// --- friendly names: did -> display name (captured at follow time) ------------
+// The follow set + records are keyed by DID (the lexicon subject), but My Sky
+// shows people by NAME. We remember the author's name when the explorer follows,
+// so My Sky reads as "AT Protocol", not "did:plc:…", even before a feed hydrates.
+
+const KEY_FOLLOW_NAMES = 'skylite.follow.names';
+
+function readNames(): Record<string, string> {
+  try {
+    const raw = globalThis.localStorage?.getItem(KEY_FOLLOW_NAMES);
+    const parsed = raw ? (JSON.parse(raw) as unknown) : null;
+    return parsed && typeof parsed === 'object' ? (parsed as Record<string, string>) : {};
+  } catch {
+    return {};
+  }
+}
+
+function writeNames(names: Record<string, string>): void {
+  try {
+    globalThis.localStorage?.setItem(KEY_FOLLOW_NAMES, JSON.stringify(names));
+  } catch {
+    /* storage disabled — non-fatal */
+  }
+}
+
+export function followNameFor(did: string): string | undefined {
+  return readNames()[did];
+}
+
+function rememberFollowName(did: string, name: string): void {
+  if (name.trim()) writeNames({ ...readNames(), [did]: name.trim() });
+}
+
+function forgetFollowName(did: string): void {
+  const names = readNames();
+  delete names[did];
+  writeNames(names);
+}
+
+/** The people in My Sky, each with the best name we hold (falls back to the DID). */
+export function followNames(): { did: string; name: string }[] {
+  const names = readNames();
+  return getLocalFollows().map((did) => ({ did, name: names[did] ?? did }));
+}
+
 function rememberFollowRecord(did: string, uri: string): void {
   writeIndex({ ...readIndex(), [did]: uri });
 }
@@ -88,9 +133,11 @@ export async function followActor(
   did: string,
   session: OAuthSession | null,
   nowIso: string,
-  fetchImpl?: typeof fetch,
+  opts: { name?: string; fetchImpl?: typeof fetch } = {},
 ): Promise<OAuthSession | null> {
+  const { name, fetchImpl } = opts;
   addLocalFollow(did);
+  if (name) rememberFollowName(did, name);
   if (!session) return session;
   const fresh = await ensureFresh(session, fetchImpl);
   const { session: next, uri } = await createRecord(
@@ -112,6 +159,7 @@ export async function unfollowActor(
   fetchImpl?: typeof fetch,
 ): Promise<OAuthSession | null> {
   removeLocalFollow(did);
+  forgetFollowName(did);
   const recordUri = followRecordUriFor(did);
   if (!session || !recordUri) return session;
   const fresh = await ensureFresh(session, fetchImpl);
