@@ -20,6 +20,7 @@ export interface Binding {
 const KEY_BINDING = 'skylite.binding';
 const KEY_CACHE = 'skylite.config.cache';
 const KEY_LOCAL = 'skylite.config.local';
+const KEY_FOLLOWS = 'skylite.follows';
 
 /**
  * Parse provisioning params (?s=<sponsorDid>&r=<rkey>&pds=<host>) into a Binding.
@@ -90,6 +91,17 @@ export function getLocalConfig(): SkyliteConfig | null {
 }
 export function setLocalConfig(c: SkyliteConfig): void {
   writeJson(KEY_LOCAL, c);
+}
+/**
+ * The explorer's device-local follows (My Sky, RUN-DISCOVER D1) — DIDs. The slot
+ * exists now so S5 backup/restore round-trips it; D1 fills it in.
+ */
+export function getLocalFollows(): string[] {
+  const list = readJson<unknown>(KEY_FOLLOWS);
+  return Array.isArray(list) ? list.filter((d): d is string => typeof d === 'string') : [];
+}
+export function setLocalFollows(dids: string[]): void {
+  writeJson(KEY_FOLLOWS, dids);
 }
 
 /**

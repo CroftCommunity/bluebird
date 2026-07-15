@@ -3,6 +3,7 @@ import { el, clear } from '../render/dom.js';
 import { registerServiceWorker } from '../pwa/register.js';
 import type { Clip } from './clip.js';
 import { listClips, saveClip, removeClip } from './store.js';
+import { exportBackup, importBackupFile } from '../backup/ui.js';
 
 /**
  * The Saves page (D4): the explorer's private, on-device saves. Each clip keeps
@@ -56,11 +57,74 @@ async function render(): Promise<void> {
   root.append(list);
 }
 
+/**
+ * S5 backup & restore controls. Lives outside `root` so a list re-render never
+ * wipes it. Export goes to the OS share sheet or a download; import restores a
+ * chosen file. Copy is plain about what the file holds and that, in localOnly
+ * mode, it is the only copy.
+ */
+function renderBackup(): HTMLElement {
+  const msg = el('span', { class: 'g-msg', 'data-backup-msg': 'true', role: 'status' });
+
+  const exportBtn = el('button', { type: 'button', class: 'g-btn g-btn--primary', 'data-backup-export': 'true' }, [
+    'Back up my saves',
+  ]);
+  exportBtn.addEventListener('click', () => {
+    msg.textContent = 'Preparing your backup…';
+    void exportBackup()
+      .then((how) => {
+        msg.textContent = how === 'shared' ? 'Shared your backup.' : 'Saved a backup file to your device.';
+      })
+      .catch(() => {
+        msg.textContent = "Couldn't make a backup just now.";
+      });
+  });
+
+  const fileInput = el('input', {
+    type: 'file',
+    accept: 'application/json,.json',
+    class: 'g-visually-hidden',
+    'data-backup-import': 'true',
+  });
+  fileInput.addEventListener('change', () => {
+    const file = fileInput.files?.[0];
+    if (!file) return;
+    msg.textContent = 'Restoring…';
+    void importBackupFile(file)
+      .then((s) => {
+        msg.textContent = `Restored ${s.saves} saved ${s.saves === 1 ? 'post' : 'posts'}.`;
+        void render();
+      })
+      .catch((e: unknown) => {
+        msg.textContent = e instanceof Error ? e.message : 'That file is not a Skylite backup.';
+      })
+      .finally(() => {
+        fileInput.value = '';
+      });
+  });
+
+  const importBtn = el('button', { type: 'button', class: 'g-btn g-btn--ghost', 'data-backup-restore': 'true' }, [
+    'Restore from a backup',
+  ]);
+  importBtn.addEventListener('click', () => fileInput.click());
+
+  return el('section', { class: 'saves-backup', 'data-backup': 'true' }, [
+    el('h2', { class: 'saves-backup__title' }, ['Back up & restore']),
+    el('p', { class: 'g-hint' }, [
+      'A backup is one file with your saved posts and notes, your follows, and this device’s settings. ',
+      'Saves live only on this device — while “on this device only” is on, a backup is the only copy. Keep it somewhere safe.',
+    ]),
+    el('div', { class: 'g-row' }, [exportBtn, importBtn, fileInput]),
+    msg,
+  ]);
+}
+
 function boot(): void {
   const stamp = document.querySelector<HTMLElement>('[data-version-stamp]');
   if (stamp) stamp.textContent = skyliteVersion();
   registerServiceWorker();
   root = document.querySelector<HTMLElement>('[data-saves]');
+  if (root) root.before(renderBackup());
   void render();
 }
 
