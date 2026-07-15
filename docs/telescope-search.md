@@ -115,9 +115,17 @@ discovery author-bounding, and device-local search-history logging with a visibl
 "your grown-up can see these" recent-searches list. The search box is hidden when
 `tier: 'off'`.
 
+**Encrypted archive — built through phase 2:** the sealed box (#19), the sponsor
+key vault (#20), and the config exchange + sealed-record write (this phase):
+`search.auditPubKeyJwk` is published in the config; when present and the explorer
+has an account, each attempt is sealed to it and written to
+`ing.croft.skylite.search` in the explorer's own repo (best-effort, mirroring
+likes/follows). Retention is 30 days / 500. **Remaining (phase 3):** the sponsor
+audit-view decrypt section + the explorer-DID linkage on the roster.
+
 **Verify-in-run / staged:** live `searchPosts`/`getFeed` against the real AppView;
-account-synced or remote search history (today the log is on-device — a sponsor
-sees it on the device or, later, via the account path).
+the real PDS record write + WebAuthn-PRF unlock (need a session / authenticator);
+repo-side retention pruning (today the 30-day/500 policy prunes the on-device log).
 
 ## What this is NOT (staged)
 

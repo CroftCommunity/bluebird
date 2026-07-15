@@ -13,7 +13,9 @@ export interface SearchEntry {
 }
 
 const KEY = 'skylite.search.history';
-const CAP = 50;
+/** Retention: the device keeps the last 30 days, up to 500 entries. */
+const MAX_ENTRIES = 500;
+const MAX_AGE_MS = 30 * 24 * 60 * 60 * 1000;
 
 export function getSearchHistory(): SearchEntry[] {
   try {
@@ -29,10 +31,14 @@ export function getSearchHistory(): SearchEntry[] {
   }
 }
 
-/** Record a search attempt (newest first, capped). `at` is passed in for testability. */
+/** Drop entries older than 30 days, then keep the 500 newest. */
+export function pruneHistory(entries: SearchEntry[], now: number): SearchEntry[] {
+  return entries.filter((e) => now - e.at <= MAX_AGE_MS).slice(0, MAX_ENTRIES);
+}
+
+/** Record a search attempt (newest first, 30-day / 500 retention). `at` for testability. */
 export function logSearch(q: string, blocked: boolean, at: number): void {
-  const entry: SearchEntry = { q, at, blocked };
-  const next = [entry, ...getSearchHistory()].slice(0, CAP);
+  const next = pruneHistory([{ q, at, blocked }, ...getSearchHistory()], at);
   try {
     globalThis.localStorage?.setItem(KEY, JSON.stringify(next));
   } catch {
