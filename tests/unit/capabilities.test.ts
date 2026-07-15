@@ -27,7 +27,7 @@ describe('capabilities-key-on-localOnly-never-skin', () => {
       ...newExplorerConfig('a'),
       localOnly: false,
       showFriendsHearts: true,
-      telescope: true,
+      search: { ...newExplorerConfig('a').search, tier: 'open' },
       showReposts: false,
     };
     expect(capabilities(withSkin(base, 'simple'))).toEqual(capabilities(withSkin(base, 'full')));

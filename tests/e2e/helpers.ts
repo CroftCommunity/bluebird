@@ -15,7 +15,7 @@ export async function seedExplorer(
     friends: { did: string; displayName?: string }[];
     showFriendsHearts: boolean;
     approvedFeeds: { uri: string; name: string }[];
-    telescope: boolean;
+    search: Record<string, unknown>;
   }> = {},
 ): Promise<void> {
   const config = {
@@ -36,7 +36,14 @@ export async function seedExplorer(
     friends: overrides.friends ?? [],
     showFriendsHearts: overrides.showFriendsHearts ?? false,
     approvedFeeds: overrides.approvedFeeds ?? [],
-    telescope: overrides.telescope ?? false,
+    search: overrides.search ?? {
+      tier: 'off',
+      useAllowlist: false,
+      allowlistExtra: [],
+      useBlocklist: true,
+      blocklistExtra: [],
+      logHistory: true,
+    },
     showReposts: overrides.showReposts ?? false,
     staleHours: 72,
   };
