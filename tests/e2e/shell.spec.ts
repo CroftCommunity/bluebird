@@ -8,10 +8,10 @@ test.describe('Phase 0 shell', () => {
     await page.route('**/xrpc/app.bsky.feed.getAuthorFeed*', (r) => r.fulfill({ json: { feed: [] } }));
   });
 
-  test('renders the wordmark and tagline', async ({ page }) => {
+  test('renders the wordmark and topbar nav', async ({ page }) => {
     await page.goto('/');
     await expect(page.getByRole('heading', { name: 'Skylite' })).toBeVisible();
-    await expect(page.getByText('A window to the stars')).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Get help' })).toBeVisible();
   });
 
   test('stamps a real build version into the page', async ({ page }) => {

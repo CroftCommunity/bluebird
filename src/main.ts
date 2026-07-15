@@ -1,10 +1,16 @@
 import { skyliteVersion } from './version.js';
 import { mountGarden } from './garden.js';
 import { renderPausedLock, renderStaleLock } from './render/locks.js';
-import { ingestProvisioningFromLocation } from './config/binding.js';
+import { ingestProvisioningFromLocation, getCachedConfig, getLocalConfig } from './config/binding.js';
 import { resolveGarden } from './config/provider.js';
 import { registerServiceWorker } from './pwa/register.js';
 import { installBackgroundLock } from './lock/backgroundLock.js';
+import { showHelpHandoff, type HelpContact } from './care/handoff.js';
+
+/** The trusted-adult contact from whatever config we last knew (any gate state). */
+function helpContact(): HelpContact {
+  return (getCachedConfig()?.config ?? getLocalConfig())?.help ?? {};
+}
 
 /**
  * Phase 2 entry point. Ingests any provisioning link, resolves which config
@@ -19,6 +25,10 @@ async function start(): Promise<void> {
 
   registerServiceWorker();
   installBackgroundLock();
+
+  // "Something's wrong" handoff — reachable from the topbar in every state.
+  const helpBtn = document.querySelector<HTMLElement>('[data-help-btn]');
+  if (helpBtn) helpBtn.addEventListener('click', () => showHelpHandoff(helpContact()));
 
   const container = document.querySelector<HTMLElement>('[data-garden]');
   if (!container) return;

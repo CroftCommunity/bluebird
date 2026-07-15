@@ -116,6 +116,17 @@ function render(): void {
   const pinInput = el('input', { type: 'password', inputmode: 'numeric', autocomplete: 'off', class: 'g-input', placeholder: '••••' });
   const pinMsg = el('span', { class: 'g-msg' });
 
+  const helpName = el('input', { type: 'text', class: 'g-input', placeholder: 'e.g. Mum' });
+  helpName.value = config.help?.contactName ?? '';
+  helpName.addEventListener('input', () => {
+    config.help = { ...config.help, contactName: helpName.value };
+  });
+  const helpEmail = el('input', { type: 'email', class: 'g-input', placeholder: 'name@example.com' });
+  helpEmail.value = config.help?.contactEmail ?? '';
+  helpEmail.addEventListener('input', () => {
+    config.help = { ...config.help, contactEmail: helpEmail.value };
+  });
+
   root.append(
     el('div', { class: 'g-card' }, [
       el('h2', {}, ['1 · Pause switch']),
@@ -170,7 +181,14 @@ function render(): void {
     ]),
 
     el('div', { class: 'g-card' }, [
-      el('h2', {}, ['5 · Device lock (PIN)']),
+      el('h2', {}, ["5 · Trusted grown-up (for the “Get help” button)"]),
+      el('p', { class: 'g-hint' }, ['Optional. When set, the child’s “Get help” button starts a message to this person. Nothing is sent automatically — it just opens a pre-filled email.']),
+      labeled('Name', helpName),
+      labeled('Email', helpEmail),
+    ]),
+
+    el('div', { class: 'g-card' }, [
+      el('h2', {}, ['6 · Device lock (PIN)']),
       el('p', { class: 'g-hint' }, ['Optional. When set, Skylite on this device asks for the PIN after it has been in the background. It is a local lock only — no account, stored as a one-way hash.']),
       el('p', { class: 'g-msg', 'data-pin-status': 'true' }, [hasPin() ? 'A PIN is set on this device.' : 'No PIN set.']),
       labeled('New PIN (4+ digits)', pinInput),

@@ -25,12 +25,21 @@ function computeVersion() {
 
 const version = computeVersion();
 
+// Each destination page: its root HTML template, TS entry, and the token the
+// template uses for the hashed script src (arecipe page-per-destination shape).
+const PAGES = [
+  { html: 'index.html', entry: 'src/main.ts', token: '%MAIN_JS%' },
+  { html: 'guardian.html', entry: 'src/guardian.ts', token: '%GUARDIAN_JS%' },
+  { html: 'scrapbook.html', entry: 'src/scrapbook/page.ts', token: '%SCRAPBOOK_JS%' },
+  { html: 'help.html', entry: 'src/help.ts', token: '%HELP_JS%' },
+];
+
 rmSync(dist, { recursive: true, force: true });
 mkdirSync(dist, { recursive: true });
 
 // Bundle the app; hashed filenames let the service worker (Phase 3) cache-bust.
 const result = await esbuild.build({
-  entryPoints: [join(root, 'src', 'main.ts'), join(root, 'src', 'guardian.ts')],
+  entryPoints: PAGES.map((p) => join(root, p.entry)),
   bundle: true,
   format: 'esm',
   target: 'es2022',
@@ -52,8 +61,7 @@ function entryHref(srcEntry) {
   if (!out) throw new Error(`build: could not locate bundled entry for ${srcEntry}`);
   return '/' + out.replace(/^dist\//, '');
 }
-const mainJsHref = entryHref('src/main.ts');
-const guardianJsHref = entryHref('src/guardian.ts');
+const pageHrefs = Object.fromEntries(PAGES.map((p) => [p.entry, entryHref(p.entry)]));
 
 // Static assets copied verbatim into dist.
 for (const asset of ['manifest.webmanifest', 'styles.css', 'CNAME', 'icons', '.nojekyll']) {
@@ -71,20 +79,17 @@ function renderPage(templateName, replacements) {
   for (const [token, value] of Object.entries(replacements)) html = html.replaceAll(token, value);
   writeFileSync(join(dist, templateName), html);
 }
-renderPage('index.html', { '%MAIN_JS%': mainJsHref });
-renderPage('guardian.html', { '%GUARDIAN_JS%': guardianJsHref });
+for (const p of PAGES) renderPage(p.html, { [p.token]: pageHrefs[p.entry] });
 
 // Generate the service worker with a precache manifest keyed to this exact build
 // (IDEAS.md §4: skipWaiting + clients.claim + a visible version stamp, so a
 // child always runs the build we shipped — a stale SW can strand safety patches).
 const precache = [
   '/',
-  '/index.html',
-  '/guardian.html',
+  ...PAGES.map((p) => `/${p.html}`),
   '/manifest.webmanifest',
   stylesHref,
-  mainJsHref,
-  guardianJsHref,
+  ...PAGES.map((p) => pageHrefs[p.entry]),
   '/icons/icon-192.png',
   '/icons/icon-512.png',
   '/icons/apple-touch-icon-180.png',
@@ -162,4 +167,4 @@ self.addEventListener('fetch', (event) => {
 `;
 writeFileSync(join(dist, 'sw.js'), sw);
 
-console.log(`built ${version} -> dist/  (index: ${mainJsHref}, guardian: ${guardianJsHref}, sw + precache ${precache.length})`);
+console.log(`built ${version} -> dist/  (${PAGES.length} pages, sw + precache ${precache.length})`);

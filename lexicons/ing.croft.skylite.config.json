@@ -28,8 +28,20 @@
             "type": "array",
             "description": "Named, individually toggleable groupings of accounts. The child's effective inclusion list is the union of accounts across enabled channels.",
             "items": { "type": "ref", "ref": "#channel" }
+          },
+          "help": {
+            "type": "ref",
+            "ref": "#help",
+            "description": "Optional trusted-adult contact for the out-of-band 'something's wrong' handoff."
           }
         }
+      }
+    },
+    "help": {
+      "type": "object",
+      "properties": {
+        "contactName": { "type": "string", "maxLength": 120 },
+        "contactEmail": { "type": "string", "maxLength": 254 }
       }
     },
     "channel": {
