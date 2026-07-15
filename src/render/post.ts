@@ -73,6 +73,23 @@ export function setLikeState(btn: HTMLButtonElement, liked: boolean): void {
   btn.classList.toggle('post__like--on', liked);
 }
 
+/**
+ * §D1 follow control. Follows the post's AUTHOR into My Sky — the explorer's own
+ * pick, distinct from the sponsor's garden. Available in every mode
+ * (capabilities.canFollowLocally is always true): device-local always, and a
+ * persisted follow record too when the explorer has an account. No counts.
+ */
+export interface FollowUi {
+  isFollowed: (did: string) => boolean;
+  onToggle: (did: string, btn: HTMLButtonElement) => void;
+}
+
+export function setFollowState(btn: HTMLButtonElement, followed: boolean): void {
+  btn.setAttribute('aria-pressed', followed ? 'true' : 'false');
+  btn.textContent = followed ? '✓ In My Sky' : '＋ Follow';
+  btn.classList.toggle('post__follow--on', followed);
+}
+
 /** §B3 share control — available in every mode (no account needed). Shares the
  *  Skylite permalink; falls back to copying the link, with gentle inline feedback. */
 function shareFeedback(outcome: ShareOutcome): string {
@@ -244,7 +261,7 @@ function renderEmbed(embed: EmbedView | undefined): Node | null {
 
 export function renderPost(
   post: PostView,
-  opts: { like?: LikeUi; friendHearts?: Map<string, string[]> } = {},
+  opts: { like?: LikeUi; follow?: FollowUi; friendHearts?: Map<string, string[]> } = {},
 ): HTMLElement {
   const author = post.author;
   const name = author.displayName?.trim() || `@${author.handle}`;
@@ -297,6 +314,21 @@ export function renderPost(
   saveBtn.addEventListener('click', () => void toggleSave(post, saveBtn));
 
   const actions: HTMLElement[] = [saveBtn, shareButton(post)];
+
+  // D1 follow — add the author to My Sky. Every mode (device-local always).
+  const follow = opts.follow;
+  if (follow) {
+    const did = post.author.did;
+    const followBtn = el('button', {
+      class: 'post__follow',
+      type: 'button',
+      'data-follow-btn': did,
+      'aria-label': 'Follow into My Sky',
+    });
+    setFollowState(followBtn, follow.isFollowed(did));
+    followBtn.addEventListener('click', () => follow.onToggle(did, followBtn));
+    actions.push(followBtn);
+  }
 
   // B1/B2 heart — only for an account-holding explorer; no counts.
   const like = opts.like;

@@ -19,6 +19,7 @@ import {
   persistExplorerSession,
 } from './social/explorer-auth.js';
 import { makeLikeUi, explorerSignInBanner } from './social/like-ui.js';
+import { makeFollowUi } from './social/follow-ui.js';
 import { fetchFriendHearts } from './social/friends-hearts.js';
 import { installTheme } from './brand/theme.js';
 
@@ -72,6 +73,16 @@ async function openGarden(container: HTMLElement): Promise<void> {
           })
         : undefined;
 
+      // D1 follow — add an author to My Sky. Available in every mode (device-local
+      // always; persisted when the explorer has an account). Never gates on skin.
+      const follow = makeFollowUi({
+        getSession: () => explorerSession,
+        setSession: (s) => {
+          explorerSession = s;
+          persistExplorerSession(s);
+        },
+      });
+
       // B2 friends' hearts — the see-but-not-be-seen lurk read. When the sponsor
       // enabled it (or the explorer has an account), read friends' PUBLIC likes
       // anonymously — NO session, NO credential — and annotate the garden by
@@ -89,6 +100,7 @@ async function openGarden(container: HTMLElement): Promise<void> {
           includeReposts: gate.config.showReposts,
           ...(notice ? { changeNotice: notice } : {}),
           ...(like ? { like } : {}),
+          follow,
           ...(friendHearts ? { friendHearts } : {}),
         },
       );

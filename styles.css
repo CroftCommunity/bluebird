@@ -674,6 +674,24 @@ body {
   cursor: pointer;
 }
 
+/* §D1 follow button — adds the author to My Sky; available in every mode. */
+.post__follow {
+  background: var(--card-soft);
+  color: var(--ink);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  padding: 0.5rem 1rem;
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.post__follow--on {
+  background: var(--accent);
+  color: var(--accent-ink);
+  border-color: var(--accent);
+}
+
 /* --- saves --- */
 .clip__list {
   display: flex;
