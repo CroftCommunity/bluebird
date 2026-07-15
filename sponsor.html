@@ -3,12 +3,18 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <!--
+      The sponsor dashboard is pure local authoring — no network at all — so
+      connect-src is locked to 'self'. (OAuth publish to the sponsor's PDS, a
+      verify-in-run item, will need the entryway + PDS + PLC directory added
+      here; app passwords are never used.)
+    -->
     <meta
       http-equiv="Content-Security-Policy"
-      content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src 'self' https://bsky.social https://*.host.bsky.network; manifest-src 'self'; base-uri 'none'; object-src 'none'; form-action 'none'; frame-ancestors 'none'"
+      content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src 'self'; manifest-src 'self'; base-uri 'none'; object-src 'none'; form-action 'none'; frame-ancestors 'none'"
     />
     <title>Skylite — Sponsor setup</title>
-    <meta name="description" content="Set up and control a explorer's Skylite garden." />
+    <meta name="description" content="Set up and control an explorer's Skylite garden." />
     <link rel="stylesheet" href="%STYLES%" />
     <meta name="theme-color" content="#14164b" />
     <meta name="color-scheme" content="dark" />

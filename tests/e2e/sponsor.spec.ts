@@ -1,77 +1,74 @@
 import { test, expect } from '@playwright/test';
 
-// Hermetic: the sponsor page is pure local authoring — no network at all.
+// Hermetic: the sponsor dashboard is pure local authoring — no network at all.
 
-test.describe('Sponsor setup page', () => {
-  test('renders the setup sections', async ({ page }) => {
+test.describe('Sponsor multi-explorer dashboard (S2)', () => {
+  test('shows the security checklist and a sponsor identity section', async ({ page }) => {
     await page.goto('/sponsor.html');
-    await expect(page.getByRole('heading', { name: '1 · Pause switch' })).toBeVisible();
-    await expect(page.getByRole('heading', { name: '2 · Channels' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'First, secure your account' })).toBeVisible();
+    await expect(page.getByText('Turn on email 2FA')).toBeVisible();
+    await expect(page.getByText('revoke device sessions')).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'You (the sponsor)' })).toBeVisible();
+    // No app-password fields anywhere.
+    await expect(page.getByPlaceholder(/app password/i)).toHaveCount(0);
   });
 
-  test('editing an account is reflected live in the exported JSON', async ({ page }) => {
+  test('creates two explorers side by side, each with its own random rkey', async ({ page }) => {
     await page.goto('/sponsor.html');
-    const firstActor = page.locator('.g-account .g-input').first();
-    await firstActor.fill('nasa.gov');
-    const json = page.locator('textarea.g-json[readonly]');
-    await expect(json).toHaveValue(/nasa\.gov/);
-    await expect(json).toHaveValue(/"paused": false/);
+    await page.locator('[data-add-explorer]').click();
+    await page.locator('[data-add-explorer]').click();
+    const cards = page.locator('[data-explorer]');
+    await expect(cards).toHaveCount(2);
+    const rkeys = await cards.evaluateAll((els) => els.map((e) => e.getAttribute('data-explorer')));
+    // Random, distinct, TID-shaped (13 base32-sortable chars).
+    expect(rkeys[0]).not.toBe(rkeys[1]);
+    for (const k of rkeys) expect(k).toMatch(/^[234567a-z]{13}$/);
   });
 
-  test('toggling pause updates the exported record', async ({ page }) => {
+  test('editing a nickname updates the card and the exported record body', async ({ page }) => {
     await page.goto('/sponsor.html');
-    await page.locator('.g-toggle--big input[type="checkbox"]').check();
-    await expect(page.locator('textarea.g-json[readonly]')).toHaveValue(/"paused": true/);
+    await page.locator('[data-add-explorer]').click();
+    const card = page.locator('[data-explorer]').first();
+    await card.getByPlaceholder('e.g. Little Bear').fill('Comet');
+    await expect(card.locator('[data-explorer-name]')).toHaveText('Comet');
+    await expect(card.locator('[data-record-json]')).toHaveValue(/"displayName": "Comet"/);
+    // The two switches default correctly in the record.
+    await expect(card.locator('[data-record-json]')).toHaveValue(/"localOnly": true/);
+    await expect(card.locator('[data-record-json]')).toHaveValue(/"skin": "simple"/);
   });
 
-  test('makes a provisioning link from a DID', async ({ page }) => {
+  test('a per-explorer provisioning link carries the sponsor DID and the record rkey', async ({ page }) => {
     await page.goto('/sponsor.html');
-    await page.getByPlaceholder('did:plc:… (sponsor DID)').fill('did:plc:abc123');
-    await page.getByRole('button', { name: 'Make device link' }).click();
-    const link = page.locator('input.g-input[readonly]');
-    await expect(link).toHaveValue(/[?&]s=did%3Aplc%3Aabc123/);
+    await page.getByPlaceholder('did:plc:… (your sponsor DID)').fill('did:plc:sponsor1');
+    await page.locator('[data-apply-identity]').click();
+    await page.locator('[data-add-explorer]').click();
+
+    const card = page.locator('[data-explorer]').first();
+    const rkey = await card.getAttribute('data-explorer');
+    const link = await card.locator('[data-provision-link]').inputValue();
+    expect(link).toContain('s=did%3Aplc%3Asponsor1');
+    expect(link).toContain(`r=${rkey}`);
   });
 
-  test('saves config to this device', async ({ page }) => {
+  test('explorers persist across reloads and can be removed', async ({ page }) => {
     await page.goto('/sponsor.html');
-    await page.locator('.g-account .g-input').first().fill('nasa.gov');
-    await page.getByRole('button', { name: 'Save to this device' }).click();
-    const stored = await page.evaluate(() => localStorage.getItem('skylite.config.local'));
-    expect(stored).toContain('nasa.gov');
+    await page.locator('[data-add-explorer]').click();
+    await expect(page.locator('[data-explorer]')).toHaveCount(1);
+
+    await page.reload();
+    await expect(page.locator('[data-explorer]')).toHaveCount(1);
+
+    page.on('dialog', (d) => void d.accept());
+    await page.locator('[data-remove-explorer]').click();
+    await expect(page.locator('[data-explorer]')).toHaveCount(0);
+    await expect(page.locator('[data-no-explorers]')).toBeVisible();
   });
 
-  test('signs in and publishes the config to the PDS (mocked)', async ({ page }) => {
-    // Mock the atproto write endpoints — no real network / credentials.
-    await page.route('**/xrpc/com.atproto.server.createSession', (r) =>
-      r.fulfill({
-        json: {
-          did: 'did:plc:sponsor',
-          handle: 'sponsor.test',
-          accessJwt: 'a',
-          refreshJwt: 'r',
-          didDoc: {
-            id: 'did:plc:sponsor',
-            service: [{ id: '#atproto_pds', type: 'AtprotoPersonalDataServer', serviceEndpoint: 'https://pds.host.bsky.network' }],
-          },
-        },
-      }),
-    );
-    let putBody: unknown;
-    await page.route('**/xrpc/com.atproto.repo.putRecord', (r) => {
-      putBody = r.request().postDataJSON();
-      return r.fulfill({ json: { uri: 'at://did:plc:sponsor/ing.croft.skylite.config/self', cid: 'c' } });
-    });
-
+  test('flipping the localOnly switch is reflected in the record', async ({ page }) => {
     await page.goto('/sponsor.html');
-    await page.getByPlaceholder('handle or email').fill('sponsor.test');
-    await page.getByPlaceholder('app password (xxxx-xxxx-xxxx-xxxx)').fill('abcd-efgh-ijkl-mnop');
-    await page.getByRole('button', { name: 'Sign in & publish' }).click();
-
-    await expect(page.locator('[data-publish-msg]')).toContainText('Published as @sponsor.test');
-    // The publish fills the sponsor DID for the device link.
-    await expect(page.getByPlaceholder('did:plc:… (sponsor DID)')).toHaveValue('did:plc:sponsor');
-    // The password field is cleared after publishing.
-    await expect(page.getByPlaceholder('app password (xxxx-xxxx-xxxx-xxxx)')).toHaveValue('');
-    expect((putBody as { collection: string }).collection).toBe('ing.croft.skylite.config');
+    await page.locator('[data-add-explorer]').click();
+    const card = page.locator('[data-explorer]').first();
+    await card.locator('.g-toggle--big input[type="checkbox"]').first().uncheck(); // localOnly off
+    await expect(card.locator('[data-record-json]')).toHaveValue(/"localOnly": false/);
   });
 });

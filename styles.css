@@ -1132,3 +1132,47 @@ body {
 .pull--loading .pull__spinner {
   animation: skylite-spin 0.8s linear infinite;
 }
+
+/* --- S2 sponsor multi-explorer dashboard --- */
+.g-checklist .g-toggle,
+.g-switches .g-toggle {
+  display: flex;
+  gap: 0.5rem;
+  align-items: baseline;
+  margin: 0.5rem 0;
+}
+
+.g-explorers {
+  max-width: 46rem;
+  margin: 0 auto;
+}
+
+.g-explorers__head,
+.g-explorer__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.6rem;
+  flex-wrap: wrap;
+}
+
+.g-explorer {
+  border-left: 4px solid var(--moon);
+}
+
+.g-explorer__head h2 {
+  margin: 0;
+}
+
+.g-switches {
+  padding: 0.6rem 0;
+  border-top: 1px solid var(--sky-indigo-soft);
+  border-bottom: 1px solid var(--sky-indigo-soft);
+  margin: 0.6rem 0;
+}
+
+.g-provision code {
+  font-family: ui-monospace, "SF Mono", Menlo, monospace;
+  color: var(--moon);
+  word-break: break-all;
+}
