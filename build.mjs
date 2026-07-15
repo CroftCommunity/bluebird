@@ -32,6 +32,7 @@ const PAGES = [
   { html: 'sponsor.html', entry: 'src/sponsor.ts', token: '%SPONSOR_JS%' },
   { html: 'audit.html', entry: 'src/audit.ts', token: '%AUDIT_JS%' },
   { html: 'saves.html', entry: 'src/saves/page.ts', token: '%SAVES_JS%' },
+  { html: 'post.html', entry: 'src/post/page.ts', token: '%POST_JS%' },
   { html: 'help.html', entry: 'src/help.ts', token: '%HELP_JS%' },
 ];
 
