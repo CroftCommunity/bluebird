@@ -128,10 +128,16 @@ discovery author-bounding, and device-local search-history logging with a visibl
   sponsor device, and decrypts to a per-explorer timeline (query · when · blocked
   · tier). A record it can't open is skipped; a wrong passphrase reads nothing.
 
+The **WebAuthn-PRF** path (passkey / PIN / biometric) is now wired into the
+sponsor UI (enable-with-passkey; audit-unlock-with-passkey, no passphrase) and
+covered end-to-end by a Playwright **virtual-authenticator** e2e — enable → seal
+→ unlock → decrypt.
+
 **Verify-in-run / staged:** live `searchPosts`/`getFeed`/`resolveHandle`/PDS reads
-and the real PDS record write against the live network; the WebAuthn-PRF unlock
-(needs an authenticator — the passphrase path is fully tested); repo-side
-retention pruning (today the 30-day/500 policy prunes the on-device log).
+and the real PDS record write against the live network + OAuth consent; real
+biometric hardware (the virtual authenticator covers the PRF flow; the passphrase
+path is fully hermetic); repo-side retention pruning (today the 30-day/500 policy
+prunes the on-device log).
 
 ## What this is NOT (staged)
 
