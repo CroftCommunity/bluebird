@@ -181,6 +181,39 @@ and the living HTML.)
 - **Landing copy** — remains `[confirm before publish — every line]` except the
   hero tagline, which is now ruled (Phase 0). Laid out, never rewritten.
 
+## Live verification (2026-07-16, post-merge)
+
+The hermetic gate is fully mocked by design. A follow-up pass exercised the real
+network to close what could be closed here. This environment's egress is the
+important caveat: server-side `fetch` (Node / curl) traverses the managed proxy,
+but headless **Chromium connections are reset** by the egress policy, so the
+browser-driven live tier could not run from here at all.
+
+**Live-validated server-side** (the app's OWN client code against the real
+network — not mocks):
+
+- `getAuthorFeed` — the garden read path over the dev inclusion accounts; the
+  label floor runs on live data.
+- `getFeed` — Telescope rung-1 discovery against a real public feed generator.
+- `resolveHandle → resolvePds → listRecords(ing.croft.skylite.search)` — the whole
+  audit-read fetch chain, end to end against a real PDS (empty sealed collection,
+  as expected — no writes were made).
+- Query-gating policy incl. the Phase 2 categories (`nsfw` → `{blocked, adult}`).
+
+**Could NOT be validated in this environment** (external / infra, not Skylite
+code):
+
+- `searchPosts` — returns **403 from BunnyCDN's WAF** (the CDN fronting
+  `public.api.bsky.app`) for this datacenter egress IP; other AppView endpoints
+  pass the same path. Re-run `npm run e2e:live` from a normal machine to confirm.
+- The in-browser live tier (`npm run e2e:live`) — sandbox egress resets
+  headless-Chromium TLS; not runnable here without disabling TLS verification
+  (which the proxy rules forbid).
+- Live **writes** (config publish, likes/follows, sealed-search records) and the
+  **OAuth consent** flow — Skylite is OAuth-only (no password path), so these need
+  a real browser + device and create real public records; left for a manual
+  device pass.
+
 ## Freeze / preservation confirmation
 
 `CONCEPT.md`, `IDEAS.md`, `PROVENANCE.md`, `seeds/`, and all prior
