@@ -59,8 +59,9 @@ test.describe('§Telescope search', () => {
 
     await expect(page.locator('[data-search-msg]')).toContainText("isn't allowed");
     expect(searched).toBe(false); // never hit the network
-    // Logged (blocked) in the visible recent-searches.
+    // Logged (blocked) in the visible recent-searches — the role reads "sponsor".
     await expect(page.locator('[data-search-history]')).toContainText('blocked');
+    await expect(page.locator('[data-search-history] summary')).toHaveText('Recent searches (your sponsor can see these)');
   });
 
   test('allowlist on: only approved topics run', async ({ page }) => {

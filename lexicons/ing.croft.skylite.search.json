@@ -1,7 +1,7 @@
 {
   "lexicon": 1,
   "id": "ing.croft.skylite.search",
-  "description": "An encrypted record of one Telescope search attempt, written into the explorer's OWN repo when the sponsor turned on the search-history archive (search.auditPubKeyJwk present) and the explorer has an account. The whole payload — query, whether it was blocked, and the tier — is sealed to the sponsor's audit public key (a libsodium-style sealed box: ECDH P-256 → HKDF → AES-256-GCM; see docs/telescope-search.md). On the public AppView it is inert; only the sponsor's private key can open it. `createdAt` is the only cleartext field (when a search happened, never what). Retention: the device keeps the last 30 days / 500.",
+  "description": "An encrypted record of one Telescope search attempt, written into the explorer's OWN repo when the sponsor turned on the search-history archive (search.auditPubKeyJwk present) and the explorer has an account. The whole payload — query, whether it was blocked, the tier, and the precise time (at, epoch ms) — is sealed to the sponsor's audit public key (a libsodium-style sealed box: ECDH P-256 → HKDF → AES-256-GCM; see docs/telescope-search.md). On the public AppView it is inert; only the sponsor's private key can open it. `createdAt` is the only cleartext field and is rounded to the UTC DAY (00:00:00Z): a public reader learns that a search happened on a day, never the precise time (sealed as at) nor what. Retention: the device keeps the last 30 days / 500.",
   "defs": {
     "main": {
       "type": "record",
@@ -18,7 +18,7 @@
           "createdAt": {
             "type": "string",
             "format": "datetime",
-            "description": "When the search happened (the only cleartext field)."
+            "description": "The UTC DAY the search happened, rounded to 00:00:00Z — the only cleartext field. The precise time rides sealed inside `enc` as `at`."
           }
         }
       }

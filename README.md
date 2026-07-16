@@ -1,5 +1,49 @@
 # Skylite
 
+## Skylite today
+
+**A butterfly garden window.** Skylite is a calm, read-first window into Bluesky,
+grown for you by someone who cares about you — no algorithm, no ads, no counts, no
+strangers. A **sponsor** tends a garden (the set of voices an **explorer** sees);
+the explorer reads, saves, and shares what they find. One switch matters, "on this
+device only": while it is on, nothing about the explorer ever leaves the device.
+
+- **Live:** https://skylite.croft.ing (an installable PWA).
+- **Roles:** *sponsor* (tends the garden, holds the account) and *explorer* (reads
+  it). The vocabulary is role-based, never age-based.
+
+### How it's built
+
+Skylite is built in **runs** — small, self-contained slices of work, each landed
+test-first (TDD) behind a hermetic gate (`lint · typecheck · unit · build · e2e`,
+never touching the network) and written up in a `RUN-*-SUMMARY.md` at the repo
+root. The run summaries are a historical record and are not rewritten after the
+fact. `npm test` runs the full gate; `npm run build` emits the static PWA to a dist/
+folder.
+
+### Where the docs live
+
+| Where | What |
+|---|---|
+| [`docs/telescope-search.md`](docs/telescope-search.md) | Telescope search — the trust-gradient model + the encrypted search-history archive. |
+| [`docs/custody.md`](docs/custody.md) | Account custody & re-authentication — the spectrum and current posture. |
+| [`docs/git-verified-commits.md`](docs/git-verified-commits.md) | Keeping commits attributed & verified when an agent and a human share a repo. |
+| [`lexicons/`](lexicons/) | The `ing.croft.skylite.*` record schemas (config, like, follow, search). |
+| `RUN-*-SUMMARY.md` | One per run — what shipped, red-to-green evidence, what it left open. |
+
+The idea-capture documents (`CONCEPT.md`, `IDEAS.md`, `PROVENANCE.md`, `seeds/`)
+are the frozen historical seed the project grew from; they are preserved verbatim
+and not updated as the code evolves.
+
+---
+
+## Historical seed — the original idea-capture README
+
+> Preserved verbatim below as historical record (it predates the runs above). It
+> reflects the project's initial framing and vocabulary, not the current product.
+
+# Skylite
+
 A read-only, non-algorithmic window into Bluesky/ATProto built for kids —
 **Skylite** = Blue*sky* + *lite*. Strip out posting, replying, and DMs and you
 remove most of the open-social child-safety surface while still offering a curated

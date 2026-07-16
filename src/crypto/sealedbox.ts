@@ -7,8 +7,11 @@
 // Scheme (all WebCrypto, no dependencies — same P-256 primitive as OAuth):
 //   ephemeral ECDH(P-256) → HKDF-SHA256 → AES-256-GCM.
 // A fresh ephemeral keypair per message means two seals of the same text differ,
-// and forward secrecy against a future ephemeral-key leak. A wrong private key or
-// any tampering fails the GCM auth tag (open() throws).
+// and that a leaked ephemeral key exposes ONLY its own message — never the rest of
+// the archive. The real key is the sponsor's PRIVATE key: compromise it and the
+// ENTIRE archive decrypts. That is exactly what the vault (WebAuthn PRF /
+// passphrase wrap, src/crypto/vault.ts) protects. A wrong private key or any
+// tampering fails the GCM auth tag (open() throws).
 
 function subtle(): SubtleCrypto {
   const c = globalThis.crypto;

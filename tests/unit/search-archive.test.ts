@@ -26,16 +26,33 @@ describe('history retention (30 days / 500)', () => {
 describe('sealed search record', () => {
   it('seals the whole payload; only the sponsor vault can read it', async () => {
     const vault = await createVault({ method: 'passphrase', passphrase: 'pw' });
-    const payload = { q: 'volcanoes', blocked: false, tier: 'open' };
+    const payload = { q: 'volcanoes', blocked: false, tier: 'open', at: 1_752_570_000_000 };
     const record = await buildSealedSearchRecord(payload, vault.publicKeyJwk, '2026-07-15T00:00:00.000Z');
 
     expect(record.$type).toBe(SEARCH_NSID);
-    expect(record.createdAt).toBe('2026-07-15T00:00:00.000Z'); // only cleartext field
     // The query text never appears in the record.
     expect(JSON.stringify(record)).not.toContain('volcanoes');
 
     // The sponsor unlocks the vault and opens the sealed payload.
     const priv = await unlockVault(vault, { passphrase: 'pw' });
     expect(JSON.parse(await open(record.enc, priv))).toEqual(payload);
+  });
+
+  it('Phase 1: the record createdAt is rounded to the UTC DAY; the precise time rides INSIDE the sealed payload', async () => {
+    const vault = await createVault({ method: 'passphrase', passphrase: 'pw' });
+    const preciseMs = Date.parse('2026-07-15T13:45:30.000Z');
+    const record = await buildSealedSearchRecord(
+      { q: 'volcanoes', blocked: false, tier: 'open', at: preciseMs },
+      vault.publicKeyJwk,
+      '2026-07-15T13:45:30.000Z',
+    );
+
+    // The cleartext createdAt exposes only the day — never the precise time.
+    expect(record.createdAt).toBe('2026-07-15T00:00:00.000Z');
+
+    // The precise instant is sealed, readable only with the private key.
+    const priv = await unlockVault(vault, { passphrase: 'pw' });
+    const opened = JSON.parse(await open(record.enc, priv)) as { at: number };
+    expect(opened.at).toBe(preciseMs);
   });
 });

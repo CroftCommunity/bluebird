@@ -10,9 +10,18 @@ describe('queryAllowed — blocklist (negative gate)', () => {
     expect(queryAllowed('how to draw a dog', S())).toEqual({ ok: true });
   });
 
-  it('honors sponsor-added blocked words', () => {
+  it('honors sponsor-added blocked words (custom category)', () => {
     const s = S({ blocklistExtra: ['fortnite'] });
-    expect(queryAllowed('fortnite skins', s)).toEqual({ ok: false, reason: 'blocked' });
+    expect(queryAllowed('fortnite skins', s)).toEqual({ ok: false, reason: 'blocked', category: 'custom' });
+  });
+
+  it('Phase 2: a blocked query carries the category of the term it hit', () => {
+    // self-harm gets its own programmatic group — the care-aware refusal keys on it.
+    expect(queryAllowed('how to commit suicide', S())).toEqual({ ok: false, reason: 'blocked', category: 'self-harm' });
+    expect(queryAllowed('thoughts of self harm', S())).toEqual({ ok: false, reason: 'blocked', category: 'self-harm' });
+    // other categories are labelled but keep the generic refusal.
+    expect(queryAllowed('nsfw', S())).toEqual({ ok: false, reason: 'blocked', category: 'adult' });
+    expect(queryAllowed('gore', S())).toEqual({ ok: false, reason: 'blocked', category: 'violence' });
   });
 
   it('can be turned off (open except allowlist)', () => {
@@ -46,7 +55,7 @@ describe('queryAllowed — both gates active', () => {
     const s = S({ useAllowlist: true, useBlocklist: true, allowlistExtra: ['bodies'] });
     // matches allowlist but hits the blocklist substring ("sex" in "bodies"? no) —
     // use an explicit blocked term to prove precedence:
-    expect(queryAllowed('space nsfw', s)).toEqual({ ok: false, reason: 'blocked' }); // blocked wins
+    expect(queryAllowed('space nsfw', s)).toEqual({ ok: false, reason: 'blocked', category: 'adult' }); // blocked wins
     expect(queryAllowed('space rockets', s)).toEqual({ ok: true }); // allowed + clean
     expect(queryAllowed('random topic', s)).toEqual({ ok: false, reason: 'not-allowlisted' });
   });

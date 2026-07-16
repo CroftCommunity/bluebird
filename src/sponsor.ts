@@ -288,7 +288,7 @@ function encryptedArchiveControl(config: SkyliteConfig, save: () => void): HTMLE
     pass.setAttribute('data-archive-pass', 'true');
     wrap.append(
       el('p', { class: 'g-hint' }, [
-        'Store search history ENCRYPTED so no one but you can read it — not even on the public network. Lock the key to this device with a passphrase, or this device’s passkey / fingerprint.',
+        'Store search history with bank-grade encryption (the same AES-256 + P-256 as banking apps) so no one but you can read it — not even on the public network. Lock the key to this device with a passphrase, or this device’s passkey / fingerprint.',
       ]),
       field('Passphrase for the history key', pass),
       button('Turn on with a passphrase', 'g-btn g-btn--primary', () => {

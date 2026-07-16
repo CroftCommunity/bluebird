@@ -96,7 +96,7 @@ export function renderLanding(container: HTMLElement): void {
         decoding: 'async',
       }),
       el('h1', { class: 'landing__title' }, [wordmark()]),
-      el('p', { class: 'landing__subtitle' }, ['A window to the stars.']),
+      el('p', { class: 'landing__subtitle' }, ['A butterfly garden window.']),
     ]),
 
     el('p', { class: 'landing__lede' }, [

@@ -16,6 +16,7 @@ export async function seedExplorer(
     showFriendsHearts: boolean;
     approvedFeeds: { uri: string; name: string }[];
     search: Record<string, unknown>;
+    help: { contactName?: string; contactEmail?: string };
   }> = {},
 ): Promise<void> {
   const config = {
@@ -25,6 +26,7 @@ export async function seedExplorer(
     skin: overrides.skin ?? 'simple',
     paused: overrides.paused ?? false,
     updatedAt: '2026-07-15T00:00:00.000Z',
+    ...(overrides.help ? { help: overrides.help } : {}),
     channels: [
       {
         id: 'dev',

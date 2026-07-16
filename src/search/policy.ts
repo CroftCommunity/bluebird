@@ -9,23 +9,30 @@ import type { SkyliteSearch } from '../config/types.js';
  */
 
 /**
- * Seed blocklist — clearly-unsafe query terms a kid-safe search should refuse.
- * Modest and category-spanning by intent; a deployment extends it via
- * `search.blocklistExtra`. Substring-matched, so "sexy"/"sexual" are caught by
- * "sex" (and yes, this over-blocks a few innocents — the conservative direction).
+ * The category a blocked term belongs to. `self-harm` is called out on its own
+ * because the refusal for it opens a door (the care-aware handoff, §RUN-TRUEUP
+ * Phase 2) rather than a flat "not available"; `custom` is a sponsor addition.
  */
-export const DEFAULT_BLOCKLIST: readonly string[] = [
-  // adult / sexual
-  'porn', 'sex', 'nude', 'nsfw', 'xxx', 'hentai', 'fetish', 'onlyfans', 'escort',
-  // graphic violence
-  'gore', 'beheading', 'execution', 'massacre',
-  // self-harm
-  'suicide', 'selfharm', 'self harm', 'cutting',
-  // hard drugs
-  'cocaine', 'heroin', 'meth', 'fentanyl',
-  // weapons acquisition
-  'ghost gun', 'buy gun',
-];
+export type BlockCategory = 'adult' | 'violence' | 'self-harm' | 'drugs' | 'weapons' | 'custom';
+
+/**
+ * Seed blocklist, grouped by category — clearly-unsafe query terms a kid-safe
+ * search should refuse. Modest and category-spanning by intent; a deployment
+ * extends it via `search.blocklistExtra`. Substring-matched, so "sexy"/"sexual"
+ * are caught by "sex" (and yes, this over-blocks a few innocents — the
+ * conservative direction). Terms are stored already-normalized (lowercase, single
+ * spaces) so they match the normalized query directly.
+ */
+export const DEFAULT_BLOCKLIST_BY_CATEGORY: Record<Exclude<BlockCategory, 'custom'>, readonly string[]> = {
+  adult: ['porn', 'sex', 'nude', 'nsfw', 'xxx', 'hentai', 'fetish', 'onlyfans', 'escort'],
+  violence: ['gore', 'beheading', 'execution', 'massacre'],
+  'self-harm': ['suicide', 'selfharm', 'self harm', 'cutting'],
+  drugs: ['cocaine', 'heroin', 'meth', 'fentanyl'],
+  weapons: ['ghost gun', 'buy gun'],
+};
+
+/** The flat seed list (all categories), kept for callers that only need the terms. */
+export const DEFAULT_BLOCKLIST: readonly string[] = Object.values(DEFAULT_BLOCKLIST_BY_CATEGORY).flat();
 
 /**
  * Seed topic allowlist — safe subjects a young explorer can search when the
@@ -46,7 +53,8 @@ export const DEFAULT_ALLOWLIST: readonly string[] = [
 
 export type QueryVerdict =
   | { ok: true }
-  | { ok: false; reason: 'blocked' | 'not-allowlisted' | 'empty' };
+  | { ok: false; reason: 'blocked'; category: BlockCategory }
+  | { ok: false; reason: 'not-allowlisted' | 'empty' };
 
 /** Lowercase, strip punctuation to spaces. */
 function normalize(query: string): string {
@@ -68,9 +76,20 @@ export function queryAllowed(query: string, search: SkyliteSearch): QueryVerdict
   if (!norm) return { ok: false, reason: 'empty' };
 
   if (search.useBlocklist) {
-    const block = [...DEFAULT_BLOCKLIST, ...search.blocklistExtra.map(normalize)].filter(Boolean);
-    // Substring match on the normalized query (protective).
-    if (block.some((term) => norm.includes(term))) return { ok: false, reason: 'blocked' };
+    // Categorized seed terms first, then sponsor additions (category: 'custom').
+    const entries: { term: string; category: BlockCategory }[] = [
+      ...Object.entries(DEFAULT_BLOCKLIST_BY_CATEGORY).flatMap(([category, terms]) =>
+        terms.map((term) => ({ term, category: category as BlockCategory })),
+      ),
+      ...search.blocklistExtra
+        .map(normalize)
+        .filter(Boolean)
+        .map((term) => ({ term, category: 'custom' as const })),
+    ];
+    // Substring match on the normalized query (protective); the first hit's
+    // category rides on the verdict so the refusal can be care-aware.
+    const hit = entries.find(({ term }) => norm.includes(term));
+    if (hit) return { ok: false, reason: 'blocked', category: hit.category };
   }
 
   if (search.useAllowlist) {

@@ -13,17 +13,34 @@ import { createRecord, ensureFresh, type OAuthSession } from '../atproto/oauth/c
 
 export const SEARCH_NSID = 'ing.croft.skylite.search';
 
-/** The payload sealed inside each record — "encrypt everything". */
+/**
+ * The payload sealed inside each record — "encrypt everything". The precise
+ * attempt time (`at`, epoch ms) lives INSIDE the ciphertext so that existence,
+ * count, and the calendar day are all a public reader ever learns; the sponsor's
+ * decrypted timeline uses this inner `at` (§RUN-TRUEUP Phase 1).
+ */
 export interface SearchPayload {
   q: string;
   blocked: boolean;
   tier: string;
+  /** Precise attempt time (epoch ms), sealed — never exposed in cleartext. */
+  at: number;
 }
 
 export interface SealedSearchRecord {
   $type?: typeof SEARCH_NSID;
   enc: { epk: JsonWebKey; iv: string; ct: string };
   createdAt: string;
+}
+
+/**
+ * Round an ISO instant DOWN to its UTC calendar day (00:00:00.000Z). The
+ * record-level `createdAt` is only ever day-granular: it leaks that a search
+ * happened on a given day, never the precise time (which rides sealed in `at`).
+ */
+export function toUtcDay(iso: string): string {
+  const d = new Date(iso);
+  return new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate())).toISOString();
 }
 
 /** Build a sealed search record: the whole payload encrypted to the sponsor key. */
@@ -33,7 +50,7 @@ export async function buildSealedSearchRecord(
   createdAtIso: string,
 ): Promise<SealedSearchRecord> {
   const enc = await seal(JSON.stringify(payload), auditPubKeyJwk);
-  return { $type: SEARCH_NSID, enc, createdAt: createdAtIso };
+  return { $type: SEARCH_NSID, enc, createdAt: toUtcDay(createdAtIso) };
 }
 
 /**

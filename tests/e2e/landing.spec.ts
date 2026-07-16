@@ -8,7 +8,7 @@ test.describe('S1 landing + role funnel', () => {
   test('shows the verbatim hero, one-switch explainer, and honesty copy', async ({ page }) => {
     await page.goto('/');
     await expect(page.locator('.landing__title')).toHaveText('Skylite');
-    await expect(page.locator('.landing__subtitle')).toHaveText('A window to the stars.');
+    await expect(page.locator('.landing__subtitle')).toHaveText('A butterfly garden window.');
     await expect(page.locator('.landing__lede')).toHaveText(
       'A calm, read-first window into Bluesky, grown for you by someone who cares about you. No algorithm, no ads, no counts, no strangers.',
     );
