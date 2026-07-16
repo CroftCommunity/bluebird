@@ -35,7 +35,7 @@ test.describe('Help handoff (IDEAS.md §3)', () => {
     await page.locator('[data-help-btn]').click();
     await expect(page.locator('[data-handoff-overlay]')).toBeVisible();
     await expect(page.locator('[data-handoff-mailto]')).toHaveCount(0);
-    await expect(page.locator('[data-handoff-overlay]')).toContainText('grown-up you trust');
+    await expect(page.locator('[data-handoff-overlay]')).toContainText('adult you trust');
   });
 
   test('"Never mind" dismisses the handoff', async ({ page }) => {

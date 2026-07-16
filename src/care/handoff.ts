@@ -2,7 +2,7 @@ import { el } from '../render/dom.js';
 
 /**
  * The out-of-band "something's wrong" handoff (IDEAS.md §3). One tap reaches the
- * trusted adult — a prefilled mailto, nothing more. NOT platform reporting, NOT
+ * sponsor — a prefilled mailto, nothing more. NOT platform reporting, NOT
  * activity monitoring, NO telemetry. Distress routes to a person the explorer
  * chooses to reach. The honest inverse of surveillance.
  */
@@ -31,9 +31,9 @@ export function showHelpHandoff(contact: HelpContact = {}): void {
 
   const primary = mailto
     ? el('a', { class: 'handoff__go', href: mailto, 'data-handoff-mailto': 'true' }, [
-        who ? `Message ${who}` : 'Message your grown-up',
+        who ? `Message ${who}` : 'Message your sponsor',
       ])
-    : el('p', { class: 'handoff__hint' }, ['Find a grown-up you trust and tell them what happened.']);
+    : el('p', { class: 'handoff__hint' }, ['Find an adult you trust and tell them what happened.']);
   if (mailto) primary.addEventListener('click', dismiss);
 
   const close = el('button', { class: 'handoff__close', type: 'button', 'data-handoff-close': 'true' }, ['Never mind']);
@@ -44,7 +44,7 @@ export function showHelpHandoff(contact: HelpContact = {}): void {
     { class: 'handoff__dialog', role: 'dialog', 'aria-modal': 'true', 'aria-label': 'Get help' },
     [
       el('span', { class: 'handoff__glyph', 'aria-hidden': 'true' }, ['💛']),
-      el('h2', { class: 'handoff__title' }, ['Want to talk to a grown-up?']),
+      el('h2', { class: 'handoff__title' }, ['Want to talk to your sponsor?']),
       el('p', { class: 'handoff__body' }, ["It's always okay to ask for help. This will start a message — nothing is sent until you send it."]),
       primary,
       close,

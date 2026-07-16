@@ -9,6 +9,7 @@ import { renderPost } from '../render/post.js';
 import { AuthorFeedClient } from '../atproto/client.js';
 import { filterByLabels } from '../feed/labels.js';
 import { queryAllowed } from '../search/policy.js';
+import { showHelpHandoff } from '../care/handoff.js';
 import { logSearch, getSearchHistory } from '../search/history.js';
 import { archiveSearch } from '../search/archive.js';
 import { makeFollowUi } from '../social/follow-ui.js';
@@ -113,6 +114,28 @@ function renderResults(results: HTMLElement, status: string, posts: ReturnType<t
   results.append(list);
 }
 
+/**
+ * §RUN-TRUEUP Phase 2 — the gentle supportive panel shown for a self-harm-category
+ * refusal. No shame, no clinical language, no lecture: it names the feeling and
+ * offers the EXISTING get-help handoff (prefilled to the sponsor). Copy v1
+ * [confirm before publish — every line].
+ */
+function carePanel(config: SkyliteConfig): HTMLElement {
+  const help = el(
+    'button',
+    { type: 'button', class: 'telescope__care-help', 'data-search-care-help': 'true' },
+    ['Get help'],
+  );
+  help.addEventListener('click', () => showHelpHandoff(config.help ?? {}));
+  return el('section', { class: 'telescope__care', role: 'note', 'data-search-care': 'true' }, [
+    el('span', { class: 'telescope__care-glyph', 'aria-hidden': 'true' }, ['💛']),
+    el('p', { class: 'telescope__care-body' }, [
+      'Some things feel too heavy to carry alone. Your sponsor cares about you and wants to hear from you — this button reaches them right away.',
+    ]),
+    help,
+  ]);
+}
+
 async function runSearch(query: string, config: SkyliteConfig, results: HTMLElement, msg: HTMLElement): Promise<void> {
   const verdict = queryAllowed(query, config.search);
   if (config.search.logHistory && query.trim()) {
@@ -121,7 +144,7 @@ async function runSearch(query: string, config: SkyliteConfig, results: HTMLElem
     // Encrypted archive: when the sponsor published an audit key and the explorer
     // has an account, seal this attempt to that key and sync it (best-effort).
     void archiveSearch(
-      { q: query.trim(), blocked: !verdict.ok, tier: config.search.tier },
+      { q: query.trim(), blocked: !verdict.ok, tier: config.search.tier, at: now },
       {
         session: explorerSession,
         ...(config.search.auditPubKeyJwk ? { auditPubKeyJwk: config.search.auditPubKeyJwk } : {}),
@@ -137,6 +160,13 @@ async function runSearch(query: string, config: SkyliteConfig, results: HTMLElem
 
   if (!verdict.ok) {
     clear(results);
+    // Care-aware refusal: a self-harm-category block opens a door (the RUN-05
+    // get-help handoff) instead of the flat refusal line (§RUN-TRUEUP Phase 2).
+    if (verdict.reason === 'blocked' && verdict.category === 'self-harm') {
+      msg.textContent = '';
+      results.append(carePanel(config));
+      return;
+    }
     msg.textContent =
       verdict.reason === 'blocked'
         ? "That search isn't allowed here."
@@ -164,7 +194,7 @@ function historyList(): HTMLElement | null {
   const entries = getSearchHistory();
   if (entries.length === 0) return null;
   return el('details', { class: 'telescope__history', 'data-search-history': 'true' }, [
-    el('summary', {}, ['Recent searches (your grown-up can see these)']),
+    el('summary', {}, ['Recent searches (your sponsor can see these)']),
     el(
       'ul',
       { class: 'telescope__history-list' },
@@ -203,11 +233,12 @@ function searchSection(config: SkyliteConfig): HTMLElement {
   const row = el('div', { class: 'telescope__search-row' }, [input, go]);
   const note =
     config.search.tier === 'discovery'
-      ? 'Search stays within the feeds your grown-up approved.'
+      ? 'Search stays within the feeds your sponsor approved.'
       : 'Search is open. The calm rules still apply — nothing unsafe gets through, and blocked words are turned away.';
-  // Honesty copy for the encrypted archive (docs/telescope-search.md).
+  // Honesty copy for the encrypted archive (docs/telescope-search.md). The scope
+  // is deliberately "what", not whether/when (§RUN-TRUEUP Phase 1).
   const archiveNote = config.search.auditPubKeyJwk
-    ? 'Your grown-up can read what you search here. It is stored scrambled, so no one else can.'
+    ? 'Your sponsor can read what you search here. It is stored scrambled, so no one else can read what you searched.'
     : null;
   const section = el('section', { class: 'telescope__search', 'data-search': 'true' }, [
     row,

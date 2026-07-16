@@ -50,6 +50,7 @@ interface SealedPayload {
   q?: unknown;
   blocked?: unknown;
   tier?: unknown;
+  at?: unknown;
 }
 
 /** Open each sealed record with the sponsor's private key; newest first. */
@@ -61,11 +62,14 @@ export async function decryptHistory(
   for (const rec of records) {
     try {
       const payload = JSON.parse(await open(rec.enc, privateKeyJwk)) as SealedPayload;
+      // Tolerant read: new records carry the precise time sealed as `at` (epoch
+      // ms); older records predate Phase 1 and only have the record `createdAt`.
+      const at = typeof payload.at === 'number' ? new Date(payload.at).toISOString() : rec.createdAt;
       out.push({
         q: typeof payload.q === 'string' ? payload.q : '',
         blocked: payload.blocked === true,
         tier: typeof payload.tier === 'string' ? payload.tier : '',
-        at: rec.createdAt,
+        at,
       });
     } catch {
       /* undecryptable (wrong key / corrupt) — skip, don't fail the whole read */

@@ -43,6 +43,7 @@ test('sponsor decrypts an explorer’s encrypted search history', async ({ page 
   await page.goto(`/audit.html?r=${rkey}`);
   const section = page.locator('[data-history-section]');
   await expect(section).toBeVisible();
+  await expect(section).toContainText('Bank-grade encryption'); // Phase 5 language
   await section.locator('[data-history-handle]').fill('kid.bsky.social');
   await section.locator('[data-history-pass]').fill('history-pass');
   await section.locator('[data-history-show]').click();

@@ -11,6 +11,9 @@ test.describe('§Phase 3 sponsor: enable encrypted search history', () => {
 
     const control = page.locator('[data-archive-control]');
     await expect(control.locator('[data-archive-on]')).toBeVisible();
+    // Phase 5: the enable copy may say "bank-grade encryption" (honest — same
+    // primitives as banking), and never claims an absolute like "unbreakable".
+    await expect(control).toContainText('bank-grade encryption');
 
     await control.locator('[data-archive-pass]').fill('a good passphrase');
     await control.locator('[data-archive-on]').click();

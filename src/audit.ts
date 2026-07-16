@@ -170,8 +170,8 @@ function searchHistorySection(explorer: ExplorerEntry): HTMLElement | null {
     el('h2', {}, ['Search history (encrypted)']),
     el('p', { class: 'g-hint' }, [
       usesPasskey
-        ? 'Only this device can read these — they are stored scrambled everywhere else. Enter the explorer’s handle, then unlock with your passkey.'
-        : 'Only this device can read these — they are stored scrambled everywhere else. Enter the explorer’s handle and your history passphrase.',
+        ? 'Bank-grade encryption keeps these scrambled everywhere else — only this device can read them. Enter the explorer’s handle, then unlock with your passkey.'
+        : 'Bank-grade encryption keeps these scrambled everywhere else — only this device can read them. Enter the explorer’s handle and your history passphrase.',
     ]),
     el('label', { class: 'g-field' }, [el('span', { class: 'g-field__label' }, ['Explorer’s handle']), handleInput]),
     ...(usesPasskey

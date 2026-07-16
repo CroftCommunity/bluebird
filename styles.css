@@ -833,6 +833,40 @@ body {
   color: var(--danger);
 }
 
+/* Care-aware refusal (self-harm category) — a gentle door, not a wall. */
+.telescope__care {
+  max-width: 480px;
+  margin: 0.6rem auto 0;
+  padding: 1.1rem 1.2rem 1.2rem;
+  background: var(--card);
+  border-radius: var(--radius);
+  text-align: center;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+}
+
+.telescope__care-glyph {
+  font-size: 1.8rem;
+  line-height: 1;
+}
+
+.telescope__care-body {
+  margin: 0.6rem 0 1rem;
+  color: var(--ink);
+}
+
+.telescope__care-help {
+  display: inline-block;
+  width: 100%;
+  background: var(--moon);
+  color: var(--highlight-ink);
+  border: 0;
+  font: inherit;
+  font-weight: 700;
+  padding: 0.85rem 1rem;
+  border-radius: 12px;
+  cursor: pointer;
+}
+
 /* --- saves --- */
 .clip__list {
   display: flex;
