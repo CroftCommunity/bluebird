@@ -165,6 +165,15 @@ biometric hardware (the virtual authenticator covers the PRF flow; the passphras
 path is fully hermetic); repo-side retention pruning (today the 30-day/500 policy
 prunes the on-device log).
 
+**Live check, 2026-07-16 (partial).** A server-side pass (the app's own client
+code against the real network) confirmed `getFeed`, `getAuthorFeed` + the label
+floor, and the audit-read chain `resolveHandle → resolvePds →
+listRecords(ing.croft.skylite.search)` end to end against a real PDS. Still open:
+`searchPosts` (the CDN in front of the public AppView returned 403 to the test
+egress — external, not code), the in-browser live tier, and the real PDS **write**
++ OAuth consent (OAuth-only; needs a real device). See RUN-TRUEUP-SUMMARY.md →
+"Live verification".
+
 ## What this is NOT (staged)
 
 - The **default lists are seeds**, deliberately modest — a real deployment
