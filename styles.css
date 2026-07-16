@@ -26,6 +26,8 @@ html {
 body {
   margin: 0;
   min-height: 100dvh;
+  /* Mobile-first safety net: a stray long token must never widen the page. */
+  overflow-x: clip;
   background:
     radial-gradient(1200px 900px at 50% -10%, var(--sky-indigo-soft), transparent 60%),
     linear-gradient(180deg, var(--sky-indigo) 0%, var(--sky-deep) 100%);
@@ -478,6 +480,15 @@ body {
   gap: 1.1rem;
 }
 
+/* Column-flex children default to min-width:auto, so one wide child (a long
+   label or token) can push a whole card past the viewport. Let them shrink;
+   their text then wraps at the real container width. */
+.sponsor > *,
+.garden > *,
+.explain > * {
+  min-width: 0;
+}
+
 .g-card {
   background: var(--card);
   border-radius: var(--radius);
@@ -495,12 +506,15 @@ body {
   color: var(--ink-dim);
   font-size: 0.95rem;
   line-height: 1.45;
+  overflow-wrap: anywhere;
 }
 
 .g-hint code,
-.g-card code {
+.g-card code,
+.g-msg code {
   font-family: ui-monospace, "SF Mono", Menlo, monospace;
   color: var(--link);
+  overflow-wrap: anywhere;
 }
 
 .g-field {
@@ -513,6 +527,7 @@ body {
 .g-field__label {
   font-size: 0.85rem;
   color: var(--ink-dim);
+  overflow-wrap: anywhere;
 }
 
 .g-input,
@@ -558,18 +573,21 @@ body {
   display: flex;
   gap: 0.4rem;
   align-items: center;
+  flex-wrap: wrap;
 }
 
 .g-account .g-input {
-  flex: 1;
+  flex: 1 1 9rem;
+  min-width: 0;
 }
 
+/* Toggle labels are full sentences; they must wrap on a phone, never widen
+   the card (the old nowrap here was the Android text-overrun bug). */
 .g-toggle {
   display: inline-flex;
-  align-items: center;
+  align-items: baseline;
   gap: 0.4rem;
   color: var(--ink);
-  white-space: nowrap;
 }
 
 .g-toggle--big {
@@ -580,9 +598,11 @@ body {
   width: 1.3rem;
   height: 1.3rem;
   accent-color: var(--accent);
+  flex: none;
 }
 
 .g-btn {
+  display: inline-block;
   background: var(--card-soft);
   color: var(--ink);
   border: none;
@@ -591,6 +611,7 @@ body {
   font: inherit;
   font-weight: 600;
   cursor: pointer;
+  text-decoration: none;
 }
 
 /* §Phase 3B — the decrypted search-history timeline in the audit view. */
@@ -652,9 +673,14 @@ body {
   margin: 0.4rem 0;
 }
 
+.g-row > * {
+  min-width: 0;
+}
+
 .g-msg {
   color: var(--accent);
   font-size: 0.9rem;
+  overflow-wrap: anywhere;
 }
 
 /* --- friends' hearts (B2) — relational, count-free "Liked by <friends>" --- */
@@ -1494,6 +1520,14 @@ body {
   color: var(--accent);
   white-space: nowrap;
 }
+
+@media (max-width: 640px) {
+  /* Monospace label NSIDs would otherwise stretch the audit table off-screen. */
+  .audit__label {
+    white-space: normal;
+    word-break: break-all;
+  }
+}
 .audit__account {
   padding: 0.7rem 0;
   border-top: 1px solid var(--sky-indigo-soft);
@@ -1710,4 +1744,44 @@ body {
 [data-skin="full"] .garden__status {
   padding-left: 1rem;
   padding-right: 1rem;
+}
+
+/* ============================================================
+   Mobile as a first-class client. Phones get slimmer gutters — the sponsor
+   dashboard nests cards three deep, and at desktop paddings that leaves too
+   little room for a form row on a 360px screen.
+   ============================================================ */
+@media (max-width: 480px) {
+  .sponsor {
+    padding-left: 0.6rem;
+    padding-right: 0.6rem;
+  }
+
+  .g-card {
+    padding-left: 0.8rem;
+    padding-right: 0.8rem;
+  }
+
+  /* Cards nested inside an explorer card (Channels, Search, provisioning…). */
+  .g-card .g-card,
+  .g-subcard {
+    padding-left: 0.65rem;
+    padding-right: 0.65rem;
+  }
+
+  .g-channel {
+    padding-left: 0.55rem;
+    padding-right: 0.55rem;
+  }
+
+  .garden,
+  .explain {
+    padding-left: 0.75rem;
+    padding-right: 0.75rem;
+  }
+
+  .post {
+    padding-left: 0.85rem;
+    padding-right: 0.85rem;
+  }
 }
