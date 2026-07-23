@@ -2,9 +2,13 @@
 // a self-contained static `dist/` (arecipe pattern — no framework, no router).
 import { execFileSync } from 'node:child_process';
 import { readFileSync, writeFileSync, rmSync, mkdirSync, cpSync, existsSync } from 'node:fs';
+import { createHash } from 'node:crypto';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import * as esbuild from 'esbuild';
+
+/** Subresource Integrity hash for a byte buffer (sha384, base64). */
+const sriFor = (bytes) => 'sha384-' + createHash('sha384').update(bytes).digest('base64');
 
 const root = dirname(fileURLToPath(import.meta.url));
 const dist = join(root, 'dist');
@@ -82,20 +86,32 @@ for (const asset of ['manifest.webmanifest', 'CNAME', 'icons', '.nojekyll', 'LIC
 // The served stylesheet is tokens.css (brand tokens, the only place raw hex
 // lives) concatenated with styles.css (components), so tokens resolve first in
 // a single request with no per-page <link> juggling.
-writeFileSync(
-  join(dist, 'styles.css'),
-  `${readFileSync(join(root, 'tokens.css'), 'utf8')}\n${readFileSync(join(root, 'styles.css'), 'utf8')}`,
+const stylesCss = `${readFileSync(join(root, 'tokens.css'), 'utf8')}\n${readFileSync(join(root, 'styles.css'), 'utf8')}`;
+writeFileSync(join(dist, 'styles.css'), stylesCss);
+const stylesSri = sriFor(Buffer.from(stylesCss, 'utf8'));
+
+// Subresource Integrity for each page's hashed JS (computed from the emitted
+// bytes), so a tampered or mis-served bundle fails the integrity check and does
+// not execute. The SRI token for a page is its JS token with _JS% → _JS_SRI%.
+const jsSri = Object.fromEntries(
+  PAGES.map((p) => [p.token, sriFor(readFileSync(join(dist, pageHrefs[p.entry])))]),
 );
 
 // Render the HTML pages from their root templates, injecting version + entries.
 const stylesHref = `styles.css?v=${encodeURIComponent(version)}`;
 function renderPage(templateName, replacements) {
   const template = readFileSync(join(root, templateName), 'utf8');
-  let html = template.replaceAll('%VERSION%', version).replaceAll('%STYLES%', stylesHref);
+  let html = template
+    .replaceAll('%VERSION%', version)
+    .replaceAll('%STYLES%', stylesHref)
+    .replaceAll('%STYLES_SRI%', stylesSri);
   for (const [token, value] of Object.entries(replacements)) html = html.replaceAll(token, value);
   writeFileSync(join(dist, templateName), html);
 }
-for (const p of PAGES) renderPage(p.html, { [p.token]: pageHrefs[p.entry] });
+for (const p of PAGES) {
+  const sriToken = p.token.replace('_JS%', '_JS_SRI%');
+  renderPage(p.html, { [p.token]: pageHrefs[p.entry], [sriToken]: jsSri[p.token] });
+}
 
 // Guard: asset/nav paths must be RELATIVE, never absolute-root. Skylite deploys
 // to a domain root today (skylite.croft.ing), but per-PR previews (planned) serve
