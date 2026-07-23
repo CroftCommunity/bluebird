@@ -1,0 +1,76 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <!--
+      CSP allowlist (build-plan §4): runtime origins are the public AppView
+      (feed reads), the Bluesky blob CDN (images), the PLC directory (DID→PDS
+      resolution), and bsky-network PDS hosts (sponsor config getRecord). Other
+      PDS hosts are not statically allowlistable; the local-only config fallback
+      covers sponsors off bsky-network. No inline script/style — all 'self'.
+    -->
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data: https://cdn.bsky.app https://*.cdn.bsky.app; connect-src 'self' https://public.api.bsky.app https://plc.directory https://bsky.social https://*.host.bsky.network; manifest-src 'self'; base-uri 'none'; object-src 'none'; form-action 'none'; frame-ancestors 'none'"
+    />
+    <title>Skylite</title>
+    <meta name="description" content="A butterfly garden window — a read-only, curated Bluesky garden." />
+
+    <link rel="manifest" href="manifest.webmanifest" />
+    <link rel="stylesheet" href="styles.css?v=v1%200.1.0%2B45433f4" integrity="sha384-YhtQQnQs5jyIiYUaUCMJYPFrTGr9LV9blJaqDozeKMCU9mpeVBibsXn8uf+o3ipN" crossorigin="anonymous" />
+
+    <meta name="theme-color" content="#FFFFFF" />
+    <meta name="color-scheme" content="light dark" />
+    <link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32.png" />
+    <link rel="icon" type="image/png" sizes="16x16" href="icons/favicon-16.png" />
+    <link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png" />
+    <link rel="icon" type="image/png" sizes="512x512" href="icons/icon-512.png" />
+    <link rel="apple-touch-icon" href="icons/apple-touch-icon-180.png" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-title" content="Skylite" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+
+    <!-- iOS launch splashes (portrait). Representative device set; unmatched
+         devices simply fall back to no splash. -->
+    <link rel="apple-touch-startup-image" href="icons/splash/splash-2048x2732.jpg" media="screen and (device-width: 1024px) and (device-height: 1366px) and (-webkit-device-pixel-ratio: 2) and (orientation: portrait)" />
+    <link rel="apple-touch-startup-image" href="icons/splash/splash-1640x2360.jpg" media="screen and (device-width: 820px) and (device-height: 1180px) and (-webkit-device-pixel-ratio: 2) and (orientation: portrait)" />
+    <link rel="apple-touch-startup-image" href="icons/splash/splash-1620x2160.jpg" media="screen and (device-width: 810px) and (device-height: 1080px) and (-webkit-device-pixel-ratio: 2) and (orientation: portrait)" />
+    <link rel="apple-touch-startup-image" href="icons/splash/splash-1290x2796.jpg" media="screen and (device-width: 430px) and (device-height: 932px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)" />
+    <link rel="apple-touch-startup-image" href="icons/splash/splash-1170x2532.jpg" media="screen and (device-width: 390px) and (device-height: 844px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)" />
+    <link rel="apple-touch-startup-image" href="icons/splash/splash-750x1334.jpg" media="screen and (device-width: 375px) and (device-height: 667px) and (-webkit-device-pixel-ratio: 2) and (orientation: portrait)" />
+  </head>
+  <body>
+    <header class="topbar">
+      <span class="topbar__mark" data-header-mark aria-hidden="true"></span>
+      <h1 class="topbar__wordmark">
+        <svg class="wordmark" viewBox="0 0 300 72" role="img" aria-label="Skylite" xmlns="http://www.w3.org/2000/svg">
+          <text x="2" y="56" fill="currentColor" font-family="system-ui,-apple-system,'Segoe UI',Roboto,sans-serif" font-weight="800" font-size="60" textLength="292" lengthAdjust="spacingAndGlyphs">Skylite</text>
+        </svg>
+      </h1>
+      <nav class="topbar__nav">
+        <a href="mysky.html">My Sky</a>
+        <a href="telescope.html">Telescope</a>
+        <a href="saves.html">Saves</a>
+        <a href="help.html">How it works</a>
+      </nav>
+      <button type="button" class="topbar__refresh" data-refresh hidden aria-label="Refresh the garden">
+        <span class="topbar__refresh-icon" aria-hidden="true">⟳</span>
+      </button>
+      <button type="button" class="topbar__theme" data-theme-toggle aria-label="Switch theme">
+        <span class="topbar__theme-icon" data-theme-icon aria-hidden="true">☀</span>
+      </button>
+      <button type="button" class="topbar__help" data-help-btn>Get help</button>
+    </header>
+    <main class="garden" data-garden aria-live="polite">
+      <p class="garden__status" data-garden-status="loading">Opening the window…</p>
+    </main>
+    <footer class="build">
+      <span class="build__label">build</span>
+      <code data-version-stamp>v1 0.1.0+45433f4</code>
+      <a class="build__croft" href="https://croft.ing" aria-label="A Croft project">Croft</a>
+    </footer>
+    <script type="module" src="assets/main-OIWB2NR7.js" integrity="sha384-6fxCTshMCvEv9Ah2A0kpPT0GnalhsoWMOa+iHe+Uhtg0A2g6qAQSqt+uAlAoP6MP" crossorigin="anonymous"></script>
+  </body>
+</html>
