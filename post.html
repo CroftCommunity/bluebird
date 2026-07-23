@@ -12,7 +12,7 @@
     />
     <title>Skylite — Post</title>
     <link rel="manifest" href="manifest.webmanifest" />
-    <link rel="stylesheet" href="%STYLES%" />
+    <link rel="stylesheet" href="%STYLES%" integrity="%STYLES_SRI%" crossorigin="anonymous" />
     <meta name="theme-color" content="#FFFFFF" />
     <link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png" />
     <link rel="apple-touch-icon" href="icons/apple-touch-icon-180.png" />
@@ -36,6 +36,6 @@
       <span class="build__label">build</span>
       <code data-version-stamp>%VERSION%</code>
     </footer>
-    <script type="module" src="%POST_JS%"></script>
+    <script type="module" src="%POST_JS%" integrity="%POST_JS_SRI%" crossorigin="anonymous"></script>
   </body>
 </html>

@@ -9,7 +9,7 @@
     />
     <title>Skylite — Saves</title>
     <link rel="manifest" href="manifest.webmanifest" />
-    <link rel="stylesheet" href="%STYLES%" />
+    <link rel="stylesheet" href="%STYLES%" integrity="%STYLES_SRI%" crossorigin="anonymous" />
     <meta name="theme-color" content="#14164b" />
     <meta name="color-scheme" content="dark" />
     <link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png" />
@@ -35,6 +35,6 @@
       <span class="build__label">build</span>
       <code data-version-stamp>%VERSION%</code>
     </footer>
-    <script type="module" src="%SAVES_JS%"></script>
+    <script type="module" src="%SAVES_JS%" integrity="%SAVES_JS_SRI%" crossorigin="anonymous"></script>
   </body>
 </html>

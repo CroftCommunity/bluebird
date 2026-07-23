@@ -18,7 +18,7 @@
     <meta name="description" content="A butterfly garden window — a read-only, curated Bluesky garden." />
 
     <link rel="manifest" href="manifest.webmanifest" />
-    <link rel="stylesheet" href="%STYLES%" />
+    <link rel="stylesheet" href="%STYLES%" integrity="%STYLES_SRI%" crossorigin="anonymous" />
 
     <meta name="theme-color" content="#FFFFFF" />
     <meta name="color-scheme" content="light dark" />
@@ -70,6 +70,6 @@
       <span class="build__label">build</span>
       <code data-version-stamp>%VERSION%</code>
     </footer>
-    <script type="module" src="%MAIN_JS%"></script>
+    <script type="module" src="%MAIN_JS%" integrity="%MAIN_JS_SRI%" crossorigin="anonymous"></script>
   </body>
 </html>
