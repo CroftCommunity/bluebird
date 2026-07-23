@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src 'self'; manifest-src 'self'; base-uri 'none'; object-src 'none'; form-action 'none'; frame-ancestors 'none'"
+    />
+    <title>Skylite — Sponsor guide</title>
+    <meta name="description" content="How to set up and secure a Skylite garden as a sponsor." />
+    <link rel="stylesheet" href="styles.css?v=v1%200.1.0%2B2057767" integrity="sha384-pzNVGNjC/KB9vxnoAtEE1mN+9Gb6P50Opzq/rfY8oPGXB9Nfz5jXjFqNhxWDZ8xa" crossorigin="anonymous" />
+    <meta name="theme-color" content="#FFFFFF" />
+    <meta name="color-scheme" content="light" />
+    <link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png" />
+    <link rel="apple-touch-icon" href="icons/apple-touch-icon-180.png" />
+  </head>
+  <body>
+    <header class="topbar">
+      <span class="topbar__mark" data-header-mark aria-hidden="true"></span>
+      <h1 class="topbar__wordmark">
+        <svg class="wordmark" viewBox="0 0 300 72" role="img" aria-label="Skylite" xmlns="http://www.w3.org/2000/svg"><text x="2" y="56" fill="currentColor" font-family="system-ui,-apple-system,'Segoe UI',Roboto,sans-serif" font-weight="800" font-size="60" textLength="292" lengthAdjust="spacingAndGlyphs">Skylite</text></svg>
+      </h1>
+      <nav class="topbar__nav">
+        <a href="sponsor.html">Sponsor setup</a>
+      </nav>
+      <button type="button" class="topbar__theme" data-theme-toggle aria-label="Switch theme"><span class="topbar__theme-icon" data-theme-icon aria-hidden="true">☀</span></button>
+    </header>
+    <main class="explain">
+      <section class="explain__card">
+        <h2>How setup works</h2>
+        <p>You set up here, on <strong>your own</strong> device or computer. You do not need the explorer's device in front of you.</p>
+        <ol class="explain__steps">
+          <li>Build the explorer's garden on this page — pick the accounts and channels they'll see.</li>
+          <li>Copy that explorer's <strong>link</strong> (each explorer card has one).</li>
+          <li>Send the link to the explorer. When they open it on <strong>their</strong> device, that device becomes their garden.</li>
+        </ol>
+        <p>The link is safe to send. It carries only public information — where your records live and which record to load. It never contains a password or any secret.</p>
+      </section>
+      <section class="explain__card">
+        <h2>Signing in (optional)</h2>
+        <p>Signing in with Bluesky lets you publish an explorer's settings straight to your account with one tap, so the garden updates without copying anything by hand. It opens Bluesky in the same window, then brings you back here.</p>
+        <p>You can also skip signing in: set your account (your DID) by hand and save each explorer's record to your account yourself. Either way works.</p>
+      </section>
+      <section class="explain__card">
+        <h2>First, secure your account</h2>
+        <p>A garden is only as safe as the account that tends it. Do these once, before you invite an explorer:</p>
+        <ul class="explain__list">
+          <li><strong>Turn on email 2FA</strong> for your Bluesky account (Settings, on bsky.social).</li>
+          <li><strong>Harden the email inbox</strong> behind it — a strong, unique password and its own 2FA.</li>
+          <li><strong>Know where to revoke device sessions</strong> — your account's OAuth session page — so you can cut off a lost device.</li>
+        </ul>
+      </section>
+      <section class="explain__card">
+        <h2>What's public and what's private</h2>
+        <p>An explorer's garden settings are stored as <strong>public</strong> records on the network, like everything on Bluesky. Use a nickname for the explorer — never a real or legal name, school, or age. The explorer's Saves and notes stay <strong>private</strong>, only on their device.</p>
+      </section>
+    </main>
+    <footer class="build">
+      <span class="build__label">build</span>
+      <code data-version-stamp>v1 0.1.0+2057767</code>
+      <a class="build__croft" href="https://croft.ing" aria-label="A Croft project">Croft</a>
+    </footer>
+    <script type="module" src="assets/guide-37FF756X.js" integrity="sha384-2Y20PRhvmWataJ9Vdb/xB2cNGm5fXWE7EMjm9YCtwch6NOofDmW70bfMWCmwrUhV" crossorigin="anonymous"></script>
+  </body>
+</html>

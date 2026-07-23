@@ -13,8 +13,9 @@
      NAVY ink (5.37:1). Dark CTA is Rich Monarch with white ink (4.17:1, held
      to large-text AA; CTA buttons render >=1.125rem bold).
 
-  Theming: light is the default; system dark applies unless the explorer forced
-  light; an explicit data-theme always wins (see src/brand/theme.ts).
+  Theming: light is the default, always — the app does not follow the device's
+  system dark mode. Dark applies only when the explorer explicitly picks it via
+  the theme toggle (an explicit data-theme="dark"; see src/brand/theme.ts).
 */
 
 :root {
@@ -28,6 +29,7 @@
 
   --accent: #2D8BCC;      /* Skylite Blue */
   --accent-ink: #FFFFFF;  /* large text only, 3.70:1 */
+  --link: #1B6FB0;        /* text-safe blue — 4.96:1 on --bg-raised (accent is a fill) */
   --cta: #FF8C00;         /* Monarch Orange */
   --cta-ink: #1C335C;     /* Twilight Navy on orange, 5.37:1 */
   --highlight: #FFDD00;   /* Sunbeam Yellow */
@@ -43,33 +45,8 @@
   color-scheme: light;
 }
 
-/* System dark, unless the explorer explicitly forced light. */
-@media (prefers-color-scheme: dark) {
-  :root:not([data-theme="light"]) {
-    --bg: #212121;         /* Charcoal Black */
-    --bg-raised: #2A2A2A;  /* Deep Aero Mist */
-    --bg-sunken: #1C1C1C;  /* Gunmetal Black */
-
-    --ink: #FFFFFF;        /* Cloud White — 16.10:1 on --bg */
-    --ink-muted: #A1BAC5;  /* Aero Grey — 7.93:1 on --bg */
-
-    --accent: #1976D2;     /* Deep-Sky Blue */
-    --accent-ink: #FFFFFF; /* 4.60:1 */
-    --cta: #D35400;        /* Rich Monarch Orange */
-    --cta-ink: #FFFFFF;    /* 4.17:1, large-text AA */
-    --highlight: #F1C40F;  /* Deep Sunbeam Yellow */
-    --highlight-ink: #212121;
-
-    --border: #3A3A3A;     /* Steel-Mist Grey */
-    --navy: #0E1A33;       /* Dark Twilight Navy */
-    --danger: #FF9A9A;     /* error text — 7.93:1 on --bg */
-    --header-mark: url("/icons/brand/header-dark.png");
-
-    color-scheme: dark;
-  }
-}
-
-/* Explicit override always wins over the media query. */
+/* Dark is opt-in only: it applies when the explorer picks it via the theme
+   toggle (data-theme="dark"). The app never auto-switches to system dark. */
 :root[data-theme="dark"] {
   --bg: #212121;
   --bg-raised: #2A2A2A;
@@ -80,7 +57,8 @@
 
   --accent: #1976D2;
   --accent-ink: #FFFFFF;
-  --cta: #D35400;
+  --link: #7FB3E3;
+  --cta: #C24C00;
   --cta-ink: #FFFFFF;
   --highlight: #F1C40F;
   --highlight-ink: #212121;
@@ -106,7 +84,8 @@
   --moon: var(--highlight);
   --star: var(--ink);
   --ink-dim: var(--ink-muted);
-  --link: var(--accent);
+  /* --link is owned by tokens.css per theme: --accent is a FILL colour and fails
+     as text on light/dark cards; --link is a darker/lighter text-safe blue. */
   /* --ink, --radius come from tokens.css */
 }
 
@@ -1113,6 +1092,26 @@ body {
   padding: 0.6rem 1.1rem;
 }
 
+/* Multi-paragraph and list cards (the sponsor guide). */
+.explain__card p + p,
+.explain__card p + ol,
+.explain__card p + ul {
+  margin-top: 0.8rem;
+}
+
+.explain__steps,
+.explain__list {
+  margin: 0.8rem 0 0;
+  padding-left: 1.4rem;
+  line-height: 1.55;
+  font-size: 1.05rem;
+}
+
+.explain__steps li,
+.explain__list li {
+  margin: 0.4rem 0;
+}
+
 /* --- help handoff modal --- */
 .handoff {
   position: fixed;
@@ -1251,6 +1250,15 @@ body {
   font-size: 0.72rem;
   color: var(--ink-dim);
   pointer-events: none;
+}
+
+.build__croft {
+  pointer-events: auto; /* the footer is pointer-events:none; the attribution is clickable */
+  color: var(--ink-dim);
+  text-decoration: none;
+}
+.build__croft:hover {
+  text-decoration: underline;
 }
 
 .build__label {
@@ -1550,12 +1558,25 @@ body {
 }
 
 /* --- S2 sponsor multi-explorer dashboard --- */
-.g-checklist .g-toggle,
-.g-switches .g-toggle {
+.g-section .g-toggle {
   display: flex;
   gap: 0.5rem;
   align-items: baseline;
   margin: 0.5rem 0;
+}
+
+/* A flat sub-section within an explorer card: a divider + heading, then its
+   controls. Deliberately NOT a raised card — the explorer card is one column
+   of fields, not a stack of nested bubbles. */
+.g-section {
+  padding-top: 1rem;
+  margin-top: 1rem;
+  border-top: 1px solid var(--border);
+}
+
+.g-section > h3 {
+  margin: 0 0 0.5rem;
+  font-size: 1.05rem;
 }
 
 .g-explorers {
@@ -1580,11 +1601,16 @@ body {
   margin: 0;
 }
 
-.g-switches {
-  padding: 0.6rem 0;
-  border-top: 1px solid var(--sky-indigo-soft);
-  border-bottom: 1px solid var(--sky-indigo-soft);
-  margin: 0.6rem 0;
+/* Collapsible advanced disclosures (raw record, no-account setup). */
+.g-details {
+  margin-top: 0.9rem;
+}
+
+.g-details > summary {
+  cursor: pointer;
+  color: var(--link);
+  font-weight: 600;
+  padding: 0.2rem 0;
 }
 
 .g-provision code {
