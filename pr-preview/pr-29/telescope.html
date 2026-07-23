@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <!-- Reads sponsor-approved discovery feeds (public AppView getFeed) + their
+         images (cdn.bsky.app), resolves the sponsor config (plc.directory + PDS),
+         and — with an account — writes follow records to the explorer's PDS. -->
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data: https://cdn.bsky.app https://*.cdn.bsky.app; connect-src 'self' https://public.api.bsky.app https://plc.directory https://bsky.social https://*.host.bsky.network; manifest-src 'self'; base-uri 'none'; object-src 'none'; form-action 'none'; frame-ancestors 'none'"
+    />
+    <title>Skylite — Telescope</title>
+    <link rel="manifest" href="manifest.webmanifest" />
+    <link rel="stylesheet" href="styles.css?v=v1%200.1.0%2B33f655f" />
+    <meta name="theme-color" content="#FFFFFF" />
+    <link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png" />
+    <link rel="apple-touch-icon" href="icons/apple-touch-icon-180.png" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-title" content="Skylite" />
+  </head>
+  <body>
+    <header class="topbar">
+      <span class="topbar__mark" data-header-mark aria-hidden="true"></span>
+      <h1 class="topbar__wordmark">
+        <svg class="wordmark" viewBox="0 0 300 72" role="img" aria-label="Skylite" xmlns="http://www.w3.org/2000/svg"><text x="2" y="56" fill="currentColor" font-family="system-ui,-apple-system,'Segoe UI',Roboto,sans-serif" font-weight="800" font-size="60" textLength="292" lengthAdjust="spacingAndGlyphs">Skylite</text></svg>
+      </h1>
+      <nav class="topbar__nav">
+        <a href="index.html">Garden</a>
+        <a href="mysky.html">My Sky</a>
+        <a href="saves.html">Saves</a>
+      </nav>
+      <button type="button" class="topbar__theme" data-theme-toggle aria-label="Switch theme"><span class="topbar__theme-icon" data-theme-icon aria-hidden="true">☀</span></button>
+    </header>
+    <p class="garden__note">Telescope shows discovery feeds someone who looks after you has approved. Same calm rules as the garden — nothing unsafe gets through.</p>
+    <div class="telescope" data-telescope></div>
+    <footer class="build">
+      <span class="build__label">build</span>
+      <code data-version-stamp>v1 0.1.0+33f655f</code>
+    </footer>
+    <script type="module" src="assets/page-DAFSW2E2.js"></script>
+  </body>
+</html>
