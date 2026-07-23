@@ -4,7 +4,9 @@
 export function registerServiceWorker(): void {
   if (!('serviceWorker' in navigator)) return;
   window.addEventListener('load', () => {
-    navigator.serviceWorker.register('/sw.js', { updateViaCache: 'none' }).catch(() => {
+    // Relative so the scope is the deploy directory (root today, a /pr-preview/
+    // subpath for planned previews).
+    navigator.serviceWorker.register('sw.js', { updateViaCache: 'none' }).catch(() => {
       /* SW is a progressive enhancement — a failure must never break the app */
     });
   });

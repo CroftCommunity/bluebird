@@ -35,7 +35,7 @@ test.describe('brand: manifest + icons + splash', () => {
     const links = page.locator('link[rel="apple-touch-startup-image"]');
     await expect(links).toHaveCount(6);
     const first = (await links.first().getAttribute('href')) ?? '';
-    expect(first).toMatch(/\/icons\/splash\/splash-.*\.jpg$/);
+    expect(first).toMatch(/icons\/splash\/splash-.*\.jpg$/);
     const res = await request.get(first);
     expect(res.ok()).toBeTruthy();
     expect(res.headers()['content-type']).toContain('image/jpeg');
