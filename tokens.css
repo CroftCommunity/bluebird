@@ -28,6 +28,7 @@
 
   --accent: #2D8BCC;      /* Skylite Blue */
   --accent-ink: #FFFFFF;  /* large text only, 3.70:1 */
+  --link: #1B6FB0;        /* text-safe blue — 4.96:1 on --bg-raised (accent is a fill) */
   --cta: #FF8C00;         /* Monarch Orange */
   --cta-ink: #1C335C;     /* Twilight Navy on orange, 5.37:1 */
   --highlight: #FFDD00;   /* Sunbeam Yellow */
@@ -55,8 +56,9 @@
 
     --accent: #1976D2;     /* Deep-Sky Blue */
     --accent-ink: #FFFFFF; /* 4.60:1 */
-    --cta: #D35400;        /* Rich Monarch Orange */
-    --cta-ink: #FFFFFF;    /* 4.17:1, large-text AA */
+    --link: #7FB3E3;       /* dark link/code text — 6.47:1 on --bg-raised (accent #1976D2 is a fill, fails as text) */
+    --cta: #C24C00;        /* Rich Monarch Orange (darkened for AA) */
+    --cta-ink: #FFFFFF;    /* 4.85:1 on --cta — normal-text AA */
     --highlight: #F1C40F;  /* Deep Sunbeam Yellow */
     --highlight-ink: #212121;
 
@@ -80,7 +82,8 @@
 
   --accent: #1976D2;
   --accent-ink: #FFFFFF;
-  --cta: #D35400;
+  --link: #7FB3E3;
+  --cta: #C24C00;
   --cta-ink: #FFFFFF;
   --highlight: #F1C40F;
   --highlight-ink: #212121;

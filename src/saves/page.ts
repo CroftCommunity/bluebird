@@ -105,6 +105,7 @@ function renderBackup(): HTMLElement {
     type: 'file',
     accept: 'application/json,.json',
     class: 'g-visually-hidden',
+    'aria-label': 'Import a Saves backup (.json)',
     'data-backup-import': 'true',
   });
   fileInput.addEventListener('change', () => {

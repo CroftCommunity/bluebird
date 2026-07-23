@@ -1,8 +1,9 @@
 // Skylite build: bundle the TS app with esbuild, cache-bust the entry, and emit
 // a self-contained static `dist/` (arecipe pattern — no framework, no router).
 import { execFileSync } from 'node:child_process';
-import { readFileSync, writeFileSync, rmSync, mkdirSync, cpSync, existsSync } from 'node:fs';
+import { readFileSync, writeFileSync, rmSync, mkdirSync, cpSync, existsSync, readdirSync } from 'node:fs';
 import { createHash } from 'node:crypto';
+import { gzipSync } from 'node:zlib';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import * as esbuild from 'esbuild';
@@ -219,4 +220,20 @@ self.addEventListener('fetch', (event) => {
 `;
 writeFileSync(join(dist, 'sw.js'), sw);
 
-console.log(`built ${version} -> dist/  (${PAGES.length} pages, sw + precache ${precache.length})`);
+// Bundle-size budget (adopted from croft-pwa). skylite code-splits, so this caps
+// any SINGLE emitted JS file's gzipped size — a tripwire against one file
+// ballooning, not the transitive per-page total. Raise it deliberately (e.g. a
+// new heavy dependency) rather than letting it drift.
+const MAX_JS_GZ = 28 * 1024;
+const jsFiles = readdirSync(join(dist, 'assets')).filter((f) => f.endsWith('.js'));
+const oversize = jsFiles
+  .map((f) => ({ f, gz: gzipSync(readFileSync(join(dist, 'assets', f))).length }))
+  .filter((x) => x.gz > MAX_JS_GZ);
+if (oversize.length > 0) {
+  throw new Error(
+    `build: bundle-size budget exceeded (${(MAX_JS_GZ / 1024).toFixed(0)}K gz/file):\n` +
+      oversize.map((x) => `  ${x.f}: ${(x.gz / 1024).toFixed(1)}K gz`).join('\n'),
+  );
+}
+
+console.log(`built ${version} -> dist/  (${PAGES.length} pages, sw + precache ${precache.length}, budget ok)`);

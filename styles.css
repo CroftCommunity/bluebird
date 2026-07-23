@@ -11,7 +11,8 @@
   --moon: var(--highlight);
   --star: var(--ink);
   --ink-dim: var(--ink-muted);
-  --link: var(--accent);
+  /* --link is owned by tokens.css per theme: --accent is a FILL colour and fails
+     as text on light/dark cards; --link is a darker/lighter text-safe blue. */
   /* --ink, --radius come from tokens.css */
 }
 
@@ -1156,6 +1157,15 @@ body {
   font-size: 0.72rem;
   color: var(--ink-dim);
   pointer-events: none;
+}
+
+.build__croft {
+  pointer-events: auto; /* the footer is pointer-events:none; the attribution is clickable */
+  color: var(--ink-dim);
+  text-decoration: none;
+}
+.build__croft:hover {
+  text-decoration: underline;
 }
 
 .build__label {
