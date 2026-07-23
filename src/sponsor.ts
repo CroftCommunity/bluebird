@@ -463,7 +463,7 @@ function renderExplorerCard(rkey: string, config: SkyliteConfig, identity: Spons
       field(`Record body (store as ${SKYLITE_CONFIG_NSID}/${rkey})`, jsonArea),
       publishRow(rkey, config),
       el('p', {}, [
-        el('a', { class: 'g-btn g-btn--ghost', href: `/audit.html?r=${encodeURIComponent(rkey)}`, 'data-audit-link': rkey }, [
+        el('a', { class: 'g-btn g-btn--ghost', href: `audit.html?r=${encodeURIComponent(rkey)}`, 'data-audit-link': rkey }, [
           'See what the garden hid, and why',
         ]),
       ]),

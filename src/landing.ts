@@ -79,7 +79,7 @@ export function renderLanding(container: HTMLElement): void {
   clear(container);
   container.classList.add('landing');
 
-  const doorA = el('a', { class: 'landing__door', href: '/sponsor.html', 'data-door': 'sponsor' }, [
+  const doorA = el('a', { class: 'landing__door', href: 'sponsor.html', 'data-door': 'sponsor' }, [
     'I look after someone',
   ]);
 
@@ -90,7 +90,7 @@ export function renderLanding(container: HTMLElement): void {
       // below is never duplicated. Decorative: the <h1> carries the name.
       el('img', {
         class: 'landing__hero-img',
-        src: '/icons/brand/landing-hero.jpg',
+        src: 'icons/brand/landing-hero.jpg',
         alt: '',
         'aria-hidden': 'true',
         decoding: 'async',
@@ -116,9 +116,9 @@ export function renderLanding(container: HTMLElement): void {
     ]),
 
     el('footer', { class: 'landing__footer' }, [
-      el('a', { href: '/help.html', class: 'landing__foot-link' }, ['about the project']),
+      el('a', { href: 'help.html', class: 'landing__foot-link' }, ['about the project']),
       el('span', { 'aria-hidden': 'true' }, ['·']),
-      el('a', { href: '/LICENSE', class: 'landing__foot-link' }, ['license']),
+      el('a', { href: 'LICENSE', class: 'landing__foot-link' }, ['license']),
     ]),
   );
 }

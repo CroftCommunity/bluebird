@@ -28,7 +28,7 @@ test.describe('S1 landing + role funnel', () => {
 
   test('Door A leads to the sponsor page', async ({ page }) => {
     await page.goto('/');
-    await expect(page.locator('[data-door="sponsor"]')).toHaveAttribute('href', '/sponsor.html');
+    await expect(page.locator('[data-door="sponsor"]')).toHaveAttribute('href', 'sponsor.html');
   });
 
   test('the footer carries the project docs, not product nav', async ({ page }) => {
