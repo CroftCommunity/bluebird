@@ -25,6 +25,13 @@ export const SKYLITE_SCOPE = 'atproto transition:generic';
 
 const KEY_PENDING = 'skylite.oauth.pending';
 const KEY_SESSION = 'skylite.oauth.session';
+const KEY_HANDLE = 'skylite.oauth.handle';
+
+/** The typed sign-in value, kept only if it's a handle (not a DID), for display. */
+function normalizeHandle(handleOrDid: string): string | null {
+  const v = handleOrDid.trim().replace(/^@/, '');
+  return v && !v.startsWith('did:') ? v : null;
+}
 
 function cfg(): { clientId: string; redirectUri: string; scope: string } {
   return { clientId: SKYLITE_CLIENT_ID, redirectUri: `${window.location.origin}/sponsor.html`, scope: SKYLITE_SCOPE };
@@ -55,6 +62,9 @@ export function clearSession(): void {
 export async function startSignIn(handleOrDid: string): Promise<void> {
   const { authorizeUrl, pending } = await beginAuthorization(handleOrDid.trim(), cfg());
   ss()?.setItem(KEY_PENDING, JSON.stringify(pending));
+  const handle = normalizeHandle(handleOrDid);
+  if (handle) ss()?.setItem(KEY_HANDLE, handle);
+  else ss()?.removeItem(KEY_HANDLE);
   window.location.assign(authorizeUrl);
 }
 
@@ -69,9 +79,12 @@ export async function finishSignInFromUrl(): Promise<OAuthSession | null> {
   if (!raw) throw new Error('No pending sign-in on this device.');
   const pending = JSON.parse(raw) as PendingAuth;
 
-  const session = await completeAuthorization(pending, { code, state }, cfg());
+  const base = await completeAuthorization(pending, { code, state }, cfg());
+  const handle = ss()?.getItem(KEY_HANDLE)?.trim();
+  const session: OAuthSession = handle ? { ...base, handle } : base;
   ss()?.setItem(KEY_SESSION, JSON.stringify(session));
   ss()?.removeItem(KEY_PENDING);
+  ss()?.removeItem(KEY_HANDLE);
 
   // Scrub the OAuth params from the address bar.
   const url = new URL(window.location.href);

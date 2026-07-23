@@ -86,9 +86,9 @@ test.describe('Sponsor OAuth (hermetic end-to-end)', () => {
     await page.locator('[data-signin-handle]').fill('alice.test');
     await page.locator('[data-signin-btn]').click();
 
-    // After the round-trip we're signed in as the DID.
+    // After the round-trip we're signed in, shown by handle (not the raw DID).
     await expect(page.locator('[data-signin="in"]')).toBeVisible();
-    await expect(page.locator('[data-signin="in"]')).toContainText(DID);
+    await expect(page.locator('[data-signed-in-as]')).toContainText('@alice.test');
 
     // Publish the explorer's record to the PDS.
     await page.locator('[data-publish-btn]').first().click();

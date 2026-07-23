@@ -1019,6 +1019,26 @@ body {
   padding: 0.6rem 1.1rem;
 }
 
+/* Multi-paragraph and list cards (the sponsor guide). */
+.explain__card p + p,
+.explain__card p + ol,
+.explain__card p + ul {
+  margin-top: 0.8rem;
+}
+
+.explain__steps,
+.explain__list {
+  margin: 0.8rem 0 0;
+  padding-left: 1.4rem;
+  line-height: 1.55;
+  font-size: 1.05rem;
+}
+
+.explain__steps li,
+.explain__list li {
+  margin: 0.4rem 0;
+}
+
 /* --- help handoff modal --- */
 .handoff {
   position: fixed;
@@ -1465,12 +1485,25 @@ body {
 }
 
 /* --- S2 sponsor multi-explorer dashboard --- */
-.g-checklist .g-toggle,
-.g-switches .g-toggle {
+.g-section .g-toggle {
   display: flex;
   gap: 0.5rem;
   align-items: baseline;
   margin: 0.5rem 0;
+}
+
+/* A flat sub-section within an explorer card: a divider + heading, then its
+   controls. Deliberately NOT a raised card — the explorer card is one column
+   of fields, not a stack of nested bubbles. */
+.g-section {
+  padding-top: 1rem;
+  margin-top: 1rem;
+  border-top: 1px solid var(--border);
+}
+
+.g-section > h3 {
+  margin: 0 0 0.5rem;
+  font-size: 1.05rem;
 }
 
 .g-explorers {
@@ -1495,11 +1528,16 @@ body {
   margin: 0;
 }
 
-.g-switches {
-  padding: 0.6rem 0;
-  border-top: 1px solid var(--sky-indigo-soft);
-  border-bottom: 1px solid var(--sky-indigo-soft);
-  margin: 0.6rem 0;
+/* Collapsible advanced disclosures (raw record, no-account setup). */
+.g-details {
+  margin-top: 0.9rem;
+}
+
+.g-details > summary {
+  cursor: pointer;
+  color: var(--link);
+  font-weight: 600;
+  padding: 0.2rem 0;
 }
 
 .g-provision code {

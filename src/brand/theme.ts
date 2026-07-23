@@ -1,8 +1,9 @@
 /**
  * P2 theme mechanics. Theme (light/dark) is a device-local, explorer-owned
  * setting — a third axis, independent of any capability or the cosmetic skin
- * switch, and it never syncs anywhere. Default follows `prefers-color-scheme`;
- * a manual override persists in localStorage and wins over the media query.
+ * switch, and it never syncs anywhere. The default is ALWAYS light — the app
+ * does not follow the device's system dark mode. Dark is opt-in: a manual
+ * override persists in localStorage and is the only way to get the dark theme.
  * The `theme-color` meta is kept in sync with the active theme's background.
  */
 
@@ -24,16 +25,9 @@ export function storedOverride(): Theme | null {
   return v === 'light' || v === 'dark' ? v : null;
 }
 
-export function systemTheme(): Theme {
-  try {
-    return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
-  } catch {
-    return 'light';
-  }
-}
-
+/** Light unless the explorer has explicitly chosen dark; system is never consulted. */
 export function activeTheme(): Theme {
-  return storedOverride() ?? systemTheme();
+  return storedOverride() ?? 'light';
 }
 
 /** Keep the browser-UI theme-color meta matching the active background token. */
@@ -96,22 +90,8 @@ function wireToggles(): void {
   updateToggles();
 }
 
-let installed = false;
-
-/** Apply on load, wire theme toggles, and follow live system changes (no override). */
+/** Apply the active theme on load and wire up the theme toggles. */
 export function installTheme(): void {
   applyTheme();
   wireToggles();
-  if (installed) return;
-  installed = true;
-  try {
-    window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => {
-      if (!storedOverride()) {
-        applyTheme();
-        updateToggles();
-      }
-    });
-  } catch {
-    /* no matchMedia — leave the applied default */
-  }
 }

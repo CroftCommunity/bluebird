@@ -28,12 +28,13 @@ async function horizontalBleeders(page: Page): Promise<string[]> {
 test.describe('no horizontal text overrun on a 360px phone', () => {
   test('sponsor dashboard with an explorer card fully rendered', async ({ page }) => {
     await page.goto('/sponsor.html');
-    await page.getByPlaceholder('did:plc:… (your sponsor DID)').fill('did:plc:sponsor1');
+    await page.locator('[data-advanced-identity] > summary').click();
+    await page.getByPlaceholder('did:plc:…').fill('did:plc:sponsor1');
     await page.locator('[data-apply-identity]').click();
     await page.locator('[data-add-explorer]').click();
     await expect(page.locator('[data-explorer]')).toHaveCount(1);
     // The long checkbox sentences must wrap, not widen the card.
-    await expect(page.getByText('Turn on email 2FA')).toBeVisible();
+    await expect(page.getByText('This device only — no account')).toBeVisible();
     expect(await horizontalBleeders(page)).toEqual([]);
   });
 

@@ -3,8 +3,8 @@ import { parseConfig } from '../config/parse.js';
 
 /**
  * Local persistence for the sponsor's authoring device: the set of explorer
- * config records (keyed by their random rkey), the sponsor's identity used to
- * build provisioning links, and the onboarding checklist acknowledgement.
+ * config records (keyed by their random rkey) and the sponsor's identity used
+ * to build provisioning links.
  *
  * This is the sponsor's working set. Records are written into the sponsor's PDS
  * out of band (or, later, over OAuth); the exported JSON is the record body.
@@ -13,7 +13,6 @@ import { parseConfig } from '../config/parse.js';
 
 const KEY_EXPLORERS = 'skylite.sponsor.explorers';
 const KEY_IDENTITY = 'skylite.sponsor.identity';
-const KEY_CHECKLIST = 'skylite.sponsor.checklist';
 
 export interface SponsorIdentity {
   did?: string;
@@ -109,12 +108,4 @@ export function getSponsorIdentity(): SponsorIdentity {
 
 export function setSponsorIdentity(identity: SponsorIdentity): void {
   writeJson(KEY_IDENTITY, identity);
-}
-
-export function getChecklist(): Record<string, boolean> {
-  return readJson<Record<string, boolean>>(KEY_CHECKLIST) ?? {};
-}
-
-export function setChecklistItem(id: string, done: boolean): void {
-  writeJson(KEY_CHECKLIST, { ...getChecklist(), [id]: done });
 }

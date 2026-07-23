@@ -55,11 +55,12 @@ test.describe('brand: header mark + wordmark', () => {
   });
 
   test('the header mark swaps day-window (light) for constellation (dark)', async ({ page }) => {
-    await page.emulateMedia({ colorScheme: 'light' });
     await page.goto('/');
     await expect.poll(() => headerMarkUrl(page)).toContain('header-light.png');
 
-    await page.emulateMedia({ colorScheme: 'dark' });
+    // Dark is opt-in (data-theme), not driven by the system color scheme.
+    await page.evaluate(() => localStorage.setItem('skylite.theme', 'dark'));
+    await page.reload();
     await expect.poll(() => headerMarkUrl(page)).toContain('header-dark.png');
   });
 

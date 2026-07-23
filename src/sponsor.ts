@@ -13,8 +13,6 @@ import {
   removeExplorer,
   getSponsorIdentity,
   setSponsorIdentity,
-  getChecklist,
-  setChecklistItem,
   type SponsorIdentity,
 } from './sponsor/store.js';
 import { ensureAuditVault } from './sponsor/audit-key.js';
@@ -64,6 +62,17 @@ function field(labelText: string, control: HTMLElement, hint?: string): HTMLElem
     el('span', { class: 'g-field__label' }, [labelText]),
     control,
     ...(hint ? [el('span', { class: 'g-hint' }, [hint])] : []),
+  ]);
+}
+
+/** A plain sub-section within the explorer column — a heading, optional intro,
+ *  then its controls. Deliberately NOT a raised card: the explorer card is one
+ *  flat column of fields, not a stack of nested bubbles. */
+function section(title: string, children: HTMLElement[], intro?: string): HTMLElement {
+  return el('section', { class: 'g-section' }, [
+    el('h3', {}, [title]),
+    ...(intro ? [el('p', { class: 'g-hint' }, [intro])] : []),
+    ...children,
   ]);
 }
 
@@ -215,7 +224,7 @@ function searchSettings(config: SkyliteConfig, save: () => void): HTMLElement {
       }),
     );
 
-  return el('div', { class: 'g-card' }, [
+  return el('section', { class: 'g-section' }, [
     el('h3', {}, ['Search (Telescope rung 2)']),
     el('p', { class: 'g-hint' }, [
       'A trust gradient, not a locked room. The label floor (no adult or graphic content) always applies. See the safeguards below.',
@@ -380,16 +389,16 @@ function renderExplorerCard(rkey: string, config: SkyliteConfig, identity: Spons
       'A nickname — never a real or legal name, school, or age. This record is public.',
     ),
 
-    el('div', { class: 'g-switches' }, [
-      toggle('On this device only (no account)', config.localOnly, (v) => {
+    section('Sharing', [
+      toggle('This device only — no account', config.localOnly, (v) => {
         config.localOnly = v;
         save();
         rerender();
       }, true),
       el('p', { class: 'g-hint' }, [
         config.localOnly
-          ? 'On: no account, nothing about the explorer leaves the device. Turn off, together, to add hearts and shared follows.'
-          : 'Off (sharing on): the explorer has an account; likes and follows exist as public records.',
+          ? 'On: the explorer has no account and nothing about them leaves their device. Turn this off (together, when the time is right) to give them hearts and shared follows — that creates a public account.'
+          : 'Off: the explorer has an account, so their hearts and follows exist as public records.',
       ]),
       field('Look (cosmetic only — never changes what the device can do)', skinSelect(config, save)),
       toggle('Pause Skylite for this explorer', config.paused, (v) => {
@@ -398,19 +407,20 @@ function renderExplorerCard(rkey: string, config: SkyliteConfig, identity: Spons
       }, true),
     ]),
 
-    el('div', { class: 'g-card' }, [
-      el('h3', {}, ['Channels']),
-      el('p', { class: 'g-hint' }, ['The explorer sees the accounts in every channel that is On.']),
-      ...config.channels.map((c, i) => renderChannel(config, c, i, save)),
-      button('+ Add channel', 'g-btn', () => {
-        config.channels.push({ id: `channel-${config.channels.length + 1}`, name: 'New channel', enabled: true, accounts: [{ actor: '' }] });
-        save();
-        rerender();
-      }),
-    ]),
+    section(
+      'Channels',
+      [
+        ...config.channels.map((c, i) => renderChannel(config, c, i, save)),
+        button('+ Add channel', 'g-btn', () => {
+          config.channels.push({ id: `channel-${config.channels.length + 1}`, name: 'New channel', enabled: true, accounts: [{ actor: '' }] });
+          save();
+          rerender();
+        }),
+      ],
+      'The explorer sees the accounts in every channel that is On.',
+    ),
 
-    el('div', { class: 'g-card' }, [
-      el('h3', {}, ['Reposts & discovery']),
+    section('Reposts & discovery', [
       toggle('Show reposts', config.showReposts, (v) => {
         config.showReposts = v;
         save();
@@ -424,28 +434,25 @@ function renderExplorerCard(rkey: string, config: SkyliteConfig, identity: Spons
       }),
     ]),
 
-    el('div', { class: 'g-card' }, [
-      el('h3', {}, ['Friends (reciprocal, curated)']),
-      el('p', { class: 'g-hint' }, ['Friends, by DID, whose hearts may show among friends. Add only people you both trust.']),
-      renderFriends(config, save),
-    ]),
+    section(
+      'Friends (reciprocal, curated)',
+      [renderFriends(config, save)],
+      'Friends, by DID, whose hearts may show among friends. Add only people you both trust.',
+    ),
 
-    el('div', { class: 'g-card' }, [
-      el('h3', {}, ['Approved feeds (Telescope)']),
-      renderFeeds(config, save),
-    ]),
+    section('Approved feeds (Telescope)', [renderFeeds(config, save)]),
 
     searchSettings(config, save),
 
-    field('Contact for the “Get help” button (optional)', helpFields(config, save)),
-    field('Check-in window (hours unreachable before the garden locks)', staleField(config, save)),
+    section('Extras', [
+      field('Contact for the “Get help” button (optional)', helpFields(config, save)),
+      field('Check-in window (hours unreachable before the garden locks)', staleField(config, save)),
+    ]),
 
-    el('div', { class: 'g-card g-provision' }, [
-      el('h3', {}, ['Set up this explorer’s device']),
+    el('section', { class: 'g-section g-provision' }, [
+      el('h3', {}, ['Send this explorer their link']),
       el('p', { class: 'g-hint' }, [
-        'Record key (random, not a name): ',
-        el('code', {}, [rkey]),
-        '. This record is public, like everything on the network.',
+        'Copy this link and send it to the explorer. When they open it on their device, that device becomes their garden. The link carries only public information — never a password.',
       ]),
       identity.did
         ? el('div', { class: 'g-row' }, [
@@ -459,9 +466,17 @@ function renderExplorerCard(rkey: string, config: SkyliteConfig, identity: Spons
             }, { 'data-copy-link': rkey }),
             copyMsg,
           ])
-        : el('p', { class: 'g-msg' }, ['Set your sponsor DID above to make a device link.']),
-      field(`Record body (store as ${SKYLITE_CONFIG_NSID}/${rkey})`, jsonArea),
+        : el('p', { class: 'g-msg' }, ['Sign in (or set your account below) to make a device link.']),
       publishRow(rkey, config),
+      el('details', { class: 'g-details' }, [
+        el('summary', {}, ['Advanced: the raw record']),
+        el('p', { class: 'g-hint' }, [
+          'Record key (random, not a name): ',
+          el('code', {}, [rkey]),
+          '. This record is public, like everything on the network.',
+        ]),
+        field(`Record body (store as ${SKYLITE_CONFIG_NSID}/${rkey})`, jsonArea),
+      ]),
       el('p', {}, [
         el('a', { class: 'g-btn g-btn--ghost', href: `audit.html?r=${encodeURIComponent(rkey)}`, 'data-audit-link': rkey }, [
           'See what the garden hid, and why',
@@ -494,42 +509,59 @@ function publishRow(rkey: string, config: SkyliteConfig): HTMLElement {
 
 // --- top-level sections ------------------------------------------------------
 
-const CHECKLIST_ITEMS: { id: string; label: string }[] = [
-  { id: 'email2fa', label: 'Turn on email 2FA for your Bluesky account (Settings, on bsky.social).' },
-  { id: 'inbox', label: 'Harden the email inbox behind it (a strong, unique password and its own 2FA).' },
-  { id: 'revoke', label: 'Know where to revoke device sessions (your PDS’s OAuth session page).' },
-];
-
-function renderChecklist(): HTMLElement {
-  const state = getChecklist();
-  const items = CHECKLIST_ITEMS.map((item) =>
-    toggle(item.label, state[item.id] === true, (v) => setChecklistItem(item.id, v)),
-  );
-  return el('div', { class: 'g-card g-checklist', 'data-checklist': 'true' }, [
-    el('h2', {}, ['First, secure your account']),
+/** Signed-in view: who you are (by handle when known) + sign out. */
+function renderSignedIn(session: OAuthSession): HTMLElement {
+  const who = session.handle ? `@${session.handle}` : session.did;
+  return el('div', { class: 'g-signin', 'data-signin': 'in' }, [
+    el('p', { class: 'g-msg', 'data-signed-in-as': 'true' }, ['Signed in as ', el('strong', {}, [who]), '.']),
     el('p', { class: 'g-hint' }, [
-      'A garden is only as safe as the account that tends it. Do these once before you invite an explorer:',
+      'Your explorers’ links are ready below. Use “Publish to my PDS” on any explorer to save its settings to your account.',
     ]),
-    ...items,
+    button('Sign out', 'g-btn g-btn--ghost', () => {
+      clearSession();
+      rerender();
+    }, { 'data-signout': 'true' }),
   ]);
 }
 
-function renderSignIn(): HTMLElement {
-  const session = getSession();
-  if (session) {
-    return el('div', { class: 'g-signin', 'data-signin': 'in' }, [
-      el('p', { class: 'g-msg' }, ['Signed in as ', el('code', {}, [session.did]), '.']),
-      button('Sign out', 'g-btn g-btn--ghost', () => {
-        clearSession();
-        rerender();
-      }, { 'data-signout': 'true' }),
-    ]);
-  }
+/** Signed-out view: the primary sign-in path + an advanced no-account path. */
+function renderSignedOut(identity: SponsorIdentity): HTMLElement {
   const handle = textInput('', 'your handle, e.g. you.bsky.social', () => undefined);
   handle.setAttribute('data-signin-handle', 'true');
   const msg = el('span', { class: 'g-msg', 'data-signin-msg': 'true' });
+
+  const advancedMsg = el('span', { class: 'g-msg', 'data-apply-msg': 'true' });
+  const advanced = el('details', { class: 'g-details', 'data-advanced-identity': 'true' }, [
+    el('summary', {}, ['Set up without signing in']),
+    el('p', { class: 'g-hint' }, [
+      'Have your account (DID) and save each explorer’s record to your account yourself. Signing in above does this for you.',
+    ]),
+    field(
+      'Your account (DID)',
+      textInput(identity.did ?? '', 'did:plc:…', (v) => {
+        setSponsorIdentity({ ...getSponsorIdentity(), did: v.trim() });
+      }),
+    ),
+    field(
+      'PDS host (optional)',
+      textInput(identity.pdsHost ?? '', 'e.g. https://…', (v) => {
+        setSponsorIdentity({ ...getSponsorIdentity(), pdsHost: v.trim() });
+      }),
+    ),
+    el('div', { class: 'g-row' }, [
+      button('Apply', 'g-btn g-btn--primary', () => {
+        if (!getSponsorIdentity().did) {
+          advancedMsg.textContent = 'Enter your account DID first.';
+          return;
+        }
+        rerender();
+      }, { 'data-apply-identity': 'true' }),
+      advancedMsg,
+    ]),
+  ]);
+
   return el('div', { class: 'g-signin', 'data-signin': 'out' }, [
-    field('Sign in with Bluesky (OAuth — no app passwords)', handle),
+    field('Sign in with Bluesky', handle, 'Opens Bluesky in this window, then brings you right back here. No app passwords.'),
     el('div', { class: 'g-row' }, [
       button('Sign in with Bluesky', 'g-btn g-btn--primary', () => {
         if (!handle.value.trim()) {
@@ -543,6 +575,7 @@ function renderSignIn(): HTMLElement {
       }, { 'data-signin-btn': 'true' }),
       msg,
     ]),
+    advanced,
   ]);
 }
 
@@ -551,26 +584,23 @@ function renderIdentity(identity: SponsorIdentity): HTMLElement {
   return el('div', { class: 'g-card' }, [
     el('h2', {}, ['You (the sponsor)']),
     el('p', { class: 'g-hint' }, [
-      'Your DID identifies where the explorer records live. Provisioning links carry only your DID and a record key — never a password or secret.',
+      'Explorer records live under your account. Provisioning links carry only your public information.',
     ]),
-    renderSignIn(),
-    field(
-      'Sponsor DID',
-      textInput(session?.did ?? identity.did ?? '', 'did:plc:… (your sponsor DID)', (v) => {
-        setSponsorIdentity({ ...getSponsorIdentity(), did: v.trim() });
-      }),
-    ),
-    field(
-      'PDS host',
-      textInput(session?.pds ?? identity.pdsHost ?? '', 'PDS host (optional, e.g. https://…)', (v) => {
-        setSponsorIdentity({ ...getSponsorIdentity(), pdsHost: v.trim() });
-      }),
-    ),
-    el('div', { class: 'g-row' }, [button('Apply', 'g-btn g-btn--primary', () => rerender(), { 'data-apply-identity': 'true' })]),
+    session ? renderSignedIn(session) : renderSignedOut(identity),
+  ]);
+}
+
+/** The one-time flow orientation + a link to the fuller sponsor guide. */
+function renderIntro(): HTMLElement {
+  return el('div', { class: 'g-card g-intro', 'data-intro': 'true' }, [
+    el('h2', {}, ['Set up a garden']),
     el('p', { class: 'g-hint' }, [
-      'Signed in, “Publish to my PDS” on each explorer writes its record over OAuth. Otherwise store each record body (shown on its card) in your repo as ',
-      el('code', {}, [SKYLITE_CONFIG_NSID]),
-      ' at its record key.',
+      'You build gardens here, on your own device — you don’t need the explorer’s device. For each explorer, pick what they see, then copy their link and send it. They open it on their device to start their garden.',
+    ]),
+    el('p', {}, [
+      el('a', { class: 'g-btn g-btn--ghost', href: 'guide.html', 'data-guide-link': 'true' }, [
+        'Read the sponsor guide (setup + securing your account)',
+      ]),
     ]),
   ]);
 }
@@ -582,7 +612,7 @@ function render(): void {
   const explorers = listExplorers();
 
   root.append(
-    renderChecklist(),
+    renderIntro(),
     renderIdentity(identity),
     el('div', { class: 'g-explorers', 'data-explorers': 'true' }, [
       el('div', { class: 'g-explorers__head' }, [

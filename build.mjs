@@ -41,6 +41,7 @@ const PAGES = [
   { html: 'mysky.html', entry: 'src/mysky/page.ts', token: '%MYSKY_JS%' },
   { html: 'telescope.html', entry: 'src/telescope/page.ts', token: '%TELESCOPE_JS%' },
   { html: 'help.html', entry: 'src/help.ts', token: '%HELP_JS%' },
+  { html: 'guide.html', entry: 'src/guide.ts', token: '%GUIDE_JS%' },
 ];
 
 rmSync(dist, { recursive: true, force: true });

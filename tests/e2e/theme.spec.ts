@@ -1,8 +1,8 @@
 import { test, expect, type Page } from '@playwright/test';
 import { seedExplorer } from './helpers.js';
 
-// P2 theme mechanics: device-local theme, default = prefers-color-scheme, a
-// manual override that persists and wins, and theme-color meta kept in sync.
+// P2 theme mechanics: device-local theme, default ALWAYS light (system dark is
+// never followed), a manual override that persists and wins, theme-color synced.
 
 const bgToken = (page: Page): Promise<string> =>
   page.evaluate(() => getComputedStyle(document.documentElement).getPropertyValue('--bg').trim().toUpperCase());
@@ -16,29 +16,30 @@ const dataTheme = (page: Page): Promise<string | null> =>
   page.evaluate(() => document.documentElement.getAttribute('data-theme'));
 
 test.describe('P2 theme mechanics', () => {
-  test('with no override, the emulated color-scheme drives the theme', async ({ page }) => {
+  test('with no override, the theme is always light — even on a dark-mode device', async ({ page }) => {
     await page.emulateMedia({ colorScheme: 'light' });
     await page.goto('/');
-    expect(await dataTheme(page)).toBeNull(); // following the system, no override
+    expect(await dataTheme(page)).toBeNull(); // no override
     expect(await bgToken(page)).toBe('#FFFFFF');
     expect(await themeColor(page)).toBe('#FFFFFF');
 
+    // System dark must NOT flip the app — light is the hard default.
     await page.emulateMedia({ colorScheme: 'dark' });
     await page.reload();
     expect(await dataTheme(page)).toBeNull();
-    expect(await bgToken(page)).toBe('#212121');
-    expect(await themeColor(page)).toBe('#212121');
+    expect(await bgToken(page)).toBe('#FFFFFF');
+    expect(await themeColor(page)).toBe('#FFFFFF');
   });
 
-  test('a manual override persists across reload and wins over the media query', async ({ page }) => {
+  test('a manual dark override persists across reload', async ({ page }) => {
     await page.emulateMedia({ colorScheme: 'light' });
     await page.goto('/');
-    // Simulate the explorer choosing dark while the system is light.
+    // Simulate the explorer choosing dark.
     await page.evaluate(() => localStorage.setItem('skylite.theme', 'dark'));
     await page.reload();
 
     expect(await dataTheme(page)).toBe('dark'); // override applied
-    expect(await bgToken(page)).toBe('#212121'); // beats the light media query
+    expect(await bgToken(page)).toBe('#212121');
     expect(await themeColor(page)).toBe('#212121');
   });
 
@@ -58,13 +59,13 @@ test.describe('P2 theme mechanics', () => {
     expect(await dataTheme(page)).toBe('dark'); // persisted
   });
 
-  test('live system change is followed when there is no override', async ({ page }) => {
+  test('a live system change is ignored when there is no override', async ({ page }) => {
     await page.emulateMedia({ colorScheme: 'light' });
     await page.goto('/');
     expect(await bgToken(page)).toBe('#FFFFFF');
-    // No reload — the matchMedia listener should re-sync.
+    // Flipping the device to dark must not change the app — light is the default.
     await page.emulateMedia({ colorScheme: 'dark' });
-    await expect.poll(() => bgToken(page)).toBe('#212121');
-    await expect.poll(() => themeColor(page)).toBe('#212121');
+    await expect.poll(() => bgToken(page)).toBe('#FFFFFF');
+    await expect.poll(() => themeColor(page)).toBe('#FFFFFF');
   });
 });

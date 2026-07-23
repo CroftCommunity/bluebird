@@ -13,8 +13,9 @@
      NAVY ink (5.37:1). Dark CTA is Rich Monarch with white ink (4.17:1, held
      to large-text AA; CTA buttons render >=1.125rem bold).
 
-  Theming: light is the default; system dark applies unless the explorer forced
-  light; an explicit data-theme always wins (see src/brand/theme.ts).
+  Theming: light is the default, always — the app does not follow the device's
+  system dark mode. Dark applies only when the explorer explicitly picks it via
+  the theme toggle (an explicit data-theme="dark"; see src/brand/theme.ts).
 */
 
 :root {
@@ -44,34 +45,8 @@
   color-scheme: light;
 }
 
-/* System dark, unless the explorer explicitly forced light. */
-@media (prefers-color-scheme: dark) {
-  :root:not([data-theme="light"]) {
-    --bg: #212121;         /* Charcoal Black */
-    --bg-raised: #2A2A2A;  /* Deep Aero Mist */
-    --bg-sunken: #1C1C1C;  /* Gunmetal Black */
-
-    --ink: #FFFFFF;        /* Cloud White — 16.10:1 on --bg */
-    --ink-muted: #A1BAC5;  /* Aero Grey — 7.93:1 on --bg */
-
-    --accent: #1976D2;     /* Deep-Sky Blue */
-    --accent-ink: #FFFFFF; /* 4.60:1 */
-    --link: #7FB3E3;       /* dark link/code text — 6.47:1 on --bg-raised (accent #1976D2 is a fill, fails as text) */
-    --cta: #C24C00;        /* Rich Monarch Orange (darkened for AA) */
-    --cta-ink: #FFFFFF;    /* 4.85:1 on --cta — normal-text AA */
-    --highlight: #F1C40F;  /* Deep Sunbeam Yellow */
-    --highlight-ink: #212121;
-
-    --border: #3A3A3A;     /* Steel-Mist Grey */
-    --navy: #0E1A33;       /* Dark Twilight Navy */
-    --danger: #FF9A9A;     /* error text — 7.93:1 on --bg */
-    --header-mark: url("/icons/brand/header-dark.png");
-
-    color-scheme: dark;
-  }
-}
-
-/* Explicit override always wins over the media query. */
+/* Dark is opt-in only: it applies when the explorer picks it via the theme
+   toggle (data-theme="dark"). The app never auto-switches to system dark. */
 :root[data-theme="dark"] {
   --bg: #212121;
   --bg-raised: #2A2A2A;

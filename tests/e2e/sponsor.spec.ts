@@ -3,12 +3,13 @@ import { test, expect } from '@playwright/test';
 // Hermetic: the sponsor dashboard is pure local authoring — no network at all.
 
 test.describe('Sponsor multi-explorer dashboard (S2)', () => {
-  test('shows the security checklist and a sponsor identity section', async ({ page }) => {
+  test('shows the setup intro, a guide link, and a sponsor identity section', async ({ page }) => {
     await page.goto('/sponsor.html');
-    await expect(page.getByRole('heading', { name: 'First, secure your account' })).toBeVisible();
-    await expect(page.getByText('Turn on email 2FA')).toBeVisible();
-    await expect(page.getByText('revoke device sessions')).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Set up a garden' })).toBeVisible();
+    await expect(page.locator('[data-guide-link]')).toHaveAttribute('href', 'guide.html');
     await expect(page.getByRole('heading', { name: 'You (the sponsor)' })).toBeVisible();
+    // The security checklist moved to the guide — it is not on the dashboard.
+    await expect(page.getByRole('heading', { name: 'First, secure your account' })).toHaveCount(0);
     // No app-password fields anywhere.
     await expect(page.getByPlaceholder(/app password/i)).toHaveCount(0);
   });
@@ -39,7 +40,9 @@ test.describe('Sponsor multi-explorer dashboard (S2)', () => {
 
   test('a per-explorer provisioning link carries the sponsor DID and the record rkey', async ({ page }) => {
     await page.goto('/sponsor.html');
-    await page.getByPlaceholder('did:plc:… (your sponsor DID)').fill('did:plc:sponsor1');
+    // The manual (no-account) DID entry lives under the advanced disclosure.
+    await page.locator('[data-advanced-identity] > summary').click();
+    await page.getByPlaceholder('did:plc:…').fill('did:plc:sponsor1');
     await page.locator('[data-apply-identity]').click();
     await page.locator('[data-add-explorer]').click();
 

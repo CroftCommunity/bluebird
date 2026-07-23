@@ -44,6 +44,8 @@ export interface PendingAuth {
 
 export interface OAuthSession {
   did: string;
+  /** The handle the sponsor signed in with, for display (e.g. you.bsky.social). */
+  handle?: string;
   pds: string;
   issuer: string;
   accessToken: string;

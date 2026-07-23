@@ -30,6 +30,7 @@ function srcFiles(): string[] {
 const LIVING_SURFACES = [
   'index.html',
   'help.html',
+  'guide.html',
   'sponsor.html',
   'audit.html',
   'telescope.html',
