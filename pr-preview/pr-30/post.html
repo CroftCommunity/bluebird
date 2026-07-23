@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <!-- Reads a single public post (app.bsky.feed.getPosts via the public AppView)
+         and its images (cdn.bsky.app). No auth host is needed — the post-view is
+         an unauthenticated read. -->
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data: https://cdn.bsky.app https://*.cdn.bsky.app; connect-src 'self' https://public.api.bsky.app; manifest-src 'self'; base-uri 'none'; object-src 'none'; form-action 'none'; frame-ancestors 'none'"
+    />
+    <title>Skylite — Post</title>
+    <link rel="manifest" href="manifest.webmanifest" />
+    <link rel="stylesheet" href="styles.css?v=v1%200.1.0%2B94b1a41" />
+    <meta name="theme-color" content="#FFFFFF" />
+    <link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png" />
+    <link rel="apple-touch-icon" href="icons/apple-touch-icon-180.png" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-title" content="Skylite" />
+  </head>
+  <body>
+    <header class="topbar">
+      <span class="topbar__mark" data-header-mark aria-hidden="true"></span>
+      <h1 class="topbar__wordmark">
+        <svg class="wordmark" viewBox="0 0 300 72" role="img" aria-label="Skylite" xmlns="http://www.w3.org/2000/svg"><text x="2" y="56" fill="currentColor" font-family="system-ui,-apple-system,'Segoe UI',Roboto,sans-serif" font-weight="800" font-size="60" textLength="292" lengthAdjust="spacingAndGlyphs">Skylite</text></svg>
+      </h1>
+      <nav class="topbar__nav">
+        <a href="index.html">Garden</a>
+        <a href="saves.html">Saves</a>
+      </nav>
+      <button type="button" class="topbar__theme" data-theme-toggle aria-label="Switch theme"><span class="topbar__theme-icon" data-theme-icon aria-hidden="true">☀</span></button>
+    </header>
+    <main class="garden" data-post-view aria-live="polite"></main>
+    <footer class="build">
+      <span class="build__label">build</span>
+      <code data-version-stamp>v1 0.1.0+94b1a41</code>
+    </footer>
+    <script type="module" src="assets/page-QK5CCJST.js"></script>
+  </body>
+</html>
