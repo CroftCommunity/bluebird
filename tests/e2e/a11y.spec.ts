@@ -3,9 +3,12 @@ import AxeBuilder from '@axe-core/playwright';
 
 // Automated accessibility scan (adopted from croft-pwa). Every page, both themes
 // (contrast is theme-dependent), must have zero serious/critical axe violations.
-// Pages are scanned as they render offline (no data mocks) — this gates the shell
-// chrome (topbar, nav, footer, empty/loading states); content that only appears
-// after a live fetch is covered by the feature specs.
+//
+// HERMETIC by construction: all cross-origin requests are blocked, so every page
+// renders the same offline/shell state everywhere (a machine with network would
+// otherwise fetch live atproto content and scan a different DOM than CI). This
+// gates the shell chrome (topbar, nav, footer, CTA, links, offline/error states);
+// a11y of live-fetched feed content is a separate concern for the feature specs.
 const PAGES = [
   '/index.html',
   '/help.html',
@@ -25,6 +28,13 @@ for (const path of PAGES) {
           /* private mode */
         }
       }, theme);
+      // Block all cross-origin traffic so the render is deterministic (offline
+      // shell) regardless of whether the runner has network.
+      await page.route('**/*', (route) => {
+        const host = new URL(route.request().url()).hostname;
+        if (host === 'localhost' || host === '127.0.0.1') void route.continue();
+        else void route.abort();
+      });
       await page.goto(path, { waitUntil: 'load' });
 
       const results = await new AxeBuilder({ page }).analyze();
