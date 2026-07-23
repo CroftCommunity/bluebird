@@ -6,45 +6,28 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: read
-  pages: write
-  id-token: write
+  contents: write # push the built site to the gh-pages branch
 
-# One deploy at a time; let an in-flight deploy finish.
+# Serialize every writer of gh-pages (this deploy + the preview workflow) so they
+# never race on `git push`.
 concurrency:
-  group: pages
+  group: gh-pages
   cancel-in-progress: false
 
 jobs:
-  build:
-    name: build
+  deploy:
+    name: deploy
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-
       - uses: actions/setup-node@v4
         with:
           node-version: 22
           cache: npm
-
       - run: npm ci
-
-      - name: Build static bundle
-        run: npm run build
-
-      - uses: actions/configure-pages@v5
-
-      - uses: actions/upload-pages-artifact@v3
-        with:
-          path: dist
-
-  deploy:
-    name: deploy
-    needs: build
-    runs-on: ubuntu-latest
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
-    steps:
-      - id: deployment
-        uses: actions/deploy-pages@v4
+      - run: npm run build
+      # Publish dist/ to the ROOT of gh-pages, PRESERVING pr-preview/ so a
+      # production deploy never wipes a live preview. The CNAME in dist/ keeps the
+      # custom domain (skylite.croft.ing). Plain git — no third-party deploy action.
+      # Pages source must be "Deploy from a branch → gh-pages / root". See docs/PREVIEWS.md.
+      - run: bash scripts/pages-deploy.sh root dist "deploy ${{ github.sha }} to Pages"
