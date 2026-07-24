@@ -414,7 +414,7 @@ refactor. *(Owner-confirmed reorder, 2026-07-24.)*
 - [x] **A1. Execute Phase 1a** (the crypto-core refactor; full spec in the Phase 1a
   section below). Gate: the existing audit tests stay GREEN; the pre-refactor
   unwrap fixture is committed. This is the foundation the probe is built on.
-- [ ] **A2. Probe harness** — new throwaway `probe.html` + `src/probe/page.ts`
+- [x] **A2. Probe harness** — new throwaway `probe.html` + `src/probe/page.ts`
   (added to `build.mjs` PAGES), built on the A1 core, every action behind a button
   (transient-activation requirement, `vault.ts:117`,`:135`). Panels:
   - **D1:** at boot, read + render `sessionStorage['probe']` and
@@ -433,18 +433,20 @@ refactor. *(Owner-confirmed reorder, 2026-07-24.)*
   - Route everything through `src/log.ts` (so the hmac-secret-trap `log.warn`
     surfaces in the console). This page lives only on the probe branch and **never
     merges** — harness code is throwaway; the blob it emits is not.
-- [ ] **A3. Fixture-capture button** — the probe emits
-  `{ wrapped:{iv,ct}, material, salt, label }` as copyable JSON, so the on-device
-  D5 result drops straight into `tests/fixtures/` as the Phase 1a keep-as-fixture
-  seed (see Phase 1a's fixture note — "prefer the D5 probe blob if available").
+- [x] **A3. Fixture-capture button** — the probe emits
+  `{ wrapped:{iv,ct}, materialHex, salt, hkdfInfo }` as copyable JSON, so the
+  on-device D5 result drops straight into `tests/fixtures/` as the Phase 1a
+  keep-as-fixture seed (see Phase 1a's fixture note).
 - [ ] **A4. Deploy rehearsal** — open a PR from the probe branch → preview builds at
   `https://skylite.croft.ing/pr-preview/pr-<N>/` → confirm on **desktop Safari
   first** that the page loads, D1 stamps render, and PRF enroll works in a tab.
   This establishes the tab baseline so the device session isolates the one genuine
-  unknown (standalone vs tab).
+  unknown (standalone vs tab). *(Pending the push/PR — outward-facing, awaiting
+  go-ahead. Hermetic proxy already green: `tests/e2e/probe-smoke.spec.ts` covers
+  the D1 stamp + the simulated crypto round-trip.)*
 
 **Track B — device-test script (the artifact you carry to the device):**
-- [ ] **B1.** A one-page checklist under `docs/` (or the PR body): preconditions
+- [x] **B1.** A one-page checklist under `docs/` (or the PR body): preconditions
   (iOS 18.4+, iCloud Keychain ON, install the preview URL to the home screen,
   confirm standalone chrome — no address bar), then the exact tap order for
   D1→D5, then a results table to fill. One session answers all six gates: D1/D5
@@ -1085,6 +1087,21 @@ surfaces; confirm it still passes after edits.
   110/110 — including `audit-passkey.spec.ts`, which drives the real PRF path via a
   virtual authenticator, so the `prfEnroll`/`prfGet` label refactor is proven
   behavior-preserving, not only the passphrase path. Next: A2 (probe harness).
+- **2026-07-24 — Phase 0-prep A2/A3/B1 done.** Built the throwaway device probe:
+  `probe.html` + `src/probe/page.ts` (wired into `build.mjs` PAGES, branch-only,
+  never merges), on the Phase 1a core. D1 storage-stamp panel; D5 enroll / get-×2
+  (intra-session stability + the `enabled`-vs-`results.first` trap dump) / wrap /
+  unlock-re-derive-round-trip; a "simulate material" path so desktop Safari (A4)
+  can verify the AES-GCM wiring with no passkey; A3 copy-fixture button emitting a
+  valid Phase 1a fixture shape. Installs standalone via apple-mobile-web-app meta;
+  strict CSP, no inline JS. **B1:** `docs/PROBE-DEVICE-SCRIPT.md` — the one-page
+  device runbook (preconditions incl. iOS 18.4+/iCloud Keychain, install steps,
+  D1 and D5 tap order with decision tables, D2/D3/D4/D6 free-observations,
+  sign-off). TDD: RED-first `tests/e2e/probe-smoke.spec.ts` (D1 stamp + simulated
+  round-trip), now green. Full suite: unit 203/203, e2e 112/112, build ok
+  (10 pages, budget ok). **A4 remains** — needs the push + PR to get a preview URL
+  (outward-facing; awaiting go-ahead), then the desktop-Safari tab baseline. After
+  A4, the device session runs the B1 script.
 
 ### Pass 2: Gap Analysis — 2026-07-24
 **Found:**
