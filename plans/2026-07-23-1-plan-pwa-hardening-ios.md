@@ -150,6 +150,43 @@ Confirmed firsthand by reading the live code (file:line evidence):
   Standalone-PWA PRF is under-documented → device-verify. Practical floor: iOS
   18.4. Sources in the Review Log.
 
+**Pass 2 gap-analysis findings (verified against code 2026-07-24):**
+- **`vault.ts` is NOT directly reusable — it is specialized to the audit
+  keypair.** `wrapPrivateKey`/`unwrapPrivateKey`/`aesFromMaterial`/`prfEnroll`/
+  `prfGet`/`passphraseMaterial` are all **private** (`vault.ts:57-153`); the only
+  exports are `createVault`/`unlockVault`/`saveVault`/`loadVault`/
+  `webauthnAvailable`/`Vault`/`VaultMethod`. `createVault` internally
+  `generateAuditKeypair()`s and wraps *that private JWK* — there is no "wrap
+  arbitrary bytes/JSON" entry point. **Reuse therefore requires refactoring
+  vault.ts to export a generic crypto core** (Phase 1a), with the sponsor audit
+  feature rebuilt on top and its tests (`audit-key.test.ts`,
+  `sponsor-archive.spec.ts`, `audit-passkey.spec.ts`) kept green as the
+  regression guard. `prfGet` also throws "use a passphrase instead" on
+  no-PRF — the explorer layer must map that to fallback (b), not surface a
+  passphrase prompt (`vault.ts:128`).
+- **WebAuthn needs a user gesture.** `navigator.credentials.get/create`
+  (`vault.ts:117`,`:135`) require transient activation on iOS. So the
+  once-per-cold-launch unlock **cannot be auto-triggered** on page load — it must
+  sit behind a tap ("tap to bring back your hearts"). Enrollment likewise runs on
+  a tap after sign-in. Corrects Pass-1 Phase-1b wording ("trigger on first open").
+- **The session is read on THREE entry points, synchronously.** `main.ts:161`
+  (async, via `refreshExplorerSessionOnOpen`), but `telescope/page.ts:296` and
+  `mysky/page.ts:82` do `getExplorerSession()` **synchronously at boot with no
+  refresh/unlock**. So the unlock/restore must be a **shared helper invoked by
+  all three** — else a cold-launch landing on mysky/telescope misses the
+  encrypted session. `getExplorerSession()` stays sync (reads the sessionStorage
+  cache); a new async `unlock` populates that cache once per launch.
+- **Hermetic testability needs a seam.** Real PRF cannot run in the Playwright
+  gate. Design requirement: the explorer-session vault exposes an **injectable
+  unwrap** (dependency injection / test hook) so the e2e wiring test simulates
+  "unlock succeeded → cache repopulated" without WebAuthn; the crypto core gets
+  unit round-trip tests with injected raw key material. Keeps the no-network
+  hermetic gate intact.
+- **StoredDpopKey is serializable** (`dpop.ts:26-27,42-43`: `privateJwk:
+  JsonWebKey` via `exportKey('jwk')`), so the whole `OAuthSession` (incl.
+  `dpopKey`) already round-trips JSON to storage today — encrypting it at rest is
+  a straight wrap of the existing serialized blob. No non-extractable-key blocker.
+
 **Unverified — needs a real iOS device (Phase 0 / the deferred manual pass):**
 - iOS clears `sessionStorage` on installed-PWA cold launch (strongly expected,
   the basis for the whole Phase 1, but a device-behavior claim — not asserted).
@@ -165,10 +202,11 @@ Confirmed firsthand by reading the live code (file:line evidence):
 
 - `docs/custody.md` — the "Current implementation status" and "how we shrink it"
   sections claim refresh-on-open keeps re-auth rare; this is false while the
-  session is ephemeral. Updated by **Phase 1a**: state that the explorer session
-  is now persisted **encrypted at rest** (WebAuthn PRF, wrapped to the device's
-  platform authenticator), decrypted once per cold launch; and clarify this is
-  local on-device encryption, distinct from the aspirational posture-(3)
+  session is ephemeral. Updated by **Phase 1c** (the phase that makes the
+  behavior real): state that the explorer session is now persisted **encrypted
+  at rest** (WebAuthn PRF, wrapped to the device's platform authenticator),
+  decrypted with one tap+Face ID per cold launch; clarify this is local
+  on-device encryption, distinct from the aspirational posture-(3)
   passkey-account-reauth (which stays blocked on passkey-on-PDS upstream).
 - `IDEAS.md` §4 — annotate items (a)–(e) with built/gap status. Light touch;
   **Phase 1** for (a), a one-line note for the rest. (IDEAS.md is idea-capture,
@@ -186,14 +224,15 @@ Confirmed firsthand by reading the live code (file:line evidence):
 
 ## Concurrency Map
 
-Sequential spine: Phase 0 → Phase 1a → Phase 1b → Phase 2 → Phase 3.
+Sequential spine: Phase 0 → 1a → 1b → 1c → Phase 2 → Phase 3 → Phase 4.
 All phases sequential. Reason: Phase 0 (device findings, esp. D5 PRF) gates
-Phase 1a's crypto design; Phase 1b depends on 1a's storage layer; Phase 2 (static
-meta) and Phase 3 (advisory nudge) are small and share no fan-out. Phase 2 is
-technically independent of the 1a/1b chain (disjoint write-sets: 1a/1b touch
-`src/social/*` + `src/main.ts`; Phase 2 touches only HTML `<head>`), so it could
-run in parallel — but the wall-clock saving is nil and one-change-in-flight is
-simpler, so it stays sequential by choice, not necessity.
+Phase 1a's crypto refactor; 1b depends on 1a's core; 1c depends on 1b's storage;
+Phase 4 (run summary) closes out the code phases. Phase 2 (static apple-meta,
+write-set = HTML `<head>` only) is genuinely disjoint from the 1a/1b/1c chain
+(write-sets under `src/crypto`, `src/social`, `src/main.ts`, page bootstraps) and
+could run in parallel — but wall-clock saving is nil and one-change-in-flight is
+simpler, so it stays sequential by choice, not necessity. No hidden shared state
+(no git/process/port mutation in any phase).
 
 ## Phases
 
@@ -260,128 +299,169 @@ device); they cannot be resolved in a hermetic context.
 Assumptions / Open Questions updated; owner reviews before Phase 1a. **D5 is the
 gate** — if PRF doesn't work in the installed PWA, Phase 1a ships fallback-only.
 
-### Phase 1a: Persist the explorer session, wrapped at rest via WebAuthn PRF
+> **Pass 2 restructure (2026-07-24):** Pass-1's Phase 1a/1b assumed `vault.ts`
+> was reusable as-is and the unlock could auto-fire. Neither holds (see Verified
+> Assumptions / Pass 2 findings). Split into **1a** (extract a reusable crypto
+> core from vault.ts — new work), **1b** (explorer-session vault + storage), and
+> **1c** (tap-to-unlock/enroll UX wired into all three entry points). Each stays
+> ≤4 files and single-context. Sequential: 1a → 1b → 1c.
 
-**Goal:** The explorer's scoped session is stored **encrypted** in localStorage,
-wrapped by a PRF secret from the device's platform authenticator, so it survives
-a cold launch. If PRF is unavailable, nothing is persisted (fallback b) — the
-session stays ephemeral and the old sponsor-re-auth behavior holds. This phase
-is the storage + crypto layer; the unlock/enroll UX is Phase 1b.
+### Phase 1a: Extract a reusable crypto core from `vault.ts` (no behavior change)
+
+**Goal:** `vault.ts` exposes generic wrap/unwrap + key-material primitives so a
+second consumer (the explorer session) can reuse the exact PRF + AES-GCM code.
+The sponsor audit-key feature is rebuilt on the core with **zero behavior
+change** — its tests are the regression guard.
 
 **Changes:**
-- [ ] `src/social/explorer-auth.ts` — split the session store into two layers:
-  an **at-rest** durable copy in localStorage (`skylite.explorer.oauth.session.enc`,
-  AES-GCM ciphertext) and an **in-use** plaintext cache in sessionStorage
-  (`skylite.explorer.oauth.session`, the existing key — unchanged shape, so
-  `main.ts` keeps reading it as-is). `persist()` writes both (encrypting the
-  durable copy); `getExplorerSession()` reads the sessionStorage cache first.
-  Keep `skylite.explorer.oauth.pending` ephemeral.
-- [ ] Reuse `src/crypto/vault.ts` PRF path for wrap/unwrap (do NOT duplicate
-  crypto). Add a thin explorer-session vault wrapper if the audit-key vault's
-  API isn't directly reusable — but wrap/unwrap primitives come from vault.ts.
-- [ ] On unavailable PRF (capability probe fails, or the hmac-secret trap):
-  write **nothing** durable; behave exactly as today.
+- [ ] `src/crypto/vault.ts` — export a generic core: `webauthnAvailable` (exists),
+  `prfEnroll(salt, label)` / `prfGet(credentialId, salt)`, `passphraseMaterial`,
+  and generic `wrapJson(material, value)` / `unwrapJson(material, wrapped)`
+  (generalize the current `wrapPrivateKey`/`unwrapPrivateKey`, which only handle
+  a `JsonWebKey`). Add a `label` param to `prfEnroll` (audit vs. session) instead
+  of the hardcoded `'skylite-audit'`.
+- [ ] Rebuild `createVault`/`unlockVault` on the generic core — identical output
+  shape and behavior; this is a pure refactor.
 
-**Call chain:** iOS cold launch → `main.ts:start()` → `main.ts:161`
-`refreshExplorerSessionOnOpen()` → `getExplorerSession()` finds the sessionStorage
-cache empty (cold launch cleared it) → attempts to unwrap the localStorage
-ciphertext via PRF (Phase 1b provides the unlock prompt) → on success repopulates
-the sessionStorage cache → `ensureFresh` refreshes → `openGarden` renders hearts
-live. On PRF failure/absence → returns null → sign-in banner (unchanged degrade).
+**Call chain:** `sponsor.ts` → `ensureAuditVault` → `createVault` → (now) generic
+core. No new entry point; the wiring is the existing audit path, unchanged.
 
-**Wiring test:** Playwright spec that seeds an *encrypted* durable session +
-a stubbed PRF unwrap (the crypto is unit-tested separately with a real key),
-clears sessionStorage to simulate cold launch, mocks the token refresh endpoint,
-and asserts the like control is active and `explorerSignInBanner` is absent.
-Plus a second case: PRF stub reports unavailable → banner IS shown, nothing
-persisted. RED today, GREEN after. Exercises the `main.ts` open path.
+**Wiring test:** the EXISTING audit tests (`tests/unit/audit-key.test.ts`,
+`tests/e2e/sponsor-archive.spec.ts`, `tests/e2e/audit-passkey.spec.ts`) are the
+guard — they must stay GREEN with no edits. That proves the refactor preserved
+behavior. Add a unit test for the new generic `wrapJson`/`unwrapJson` round-trip
+with injected raw material (no WebAuthn).
 
-**Depends on:** Phase 0 (D1 confirms the failure mode; **D5 gates this phase** —
-if PRF doesn't work in the PWA, 1a ships as fallback-only until it does; D6
-informs how common the persistent path will be).
+**Depends on:** Phase 0 D5 (confirms the PRF path is worth building on).
 
-**Read-set:** `src/social/explorer-auth.ts`, `src/main.ts`,
-`src/atproto/oauth/client.ts` (types), `src/crypto/vault.ts`, `docs/custody.md`.
-**Write-set:** `src/social/explorer-auth.ts`, a new
-`src/social/explorer-session-vault.ts` (thin wrapper, if needed),
-`tests/e2e/session-persistence.spec.ts`, `tests/unit/explorer-session-vault.test.ts`.
-**Shared-state contract:** localStorage keys `skylite.explorer.oauth.session.enc`
-and sessionStorage `skylite.explorer.oauth.session` are owned solely by this
-module (grep-confirmed); WebAuthn credential creation touches the platform
-authenticator but no server/PDS. No git/process/port state.
+**Read-set:** `src/crypto/vault.ts`, `src/sponsor/audit-key.ts`, `src/sponsor.ts`,
+`src/crypto/sealedbox.ts`.
+**Write-set:** `src/crypto/vault.ts`, `tests/unit/vault-core.test.ts` (new).
+**Shared-state contract:** no storage/ambient change; `skylite.audit.vault` key
+and shape unchanged. Pure in-module refactor.
 
-**Risks:**
-- The plaintext session is in sessionStorage **while the app is open** (same as
-  today) — only the *at-rest, app-closed* copy is encrypted. That is the intended
-  posture (encrypt at rest, decrypt into the app session), not a gap.
-- The "prf.enabled true but no hmac-secret" trap → must treat unwrap failure as
-  "no persistence," never as "store unwrapped." D5 verifies.
-- iOS ITP may still evict localStorage after ~7 days idle — graceful degrade
-  (`refreshExplorerSessionOnOpen` → clear → banner) remains the backstop.
-- **File-count watch:** this phase touches ~4 files (explorer-auth, the vault
-  wrapper, 2 tests). At the ceiling — if the vault wrapper grows, split the
-  crypto wrapper into its own phase before 1b.
+**Risks:** breaking the sponsor audit feature. Mitigation: the audit test suite
+must pass untouched; if any audit test needs editing to stay green, the refactor
+changed behavior and must be corrected.
 
 **Done when:**
-1. **Behavioral:** With sharing on and PRF available, after a simulated cold
-   launch (sessionStorage cleared, encrypted localStorage retained) the garden
-   shows an active like control and no sign-in banner. With PRF unavailable,
-   the banner shows and no ciphertext is written.
-2. **Verification:** `npx playwright test session-persistence` +
-   `npx vitest run explorer-session-vault` pass; the full existing suite
-   (`oauth`, `likes`, `refresh`, `sponsor`) stays green.
+1. **Behavioral:** the sponsor can still create + unlock an audit vault exactly
+   as before; the generic core is exported and unit-round-trips.
+2. **Verification:** `npx vitest run vault-core audit-key` + `npx playwright test
+   sponsor-archive audit-passkey` all green, no edits to the audit tests.
 
-**Validation:** Broad (crypto + auth + platform API) → wiring test + unit
-round-trip test + **mandatory on-device confirm** (D5 device: cold relaunch with
-Face ID unlock → hearts work; toggle iCloud Keychain off → clean fallback). Do
-not close on hermetic tests alone.
+**Validation:** Moderate (refactor of security code) → unit round-trip + the full
+audit suite as the behavior lock.
 
-### Phase 1b: Unlock + enroll UX (Face ID prompt, once per cold launch)
+### Phase 1b: Explorer-session vault + encrypt-at-rest storage
 
-**Goal:** The explorer gets one biometric prompt per cold launch to decrypt the
-session (not per heart, not per page nav), a one-time passkey enrollment when
-sharing is first enabled, and a clean degrade message when PRF is unavailable.
+**Goal:** The explorer's scoped session is stored **encrypted** in localStorage
+(wrapped via the Phase-1a core) and cached plaintext in sessionStorage for
+in-app use, so it survives a cold launch. If PRF is unavailable, **nothing
+durable is written** (fallback b) and behavior is exactly as today.
 
 **Changes:**
-- [ ] `src/social/explorer-auth.ts` (or a small `explorer-unlock.ts`) — the
-  once-per-cold-launch unlock: if the sessionStorage cache is empty but encrypted
-  localStorage exists, trigger the PRF `get()` unlock on first garden open,
-  repopulate the cache. Enrollment (`create()` the local passkey) happens at
-  first successful explorer sign-in.
-- [ ] `src/main.ts` — call the unlock at the right point in `start()` (before
-  `refreshExplorerSessionOnOpen`, or fold into it) so it runs once per launch.
-- [ ] A small UI affordance (reuse `explorerSignInBanner` styling) for the
-  "unlock to bring back your hearts" prompt and the PRF-unavailable degrade.
+- [ ] `src/social/explorer-session-vault.ts` (new) — `wrapSession(session)` /
+  `unwrapSession(ciphertext)` over the Phase-1a core, plus an **injectable
+  unwrap seam** for hermetic tests. Maps "no PRF / hmac-secret trap" to a typed
+  `NoPersistence` result — never a passphrase prompt.
+- [ ] `src/social/explorer-auth.ts` — two layers: at-rest ciphertext in
+  localStorage (`skylite.explorer.oauth.session.enc`) + in-use plaintext cache in
+  sessionStorage (`skylite.explorer.oauth.session`, existing key/shape unchanged
+  so `main.ts`/`mysky`/`telescope` keep reading it synchronously). `persist()`
+  writes both (encrypting the durable copy) when a session vault exists; else
+  sessionStorage only (fallback b). `getExplorerSession()` stays **sync** (reads
+  the cache). Keep `…pending` ephemeral.
 
-**Call chain:** `main.ts:start()` → unlock step (PRF `get()` → biometric prompt)
-→ session cached in sessionStorage → `refreshExplorerSessionOnOpen` proceeds.
+**Call chain:** explorer signs in / refreshes → `persistExplorerSession` →
+`wrapSession` → localStorage ciphertext + sessionStorage cache. (The *read/unlock*
+side is Phase 1c.)
 
-**Wiring test:** Playwright: encrypted session present + PRF stub, load page,
-assert exactly one unlock affordance and that after "unlock" the like control is
-live; navigate to another page (saves.html) and assert NO second prompt (cache
-survives in-app nav). RED before, GREEN after.
+**Wiring test:** unit — round-trip `wrapSession`/`unwrapSession` with injected
+material; fallback path asserts NO ciphertext written when PRF unavailable.
+(The end-to-end restore assertion is Phase 1c's wiring test.)
 
-**Depends on:** Phase 1a (the storage layer must exist first).
+**Depends on:** Phase 1a (the crypto core).
 
-**Read-set:** `src/social/explorer-auth.ts`, `src/main.ts`, `src/social/like-ui.ts`.
+**Read-set:** `src/social/explorer-auth.ts`, `src/crypto/vault.ts`,
+`src/atproto/oauth/client.ts`.
+**Write-set:** `src/social/explorer-session-vault.ts` (new),
+`src/social/explorer-auth.ts`, `tests/unit/explorer-session-vault.test.ts` (new).
+**Shared-state contract:** owns `skylite.explorer.oauth.session[.enc]`; WebAuthn
+touches the platform authenticator, no server/PDS. No git/process/port state.
+
+**Risks:** the plaintext cache is in sessionStorage **while the app is open**
+(same as today) — only the at-rest, app-closed copy is encrypted; intended
+posture. The hmac-secret trap → unwrap failure means "no persistence," never
+"store unwrapped."
+
+**Done when:**
+1. **Behavioral:** a signed-in explorer's session is written encrypted at rest
+   when PRF is available, and not written at all when it isn't.
+2. **Verification:** `npx vitest run explorer-session-vault` green; existing
+   `oauth`/`likes`/`refresh` suites stay green.
+
+**Validation:** Broad (crypto + auth) → unit round-trip + fallback assertion;
+on-device confirm folded into Phase 1c.
+
+### Phase 1c: Tap-to-unlock + enroll UX, wired into all three entry points
+
+**Goal:** One tap + Face ID per **cold launch** restores hearts (not per heart,
+not per page nav); a one-time passkey enrollment happens after the explorer's
+first sign-in; PRF-unavailable degrades cleanly to the sign-in banner. Works
+whether the explorer lands on the garden, My Sky, or Telescope first.
+
+**Changes:**
+- [ ] `src/social/explorer-unlock.ts` (new) — a shared helper: if the
+  sessionStorage cache is empty AND encrypted localStorage exists, render a
+  **tap** affordance ("bring back your hearts"); the tap (a user gesture, as iOS
+  requires) runs `unwrapSession` → repopulates the cache. Enrollment
+  (`prfEnroll`) runs on a tap right after a successful sign-in. Idempotent within
+  a JS runtime (guarded by the cache).
+- [ ] `src/main.ts`, `src/mysky/page.ts`, `src/telescope/page.ts` — call the
+  shared unlock helper at boot (each is a separate entry point that reads the
+  session; all three must offer the unlock, else a cold-launch landing there
+  misses the encrypted session).
+
+**Call chain:** any entry point boot → `explorer-unlock` sees cache empty +
+ciphertext present → shows tap affordance → tap → `unwrapSession` → cache filled →
+`refreshExplorerSessionOnOpen`/`getExplorerSession` now returns the session →
+hearts/follows live.
+
+**Wiring test:** Playwright with the injectable unlock seam (no real WebAuthn):
+encrypted session present, cold launch (sessionStorage cleared), assert the tap
+affordance appears; "tap" → like control becomes live; navigate to `saves.html`
+and `mysky.html` and assert **no second prompt** (cache survives in-app nav).
+Second case: seam reports no-PRF → sign-in banner shown, no affordance. RED
+before, GREEN after. Exercises the real boot paths of all three pages.
+
+**Depends on:** Phase 1b (the session vault + storage layers).
+
+**Read-set:** `src/social/explorer-auth.ts`, `src/social/explorer-session-vault.ts`,
+`src/main.ts`, `src/mysky/page.ts`, `src/telescope/page.ts`, `src/social/like-ui.ts`.
 **Write-set:** `src/social/explorer-unlock.ts` (new), `src/main.ts`,
-`tests/e2e/session-persistence.spec.ts` (extended).
-**Shared-state contract:** as Phase 1a; the unlock is idempotent within a JS
-runtime (guarded by the sessionStorage cache presence).
+`src/mysky/page.ts`, `src/telescope/page.ts`,
+`tests/e2e/session-persistence.spec.ts` (new). *(5 files — over the 4-file rule
+because three near-identical one-line boot wire-ups are unavoidable; if it
+strains a single context, split the mysky/telescope wire-ups into a Phase 1c.2.)*
+**Shared-state contract:** as Phase 1b; the unlock is idempotent within a JS
+runtime, guarded by the sessionStorage cache presence.
 
-**Risks:** a mis-scoped unlock that re-prompts on every page nav (the MPA trap) —
-the sessionStorage cache is precisely what prevents it; the wiring test asserts
-no second prompt across a page navigation.
+**Risks:** (a) auto-firing the unlock without a gesture — iOS blocks it; MUST be
+tap-driven. (b) the MPA re-prompt trap — the sessionStorage cache prevents it;
+the wiring test asserts no second prompt across page navigation. (c) missing one
+entry point — the test loads all three.
 
 **Done when:**
-1. **Behavioral:** One Face ID prompt per cold launch restores hearts; in-app
-   navigation does not re-prompt; PRF-unavailable shows the degrade, never a
-   broken state.
-2. **Verification:** the extended `session-persistence` spec (including the
-   cross-page no-reprompt case) passes; full suite green.
+1. **Behavioral:** one tap+Face ID per cold launch restores hearts from any of
+   the three entry pages; in-app navigation never re-prompts; no-PRF shows the
+   sign-in banner, never a broken state; `docs/custody.md` updated to match.
+2. **Verification:** `npx playwright test session-persistence` passes (incl. the
+   cross-page no-reprompt case); full suite green.
 
-**Validation:** Moderate → wiring test + on-device confirm (one prompt per
-relaunch; navigate between pages without re-prompt).
+**Validation:** Broad → wiring test + **mandatory on-device confirm** (cold
+relaunch → one Face ID → hearts work; page-nav no re-prompt; iCloud Keychain off
+→ clean sign-in-banner fallback). Do not close on hermetic tests alone.
 
 ### Phase 2: Make the installed-PWA meta consistent across pages
 
@@ -457,6 +537,41 @@ warrants it).
 
 **Validation:** Moderate; and only undertaken if D3 shows a real latency gap.
 
+### Phase 4: Run wrap-up (RUN summary + doc true-up)
+
+**Goal:** Close the run per house convention — a `RUN-*-SUMMARY.md`, the IDEAS.md
+§4 status annotations, and the stub true-up — so the record matches what shipped.
+
+**Changes:**
+- [ ] `RUN-PWA-HARDENING-SUMMARY.md` (or the next `RUN-*` name in sequence) —
+  what was built, what stayed fallback-only pending device gates, invariant
+  tests added.
+- [ ] `IDEAS.md` §4 — one-line built/gap annotation per item (a)–(e); (d) HEIC
+  marked N/A.
+- [ ] `plans/2026-07-20-1-plan-hardening-sequence-TODO.md` — mark item #1 done,
+  point at this plan; note items #2–#4 remain.
+
+**Call chain:** docs only; no runtime wiring.
+
+**Wiring test:** none (docs). The `copy-lint` unit test already guards living
+surfaces; confirm it still passes after edits.
+
+**Depends on:** Phases 1a–1c and 2 (so the summary reflects what actually shipped).
+
+**Read-set:** the three docs above, the shipped diffs.
+**Write-set:** `RUN-PWA-HARDENING-SUMMARY.md` (new), `IDEAS.md`,
+`plans/2026-07-20-1-plan-hardening-sequence-TODO.md`.
+**Shared-state contract:** none.
+
+**Risks:** none material; keep IDEAS.md edits minimal (owner decision).
+
+**Done when:**
+1. **Behavioral:** the run is documented; the stub reflects #1 complete.
+2. **Verification:** `npx vitest run copy-lint` green; docs reference only
+   existing paths.
+
+**Validation:** Narrow → the copy-lint/path-existence guard suffices.
+
 ## Open Questions
 
 - [CONFIRMED: BLOCKING — RESOLVED 2026-07-23: **persist (Option A)**]
@@ -501,6 +616,18 @@ warrants it).
 - [CONFIRMED: ADVISORY — 2026-07-24] **The four-part order still stands;
   PWA-hardening remains item #1.** *Owner confirmed priorities are unchanged from
   the 2026-07-20 stub.*
+- [RECOMMENDED: ADVISORY — new in Pass 2] **The explorer session enrolls its
+  OWN WebAuthn credential (separate from the sponsor's audit-key credential),
+  labelled distinctly.** *On the explorer's device there is no audit credential
+  anyway (that lives on the sponsor's device), so a dedicated session credential
+  is the natural design. Recommend confirm. Flagging only because Phase 1a adds a
+  `label` param to `prfEnroll` to keep the two uses distinct.*
+- [RECOMMENDED: ADVISORY — new in Pass 2] **Phase 1c's write-set is 5 files
+  (over the "split at 4" rule) because three entry points each need a one-line
+  boot wire-up.** *Recommend accept as one phase — the three wire-ups are
+  near-identical and trivial. Fallback: split the mysky/telescope wire-ups into a
+  Phase 1c.2 if it strains a single execution context. Owner/executor call at
+  execution time.*
 
 ## Review Log
 
@@ -538,3 +665,44 @@ warrants it).
   PHASE-GATED/cadence resolved; 3 ADVISORY confirmed: offline fail-open intended,
   IDEAS.md minimal, four-part order unchanged with PWA-hardening as #1). Plan
   ready for Pass 2 (gap analysis) in a fresh context. No code changed.
+
+### Pass 2: Gap Analysis — 2026-07-24
+**Found:**
+- **`vault.ts` is not reusable as claimed** — wrap/unwrap + PRF helpers are
+  private and specialized to the audit *keypair* (`vault.ts:57-153`); only
+  `createVault`/`unlockVault`/`save`/`load`/`webauthnAvailable` are exported.
+  Reuse needs a crypto-core refactor first → **new Phase 1a**.
+- **WebAuthn needs a user gesture** (`vault.ts:117`,`:135`): the once-per-launch
+  unlock can't auto-fire on load — must be **tap-driven**. Corrected in Phase 1c.
+- **Three entry points read the session synchronously** (`main.ts:161` async,
+  but `telescope/page.ts:296` + `mysky/page.ts:82` sync at boot with no
+  refresh/unlock). The unlock/restore must be a shared helper wired into all
+  three → Phase 1c write-set expanded to 5 files.
+- **Hermetic testability** needs an injectable unwrap seam (real PRF can't run in
+  the Playwright gate) → added to Phase 1b design + Phase 1c wiring test.
+- Confirmed **StoredDpopKey is serializable** (`dpop.ts:26-43`) — the session
+  already JSON-round-trips, so encrypt-at-rest is a straight wrap; no
+  non-extractable-key blocker.
+- Missing **run wrap-up** (RUN summary + IDEAS/stub true-up) → **new Phase 4**.
+
+**Concurrency:**
+- No changes to the sequential decision. Map updated for the new phase list
+  (0 → 1a → 1b → 1c → 2 → 3 → 4). Noted Phase 2's write-set (HTML `<head>`) is
+  genuinely disjoint from the 1a–1c chain and could parallelize, but kept
+  sequential by choice. No hidden git/process/port state in any phase.
+
+**Changed:**
+- Split Pass-1 Phase 1a/1b into **1a** (vault crypto-core refactor, audit tests
+  as regression guard), **1b** (explorer-session vault + encrypt-at-rest
+  storage), **1c** (tap-to-unlock/enroll UX across all three entry points).
+- Added **Phase 4** (run wrap-up). Moved the `custody.md` update to Phase 1c
+  (the phase that makes the behavior real). Added an injectable-seam requirement
+  and the multi-entry-point wiring. Two new ADVISORY open questions (separate
+  session credential; the 5-file Phase 1c exception).
+
+**Confirmed:**
+- The core storage model (encrypted localStorage at rest + sessionStorage cache
+  in use) holds. Fallback (b), once-per-cold-launch cadence, and the "local
+  encryption ≠ posture-3 account passkey" distinction all survive review.
+- Phase 0 device gates (esp. D5 PRF-in-PWA) remain the correct blocking checks.
+- Reading the garden stays authless and unaffected.
