@@ -42,6 +42,8 @@ const PAGES = [
   { html: 'telescope.html', entry: 'src/telescope/page.ts', token: '%TELESCOPE_JS%' },
   { html: 'help.html', entry: 'src/help.ts', token: '%HELP_JS%' },
   { html: 'guide.html', entry: 'src/guide.ts', token: '%GUIDE_JS%' },
+  // THROWAWAY device probe (Phase 0-prep A2). Branch-only; never merges to main.
+  { html: 'probe.html', entry: 'src/probe/page.ts', token: '%PROBE_JS%' },
 ];
 
 rmSync(dist, { recursive: true, force: true });
