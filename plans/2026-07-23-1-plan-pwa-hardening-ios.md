@@ -1,8 +1,11 @@
 # PWA hardening (iOS reliability) — item #1 of the 4-part sequence
 
-**Status:** Pass 1 (draft plan + Phase-0 discovery findings). Not yet executed.
-Input stub: `plans/2026-07-20-1-plan-hardening-sequence-TODO.md`. Owner review
-gate before Pass 2/3 and before implementation.
+**Status:** Pass 3 complete (quality gates applied); all open questions
+confirmed by the owner. Not yet executed. No BLOCKING owner decisions remain;
+finding F is PHASE-GATED (Phase 1b), audit-label stability is ADVISORY. Input
+stub: `plans/2026-07-20-1-plan-hardening-sequence-TODO.md`. The only remaining
+execution blockers are the Phase 0 device gates (**D1** sessionStorage wipe,
+**D5** PRF-in-installed-PWA) — the plan is otherwise execution-ready.
 
 ## Problem Statement
 
@@ -83,6 +86,60 @@ missing on `sponsor.html`, `audit.html`, and the new `guide.html`. Cheap to fix,
 keeps the installed-PWA chrome consistent if a sponsor adds those pages to the
 home screen. Low risk, no logic.
 
+## Security model (added Pass 3)
+
+This plan stores a **scoped OAuth refresh token + DPoP private key** encrypted at
+rest on a **child's** device. The threat model, made explicit so the invariants
+below are testable rather than implicit:
+
+- **Asset & blast radius.** The persisted value grants create/delete on the
+  explorer's like + follow + search collections **only** (`EXPLORER_SCOPE`,
+  `explorer-auth.ts:23`) — never the account password, never full-account
+  access. Reading the garden is never gated (`main.ts:40-115`). Worst-case
+  compromise: an attacker hearts/follows as the child; they cannot read DMs,
+  change credentials, or lock the child out.
+- **At-rest threat (app closed) — DEFENDED.** Device theft / localStorage
+  exfiltration while the PWA is not running. Mitigated by PRF-wrapped
+  AES-256-GCM: nothing brute-forceable is stored (no passphrase-derived path for
+  the explorer — see invariant 1). This is the threat the whole plan exists to
+  close *without* reintroducing per-heart re-auth.
+- **In-use threat (app open) — ACCEPTED, UNCHANGED.** The plaintext session
+  lives in the sessionStorage cache while the app is open, exactly as today.
+  Phase 1b does not change this exposure; it only adds an encrypted at-rest copy.
+- **Live-unlocked-device threat — OUT OF SCOPE.** A thief holding an unlocked,
+  app-open device has the same access any signed-in app grants. The 4-digit
+  background-lock PIN (`src/lock/pin.ts`) is a separate, weaker gate and is
+  explicitly **not** an encryption secret.
+
+**Invariants (each maps to a test or on-device check below):**
+
+1. **Biometric-or-nothing.** The explorer session is wrapped **only** via the
+   WebAuthn-PRF path. The passphrase path (`passphraseMaterial`, `vault.ts:89`)
+   is **never** invoked for the explorer session. No weakly-wrapped token is ever
+   written. *(Phase 1b test: session vault never calls the passphrase path;
+   fallback (b) writes no ciphertext.)*
+2. **Domain-separated wrapping keys.** The Phase-1a `label` param must feed the
+   HKDF `info` (e.g. `skylite-audit-vault-v1` vs `skylite-explorer-session-v1`),
+   not only the WebAuthn `user.name`. Audit-material and session-material can then
+   never derive the same AES key even if the raw PRF secret collided. *(Phase 1a
+   test: ciphertext wrapped under one label fails GCM under the other.)*
+3. **Fresh random IV per wrap.** The generic `wrapJson` must keep the current
+   per-wrap `crypto.getRandomValues(new Uint8Array(12))` IV (`vault.ts:72`) —
+   never a fixed or derived nonce. GCM nonce reuse under one key is catastrophic.
+   *(Phase 1a invariant + test: two wraps of identical plaintext yield distinct
+   IVs.)*
+4. **No stale secret at rest.** On refresh-chain break or any unwrap failure
+   (hmac-secret trap, deleted passkey, iCloud Keychain disabled), the at-rest
+   `.enc` ciphertext is **cleared**, not left dangling. `clearExplorerSession`
+   clears **both** layers. *(Phase 1b test: unwrap failure → NoPersistence +
+   both keys removed.)*
+5. **Refactor cannot regress the sponsor's audit key.** The hermetic audit suite
+   is necessary but not sufficient (it exercises only the passphrase path and
+   round-trips within one run). Phase 1a adds a committed fixture — an audit
+   `wrapped` blob + material produced by the **pre-refactor** code — that the
+   refactored `unwrapJson` must still decrypt, plus an on-device real-PRF unlock
+   of a sponsor audit vault (Security finding E; Phase 1a Done-when).
+
 ## Verified Assumptions
 
 Confirmed firsthand by reading the live code (file:line evidence):
@@ -147,8 +204,21 @@ Confirmed firsthand by reading the live code (file:line evidence):
   built-in authenticator). Known trap: a reported case where `prf.enabled` is
   `true` but no `hmac-secret` is actually used, so the derived secret is not
   real — must verify the secret is stable/usable, not just trust the flag.
-  Standalone-PWA PRF is under-documented → device-verify. Practical floor: iOS
-  18.4. Sources in the Review Log.
+  **Trap resolved (armchair 2026-07-24):** the referenced Apple forum thread
+  (782466) resolves with "the WebAuthn spec is being fixed to make it clear that
+  `hmac-secret` is in fact not required" — i.e. `enabled: true` without a visible
+  `hmac-secret` is now spec-**conformant**, not a bug. So `prf.enabled` is not
+  merely insufficient, it is semantically meaningless as a has-a-secret signal.
+  The only trustworthy check is reading `prf.results.first` and throwing when
+  absent — which `vault.ts:127-128` already does. Determinism is documented for
+  same-session same-salt (Yubico); byte-for-byte stability **across a cold
+  launch** is NOT guaranteed by any source, which is why D5's success criterion
+  must be the wrap→relaunch→unwrap round-trip, not a single `get()`.
+  Standalone-PWA PRF is under-documented → device-verify (no primary or secondary
+  source addresses `display-mode: standalone` for `navigator.credentials`; that
+  absence is itself the finding, and it keeps the device gate non-optional).
+  Practical floor: iOS 18.4 (Corbado: PRF data-loss bugs in 18.0–18.3, fixed
+  18.4+). Sources in the Review Log.
 
 **Pass 2 gap-analysis findings (verified against code 2026-07-24):**
 - **`vault.ts` is NOT directly reusable — it is specialized to the audit
@@ -187,13 +257,65 @@ Confirmed firsthand by reading the live code (file:line evidence):
   `dpopKey`) already round-trips JSON to storage today — encrypting it at rest is
   a straight wrap of the existing serialized blob. No non-extractable-key blocker.
 
+**Pass 3 spot-check (re-verified against code 2026-07-24):**
+- **The three-entry-point premise holds.** `main.ts:161` reads via
+  `refreshExplorerSessionOnOpen` (async); `mysky/page.ts:82` and
+  `telescope/page.ts:296` both call `getExplorerSession()` **synchronously at
+  boot**. Additionally, both mysky (`:64`) and telescope (`:41,:156`) call
+  `persistExplorerSession(s)` on in-page refresh — so the encrypt-on-write path
+  (Phase 1b) is exercised from all three entry points, not just sign-in. The
+  shared unlock helper (1c) and the shared session-vault module (1b) must
+  therefore serve all three.
+- **`src/log.ts` is the diagnostic surface and is currently unused in the
+  crypto/auth path.** Its API is `log.debug/info/warn/error`; `debug`/`info` are
+  gated behind `?debug=1` or `localStorage['skylite-debug']==='1'`, while
+  `warn`/`error` **always emit** (`log.ts:19-32`). The header explicitly names
+  crypto and OAuth as boundaries that "should log through this so a failure is
+  diagnosable from the console alone," and records the gotcha that **`?debug=1`
+  does not survive an OAuth redirect — the `skylite-debug` localStorage flag is
+  the durable switch around auth.** `grep` confirms neither `vault.ts` nor
+  `explorer-auth.ts` nor `src/atproto/oauth/*` import `log` today; the only
+  consumer is `src/pwa/register.ts`. So the fallback-(b) and hmac-secret-trap
+  diagnosability the owner requires is **net-new work** this plan must schedule.
+- **`explorer-auth.ts` uses empty `catch {}` swallows** (`:35-37`, `:44-46`,
+  `:69-72`) — `getExplorerSession` and `refreshExplorerSessionOnOpen` silently
+  return null on any error. The new crypto paths must **not** copy this pattern
+  (house rule: fail loud); crypto failures log through `log.warn`/`log.error`.
+- **`WRAP_INFO` is a single hardcoded constant** (`vault.ts:25`,
+  `'skylite-audit-vault-v1'`), fed as the HKDF `info` with an **empty salt**
+  (`:62`); the wrapping key is derived deterministically from material. Each wrap
+  draws a fresh random 12-byte IV (`:72`). See Security model for the
+  domain-separation and IV invariants Phase 1a must preserve.
+- **The existing hermetic vault tests exercise only the passphrase path.**
+  `tests/unit/vault.test.ts` states "The WebAuthn-PRF path needs a real/virtual
+  authenticator (verify-in-run), so it isn't exercised here." So the audit
+  regression guard is blind to the real-PRF derivation — see Security finding E
+  and the Phase 1a fixture requirement.
+
 **Unverified — needs a real iOS device (Phase 0 / the deferred manual pass):**
 - iOS clears `sessionStorage` on installed-PWA cold launch (strongly expected,
   the basis for the whole Phase 1, but a device-behavior claim — not asserted).
+  *Armchair 2026-07-24: consistent with the platform definition — session storage
+  lives only for the lifetime of the top-level browsing context and a true cold
+  launch constructs a fresh one — but no developer report nails this exact surface
+  (standalone PWA, swipe-kill relaunch, sessionStorage specifically); the threads
+  at that surface are about localStorage/OAuth-popups. Mechanism corroborated,
+  direct report absent → stays a device probe (D1).*
 - iOS retention/eviction of `localStorage` across launches and the ITP ~7-day
   no-interaction eviction window (affects whether the *persistent* session also
   eventually vanishes, i.e., whether the graceful degrade still needs to be the
-  backstop even after the fix).
+  backstop even after the fix). *Armchair 2026-07-24 — LARGELY SETTLED in the
+  plan's favor: WebKit's own Tracking Prevention doc states "the first-party
+  domain of home screen web applications is exempt from ITP's 7-day cap on all
+  script-writeable storage" (the removal algorithm skips that domain). Skylite
+  installed to the home screen is exactly that case, so the 7-day-no-interaction
+  eviction that motivates D2 does NOT apply to our origin → persisted localStorage
+  is durable-by-default; degrade-to-sponsor-reauth is a RARE backstop, not a
+  first-class path (shapes custody.md toward "your hearts stay"). Asterisk: the
+  exemption is specifically the interaction-based cap; it is NOT a promise against
+  eviction under storage-quota pressure or after long device power-off (scattered
+  unverified reports, e.g. Apple Dev Forums 710157), so keep the graceful-degrade
+  backstop wired even though it should fire rarely.*
 - SW `skipWaiting`+`clients.claim` actually takes over promptly on iOS Safari's
   PWA container (update liveness for safety patches).
 - Splash/status-bar render correctly when installed to the home screen.
@@ -208,14 +330,33 @@ Confirmed firsthand by reading the live code (file:line evidence):
   decrypted with one tap+Face ID per cold launch; clarify this is local
   on-device encryption, distinct from the aspirational posture-(3)
   passkey-account-reauth (which stays blocked on passkey-on-PDS upstream).
+  *Wording note (armchair D2, 2026-07-24): WebKit's home-screen exemption from the
+  7-day cap means the persisted session is durable-by-default, so lean toward
+  "your hearts stay" rather than "you may need to sign back in weekly." Keep the
+  degrade path described as a rare backstop (quota pressure / long power-off), not
+  a routine weekly re-auth.*
 - `IDEAS.md` §4 — annotate items (a)–(e) with built/gap status. Light touch;
-  **Phase 1** for (a), a one-line note for the rest. (IDEAS.md is idea-capture,
-  not a living spec — keep edits minimal, or record status in the RUN summary
-  instead. Owner preference — see Open Questions.)
+  all annotation happens in **Phase 4** (run wrap-up), per the owner decision
+  that IDEAS.md is idea-capture, not a living spec, and the real built/gap status
+  lives in the RUN summary. *(Pass 3 reconciliation: Pass 1 wrote "Phase 1 for
+  (a)"; the actual edit is scheduled in Phase 4's change list, so this section is
+  corrected to Phase 4 to remove the contradiction. IDEAS.md never becomes
+  "wrong" mid-run — it is capture, not a spec that goes stale when the fix
+  ships.)*
 - `RUN-*-SUMMARY.md` — a new `RUN-*-SUMMARY.md` for this hardening run
-  (house convention), written at the end of execution, not during planning.
-- `plans/2026-07-20-1-plan-hardening-sequence-TODO.md` — mark item #1's Phase-0
-  discovery as done and point at this plan. **Phase 0** close-out.
+  (house convention), written at the end of execution (**Phase 4**), not during
+  planning. This is a *creation* artifact, not a doc that goes stale mid-run.
+- `plans/2026-07-20-1-plan-hardening-sequence-TODO.md` — **all** edits to the
+  stub happen in **Phase 4** (mark item #1 done, point at this plan, note #2–#4
+  remain). *(Pass 3 reconciliation: Pass 1 assigned the "Phase-0 discovery done"
+  mark to Phase 0, but Phase 0 runs under the Discovery Exemption and records its
+  findings in **this** plan doc, not the stub — its write-set is honestly empty.
+  Folding the stub mark into Phase 4 keeps Phase 0's write-set = none truthful.)*
+- `docs/telescope-search.md` — referenced by `vault.ts`'s header comment as the
+  source for the two protection methods. Grepped: the Phase-1a refactor is
+  behavior-preserving for the audit vault (both methods stay), so this reference
+  does **not** go stale — no edit scheduled. Recorded here so the reference is
+  accounted for, not silently assumed safe.
 - Grepped for references to `explorer.oauth.session` / `sessionStorage` outside
   the two auth files: only `src/social/explorer-auth.ts` and `src/sponsor/oauth.ts`
   define them; `main.ts` consumes via the exported functions (no direct key use).
@@ -224,17 +365,111 @@ Confirmed firsthand by reading the live code (file:line evidence):
 
 ## Concurrency Map
 
-Sequential spine: Phase 0 → 1a → 1b → 1c → Phase 2 → Phase 3 → Phase 4.
-All phases sequential. Reason: Phase 0 (device findings, esp. D5 PRF) gates
-Phase 1a's crypto refactor; 1b depends on 1a's core; 1c depends on 1b's storage;
-Phase 4 (run summary) closes out the code phases. Phase 2 (static apple-meta,
+Sequential spine: Phase 0-prep (1a refactor + probe harness) → Phase 0 (device
+session) → 1b → 1c → Phase 2 → Phase 3 → Phase 4.
+All phases sequential. Reason (reordered 2026-07-24, owner-confirmed): the Phase
+1a refactor is device-independent and behavior-preserving for the shipping audit
+vault, so it runs in **Phase 0-prep** to give the device probe a real crypto core;
+the device session (Phase 0) then needs that harness; **D5 gates Phase 1b** (not
+1a); 1b depends on 1a's core; 1c depends on 1b's storage; Phase 4 (run summary)
+closes out the code phases. *(The Pass-2/Pass-3 text below that says "Phase 0 gates
+Phase 1a" predates this reorder — 1a moved earlier; D5's gate moved to 1b.)* Phase 2 (static apple-meta,
 write-set = HTML `<head>` only) is genuinely disjoint from the 1a/1b/1c chain
 (write-sets under `src/crypto`, `src/social`, `src/main.ts`, page bootstraps) and
 could run in parallel — but wall-clock saving is nil and one-change-in-flight is
 simpler, so it stays sequential by choice, not necessity. No hidden shared state
 (no git/process/port mutation in any phase).
 
+**Pass 3 re-check (2026-07-24):** the map still holds after Pass-3 additions. New
+write-set entries are all committed test assets
+(`tests/unit/vault-core.test.ts`, `tests/fixtures/audit-vault-pre-refactor.json`,
+`tests/unit/explorer-session-vault.test.ts`,
+`tests/e2e/session-persistence.spec.ts`) — no new runtime module, no new shared
+mutable state. The retained in-memory wrapping key (finding F) is per-JS-runtime
+process state, not cross-phase shared state, and each phase is sequential, so it
+introduces no concurrency hazard. WebAuthn touches the platform authenticator
+(ambient), but sequentially and only within a single phase at a time. No parallel
+set is added; no re-entry verification is required. Every phase remains
+files-plus-authenticator only — no git/process/port/daemon mutation.
+
 ## Phases
+
+### Phase 0-prep: Readiness build (device-independent) — do BEFORE the device session
+
+**Goal:** Make the single iOS device session decisive. Phase 0's D5 criterion is a
+wrap→relaunch→unwrap **round-trip**, which cannot be answered by observation alone
+(Phase 0's write-set is "none") — it needs real crypto code on the device. This
+prep track builds that harness on the production crypto core so the device session
+is a clean go/no-go and its D5 output drops straight into the Phase 1a fixture.
+
+**Why this runs before Phase 0 (the reorder):** the Phase 1a refactor is
+*behavior-preserving for the audit vault, which already ships PRF in production*,
+so it carries no device risk and can be built now. Doing it first lets the probe
+exercise the real `prfEnroll`/`prfGet`/`wrapJson`/`unwrapJson` rather than
+throwaway crypto — so the probe blob is a valid Phase 1a fixture, not a discard.
+D5 still gates **Phase 1b** (building explorer persistence on the core), not this
+refactor. *(Owner-confirmed reorder, 2026-07-24.)*
+
+**Track A — build (device-independent):**
+- [x] **A1. Execute Phase 1a** (the crypto-core refactor; full spec in the Phase 1a
+  section below). Gate: the existing audit tests stay GREEN; the pre-refactor
+  unwrap fixture is committed. This is the foundation the probe is built on.
+- [ ] **A2. Probe harness** — new throwaway `probe.html` + `src/probe/page.ts`
+  (added to `build.mjs` PAGES), built on the A1 core, every action behind a button
+  (transient-activation requirement, `vault.ts:117`,`:135`). Panels:
+  - **D1:** at boot, read + render `sessionStorage['probe']` and
+    `localStorage['probe']`; a button (re)writes both with a counter+timestamp. On
+    cold relaunch you see at a glance which store survived.
+  - **D5 enroll:** `prfEnroll(fixedSalt, 'skylite-explorer-session-v1')`; store the
+    credentialId in localStorage; confirm Face ID / Touch ID is invoked.
+  - **D5 stability + trap:** `prfGet` ×2 with the same salt; render both secrets as
+    hex + a byte-equal verdict; **dump `getClientExtensionResults().prf`** so
+    `enabled` vs a present-and-32-byte `results.first` is visible (the resolved
+    trap — `enabled` alone is meaningless).
+  - **D5 wrap:** derive key, `wrapJson(material, {hello:'world', n})`, write the
+    ciphertext to `localStorage['probe.wrapped']`, render it.
+  - **D5 unlock/round-trip:** tap → `prfGet` again → `unwrapJson` the stored blob →
+    render recovered plaintext + a round-trip verdict.
+  - Route everything through `src/log.ts` (so the hmac-secret-trap `log.warn`
+    surfaces in the console). This page lives only on the probe branch and **never
+    merges** — harness code is throwaway; the blob it emits is not.
+- [ ] **A3. Fixture-capture button** — the probe emits
+  `{ wrapped:{iv,ct}, material, salt, label }` as copyable JSON, so the on-device
+  D5 result drops straight into `tests/fixtures/` as the Phase 1a keep-as-fixture
+  seed (see Phase 1a's fixture note — "prefer the D5 probe blob if available").
+- [ ] **A4. Deploy rehearsal** — open a PR from the probe branch → preview builds at
+  `https://skylite.croft.ing/pr-preview/pr-<N>/` → confirm on **desktop Safari
+  first** that the page loads, D1 stamps render, and PRF enroll works in a tab.
+  This establishes the tab baseline so the device session isolates the one genuine
+  unknown (standalone vs tab).
+
+**Track B — device-test script (the artifact you carry to the device):**
+- [ ] **B1.** A one-page checklist under `docs/` (or the PR body): preconditions
+  (iOS 18.4+, iCloud Keychain ON, install the preview URL to the home screen,
+  confirm standalone chrome — no address bar), then the exact tap order for
+  D1→D5, then a results table to fill. One session answers all six gates: D1/D5
+  are the gates; D2 (localStorage survival), D3 (SW update latency), D4
+  (splash/status bar), D6 (does the device enroll at all) are captured
+  opportunistically in the same sitting.
+
+**Two notes that de-confuse the device session:**
+- **rpId transfers, scope does not.** The preview hostname is `skylite.croft.ing`,
+  identical to production, and `rpId = location.hostname` (`vault.ts:120`,`:138`),
+  so a passkey enrolled on the preview is rpId-bound to prod and the D5 finding
+  transfers to the real app. The PWA install *scope* differs
+  (`/pr-preview/pr-N/` vs root), but credentials are rpId-scoped, not
+  path/scope-scoped, so scope does not affect resolution.
+- **Standalone is the only new variable.** Because A4 already confirmed the tab
+  path, a device-session failure localizes cleanly to standalone display mode
+  (the D5 "works in Safari tab but not standalone PWA" outcome) rather than to a
+  bug in the harness.
+
+**Read-set:** `src/crypto/vault.ts` (A1), `build.mjs` (A2).
+**Write-set:** everything Phase 1a writes, plus throwaway `probe.html` +
+`src/probe/page.ts` (never merged) and `docs/` device-test script (B1).
+**Done when:** Phase 1a is green; the probe harness is live at a preview URL and
+verified in a desktop Safari tab; the device-test script exists. Only then does the
+device session (Phase 0) run — with nothing left to build mid-session.
 
 ### Phase 0: Discovery (device-gated) — REQUIRED before Phase 1
 
@@ -296,8 +531,12 @@ device); they cannot be resolved in a hermetic context.
 **Write-set:** none (findings recorded in this plan + Verified Assumptions).
 **Shared-state contract:** none beyond a test device.
 **Done when:** D1–D6 answered with observed behavior and the plan's Verified
-Assumptions / Open Questions updated; owner reviews before Phase 1a. **D5 is the
-gate** — if PRF doesn't work in the installed PWA, Phase 1a ships fallback-only.
+Assumptions / Open Questions updated; owner reviews before Phase 1b. **D5 is the
+gate** — if PRF doesn't work in the installed PWA, **Phase 1b ships
+fallback-(b)-only** (no explorer persistence; behavior stays as today). The Phase
+1a refactor is done in Phase 0-prep and stands regardless — it is behavior-
+preserving for the audit vault, which ships PRF today, so it is not wasted even
+if D5 fails.
 
 > **Pass 2 restructure (2026-07-24):** Pass-1's Phase 1a/1b assumed `vault.ts`
 > was reusable as-is and the unlock could auto-fire. Neither holds (see Verified
@@ -314,13 +553,31 @@ The sponsor audit-key feature is rebuilt on the core with **zero behavior
 change** — its tests are the regression guard.
 
 **Changes:**
-- [ ] `src/crypto/vault.ts` — export a generic core: `webauthnAvailable` (exists),
-  `prfEnroll(salt, label)` / `prfGet(credentialId, salt)`, `passphraseMaterial`,
-  and generic `wrapJson(material, value)` / `unwrapJson(material, wrapped)`
-  (generalize the current `wrapPrivateKey`/`unwrapPrivateKey`, which only handle
-  a `JsonWebKey`). Add a `label` param to `prfEnroll` (audit vs. session) instead
-  of the hardcoded `'skylite-audit'`.
-- [ ] Rebuild `createVault`/`unlockVault` on the generic core — identical output
+- [x] `src/crypto/vault.ts` — export a generic core: `webauthnAvailable` (exists),
+  `prfEnroll(opts)` / `prfGet(credentialId, salt)`, `passphraseMaterial`,
+  and generic `wrapJson(value, ctx)` / `unwrapJson(wrapped, ctx)`
+  (generalize the current `wrapPrivateKey`/`unwrapPrivateKey`, which only handled
+  a `JsonWebKey`). `prfEnroll` takes `{ salt, label, displayName }` (audit vs.
+  session) instead of the hardcoded `'skylite-audit'`. *(Impl deviation from the
+  Pass-2 sketch, house style: the domain-separation `info` and `material` travel
+  in a `WrapContext` options object — `wrapJson(value, { material, info })` — not
+  positionally, and `prfEnroll` takes an options object carrying both `label` and
+  `displayName` so the session credential can be labelled distinctly.)*
+- [x] **Domain separation (Security invariant 2):** the `label` must feed the
+  HKDF `info` (`aesFromMaterial`, `vault.ts:62`) — `skylite-audit-vault-v1` for
+  audit, `skylite-explorer-session-v1` for the session — not only the WebAuthn
+  `user.name`. The audit label MUST stay byte-for-byte `skylite-audit-vault-v1`
+  so an existing sponsor vault still unlocks (pre-1.0, but a live sponsor's
+  at-rest vault must survive this refactor).
+- [x] **Preserve the fresh-random-IV per wrap (Security invariant 3):**
+  `wrapJson` keeps `crypto.getRandomValues(new Uint8Array(12))` per call
+  (`vault.ts:72`) — never a fixed/derived nonce.
+- [x] **Diagnostic logging:** `prfGet`'s no-`first` branch (`vault.ts:128`, the
+  hmac-secret-trap signal) logs `log.warn('[vault] PRF returned no hmac-secret')`
+  **before** throwing, so the trap is diagnosable from the console. Route through
+  `src/log.ts` (warn/error always emit; `?debug=1` won't survive the OAuth
+  redirect, so warn/error are the right levels here).
+- [x] Rebuild `createVault`/`unlockVault` on the generic core — identical output
   shape and behavior; this is a pure refactor.
 
 **Call chain:** `sponsor.ts` → `ensureAuditVault` → `createVault` → (now) generic
@@ -329,29 +586,62 @@ core. No new entry point; the wiring is the existing audit path, unchanged.
 **Wiring test:** the EXISTING audit tests (`tests/unit/audit-key.test.ts`,
 `tests/e2e/sponsor-archive.spec.ts`, `tests/e2e/audit-passkey.spec.ts`) are the
 guard — they must stay GREEN with no edits. That proves the refactor preserved
-behavior. Add a unit test for the new generic `wrapJson`/`unwrapJson` round-trip
-with injected raw material (no WebAuthn).
+behavior. In `tests/unit/vault-core.test.ts` (new), RED-first, add and name:
+- `wrapJson/unwrapJson round-trips arbitrary JSON with injected raw material`
+  (no WebAuthn) — the generic-core happy path.
+- `two labels derive distinct keys` (invariant 2): a blob wrapped under the
+  `session` label fails GCM `decrypt` under the `audit` label.
+- `each wrap uses a fresh IV` (invariant 3): two wraps of identical plaintext
+  produce different `iv` fields.
+- **`a pre-refactor audit blob still unwraps` (invariant 5, the regression the
+  hermetic same-run round-trip cannot catch):** commit a fixture — a `wrapped`
+  `{iv,ct}` blob + its raw material, produced by the CURRENT (pre-refactor)
+  `wrapPrivateKey` under `skylite-audit-vault-v1` — and assert the refactored
+  `unwrapJson` decrypts it byte-for-byte. This fails if the refactor changes the
+  HKDF `info`/salt or the AES params, which a wrap-then-unwrap-in-one-run test
+  would silently pass. *(Fixture disposition: keep-as-fixture. If Phase 0's D5
+  probe blob is available, prefer it; otherwise generate from the pre-refactor
+  code on the first RED run and commit it.)*
 
-**Depends on:** Phase 0 D5 (confirms the PRF path is worth building on).
+**Depends on:** nothing device-side. This is a behavior-preserving refactor of a
+shipping feature (the audit vault already uses PRF in production), so it runs in
+**Phase 0-prep, BEFORE the device session**, to give the probe harness the real
+crypto core. *(Corrects the Pass-2 ordering, which had this gated on D5. D5 gates
+Phase 1b — building explorer persistence on this core — not the refactor itself.
+Owner-confirmed reorder, 2026-07-24.)*
 
 **Read-set:** `src/crypto/vault.ts`, `src/sponsor/audit-key.ts`, `src/sponsor.ts`,
-`src/crypto/sealedbox.ts`.
-**Write-set:** `src/crypto/vault.ts`, `tests/unit/vault-core.test.ts` (new).
+`src/crypto/sealedbox.ts`, `docs/telescope-search.md`.
+**Write-set:** `src/crypto/vault.ts`, `tests/unit/vault-core.test.ts` (new),
+`tests/fixtures/audit-vault-pre-refactor.json` (new, committed fixture).
 **Shared-state contract:** no storage/ambient change; `skylite.audit.vault` key
-and shape unchanged. Pure in-module refactor.
+and shape unchanged. Pure in-module refactor. No git/process/port mutation.
 
-**Risks:** breaking the sponsor audit feature. Mitigation: the audit test suite
-must pass untouched; if any audit test needs editing to stay green, the refactor
-changed behavior and must be corrected.
+**Risks:** breaking the sponsor audit feature — **especially the real-PRF path,
+which no hermetic test exercises** (`vault.test.ts` runs only the passphrase
+path). Mitigation: (a) the audit test suite must pass untouched; if any audit
+test needs editing to stay green, the refactor changed behavior and must be
+corrected. (b) the pre-refactor fixture guards against a derivation change. (c)
+the on-device unlock in Done-when catches a real-PRF regression the fixture and
+mocked tests can't.
 
 **Done when:**
 1. **Behavioral:** the sponsor can still create + unlock an audit vault exactly
-   as before; the generic core is exported and unit-round-trips.
-2. **Verification:** `npx vitest run vault-core audit-key` + `npx playwright test
-   sponsor-archive audit-passkey` all green, no edits to the audit tests.
+   as before; the generic core is exported and unit-round-trips; the pre-refactor
+   fixture still unwraps.
+2. **Verification (hermetic):** `npx vitest run vault-core audit-key` + `npx
+   playwright test sponsor-archive audit-passkey` all green, no edits to the
+   audit tests.
+3. **Verification (on-device — required, do not skip):** on a real device with a
+   sponsor audit vault created **before** this refactor lands, a Face ID / PRF
+   unlock still recovers the audit private key. This is the only check that
+   exercises the real-PRF derivation end to end.
 
-**Validation:** Moderate (refactor of security code) → unit round-trip + the full
-audit suite as the behavior lock.
+**Validation:** **Broad** (refactor of security-critical crypto that a live
+sponsor's at-rest key depends on) → unit round-trip + distinct-key + IV +
+pre-refactor-fixture tests, the full audit suite as the behavior lock, **and** the
+on-device real-PRF unlock. Do not close 1a on the hermetic suite alone — it is
+blind to the real-PRF path.
 
 ### Phase 1b: Explorer-session vault + encrypt-at-rest storage
 
@@ -362,24 +652,58 @@ durable is written** (fallback b) and behavior is exactly as today.
 
 **Changes:**
 - [ ] `src/social/explorer-session-vault.ts` (new) — `wrapSession(session)` /
-  `unwrapSession(ciphertext)` over the Phase-1a core, plus an **injectable
-  unwrap seam** for hermetic tests. Maps "no PRF / hmac-secret trap" to a typed
-  `NoPersistence` result — never a passphrase prompt.
+  `unwrapSession(ciphertext)` over the Phase-1a core (session `label`, invariant
+  2), plus an **injectable unwrap seam** for hermetic tests. Wraps **only** via
+  the PRF path — the passphrase path is never referenced (Security invariant 1).
+  Maps "no PRF / hmac-secret trap" to a typed `NoPersistence` result — never a
+  passphrase prompt.
+- [ ] **Retain the PRF-derived wrapping material for the runtime (Security /
+  finding F):** after the launch unlock (or first enrollment) derives the PRF
+  secret, the module holds the derived wrapping key in memory for the JS-runtime
+  lifetime, so a subsequent proactive/in-page refresh can **re-encrypt the
+  rotated refresh token silently** — without a second Face ID gesture. Same
+  in-use exposure as the plaintext cache; documented, not a new leak. Without
+  this, atproto's rotating refresh (`ensureFresh`) would re-prompt on every open.
 - [ ] `src/social/explorer-auth.ts` — two layers: at-rest ciphertext in
   localStorage (`skylite.explorer.oauth.session.enc`) + in-use plaintext cache in
   sessionStorage (`skylite.explorer.oauth.session`, existing key/shape unchanged
   so `main.ts`/`mysky`/`telescope` keep reading it synchronously). `persist()`
-  writes both (encrypting the durable copy) when a session vault exists; else
-  sessionStorage only (fallback b). `getExplorerSession()` stays **sync** (reads
-  the cache). Keep `…pending` ephemeral.
+  writes both (encrypting the durable copy) when a session vault exists **and**
+  the wrapping material is held; else sessionStorage only (fallback b).
+  `getExplorerSession()` stays **sync** (reads the cache). Keep `…pending`
+  ephemeral.
+- [ ] **`clearExplorerSession()` clears BOTH layers (Security invariant 4):**
+  today it removes only the sessionStorage cache (`:49-51`). It must also remove
+  `skylite.explorer.oauth.session.enc`. Wire it into (a) the existing
+  refresh-chain-break path (`refreshExplorerSessionOnOpen` catch, `:69-72`) and
+  (b) any `unwrapSession` GCM failure (deleted passkey / iCloud Keychain off /
+  hmac-secret trap) — so no undecryptable secret lingers at rest.
+- [ ] **Diagnostic logging (loud degrade):** the fallback-(b) path logs
+  `log.warn('[explorer-vault] PRF unavailable — session not persisted
+  (fallback b)')`; an `unwrapSession` GCM failure logs
+  `log.error('[explorer-vault] stored session could not be decrypted — clearing
+  at-rest copy')`. New crypto paths do **not** use the empty-`catch {}` swallow
+  pattern of the surrounding file.
 
 **Call chain:** explorer signs in / refreshes → `persistExplorerSession` →
 `wrapSession` → localStorage ciphertext + sessionStorage cache. (The *read/unlock*
 side is Phase 1c.)
 
-**Wiring test:** unit — round-trip `wrapSession`/`unwrapSession` with injected
-material; fallback path asserts NO ciphertext written when PRF unavailable.
-(The end-to-end restore assertion is Phase 1c's wiring test.)
+**Wiring test:** unit in `tests/unit/explorer-session-vault.test.ts` (new),
+RED-first, named:
+- `wrapSession/unwrapSession round-trips a full OAuthSession (incl. dpopKey) with
+  injected material`.
+- `fallback (b): PRF unavailable → NoPersistence, no ciphertext written` (asserts
+  `skylite.explorer.oauth.session.enc` absent).
+- `unwrap GCM failure → NoPersistence and BOTH storage keys cleared` (invariant
+  4, the third edge — not just happy-path + no-PRF).
+- `session vault never invokes the passphrase path` (invariant 1) — e.g. spy /
+  seam asserts `passphraseMaterial` is not reached.
+- `a post-unlock refresh re-encrypts without a second gesture` (finding F): with
+  material retained, a simulated `persist(fresh)` writes new ciphertext and does
+  NOT call the unlock seam again.
+
+(The end-to-end restore assertion across a cold launch is Phase 1c's wiring test.)
 
 **Depends on:** Phase 1a (the crypto core).
 
@@ -392,8 +716,10 @@ touches the platform authenticator, no server/PDS. No git/process/port state.
 
 **Risks:** the plaintext cache is in sessionStorage **while the app is open**
 (same as today) — only the at-rest, app-closed copy is encrypted; intended
-posture. The hmac-secret trap → unwrap failure means "no persistence," never
-"store unwrapped."
+posture. The retained in-memory wrapping key (finding F) shares that same
+app-open exposure window and is discarded when the runtime tears down — no new
+at-rest surface. The hmac-secret trap → unwrap failure means "no persistence"
+**and clears the at-rest copy** (invariant 4), never "store unwrapped."
 
 **Done when:**
 1. **Behavioral:** a signed-in explorer's session is written encrypted at rest
@@ -422,6 +748,12 @@ whether the explorer lands on the garden, My Sky, or Telescope first.
   shared unlock helper at boot (each is a separate entry point that reads the
   session; all three must offer the unlock, else a cold-launch landing there
   misses the encrypted session).
+- [ ] **Diagnostic logging:** the helper logs the branch it took —
+  `log.info('[unlock] restoring session from at-rest copy')` on the tap→unwrap
+  success path, `log.warn('[unlock] no PRF — showing sign-in banner')` on the
+  degrade path. Because the explorer flow crosses an OAuth redirect (`?debug=1`
+  does not survive it), the degrade uses `warn` (always emits) so a field failure
+  is diagnosable via the console with only the durable `skylite-debug` flag.
 
 **Call chain:** any entry point boot → `explorer-unlock` sees cache empty +
 ciphertext present → shows tap affordance → tap → `unwrapSession` → cache filled →
@@ -598,7 +930,16 @@ surfaces; confirm it still passes after edits.
 - [CONFIRMED: BLOCKING] **Does iOS actually clear `sessionStorage` on
   installed-PWA cold launch (Phase 0 D1)?** *If, surprisingly, it does not, the
   premise of Phase 1 weakens and we'd re-scope. This is verifiable only on a
-  device, so it gates Phase 1a. Not an owner decision — a device probe.*
+  device, so it gates **Phase 1b** (the encrypt-at-rest build); the Phase 1a
+  refactor runs earlier in Phase 0-prep regardless. Not an owner decision — a
+  device probe. Armchair
+  2026-07-24: the mechanism is well-supported (session storage is scoped to the
+  top-level browsing context's lifetime; a cold launch builds a fresh context)
+  and the localStorage-exempt/sessionStorage-non-persistent asymmetry points the
+  same way — but no report nails this exact surface, so the probe still runs. If
+  the probe shows sessionStorage survived, the real cause of the reported symptom
+  is elsewhere (ITP eviction, a `clearExplorerSession` error path, or an
+  OAuth-refresh failure) and Phase 1 re-scopes before building encrypt-at-rest.*
 - [CONFIRMED: ADVISORY — cadence definition, resolve in Pass 2] **What exactly
   counts as a "cold launch" for the once-per-launch unlock?** *Decision: start
   with the sessionStorage boundary — encrypted session in localStorage; on unlock
@@ -628,6 +969,24 @@ surfaces; confirm it still passes after edits.
   near-identical and trivial. Fallback: split the mysky/telescope wire-ups into a
   Phase 1c.2 if it strains a single execution context. Owner/executor call at
   execution time.*
+- [CONFIRMED: PHASE-GATED (Phase 1b) — 2026-07-24] **How does a post-unlock
+  refresh re-encrypt the rotated token without a second Face ID gesture?**
+  *Owner confirmed PHASE-GATED and endorsed the retained-in-memory-wrapping-key
+  approach.*
+  *atproto refresh tokens rotate on use; `ensureFresh` → `persist(fresh)` runs on
+  every open and from mysky/telescope in-page refreshes. If the PRF-derived
+  wrapping key is only obtainable via a user-gesture `prfGet`, a background
+  re-encrypt is impossible without re-prompting. Recommend: the session-vault
+  module **retains the derived wrapping key in memory for the JS-runtime
+  lifetime** (encoded in Phase 1b), so re-wraps are silent; exposure equals the
+  existing plaintext cache. Resolve before Phase 1b — it shapes the module's
+  interface.*
+- [CONFIRMED: ADVISORY — 2026-07-24] **The audit `label`/HKDF-`info` value
+  must stay byte-for-byte `skylite-audit-vault-v1` through the 1a refactor.**
+  *A live sponsor's existing at-rest audit vault becomes un-unlockable if the
+  derivation string changes. The pre-refactor fixture test + on-device unlock
+  guard this; flagging because it constrains the refactor's freedom (pre-1.0
+  no-backwards-compat does NOT extend to a live sponsor's already-stored key).*
 
 ## Review Log
 
@@ -665,6 +1024,67 @@ surfaces; confirm it still passes after edits.
   PHASE-GATED/cadence resolved; 3 ADVISORY confirmed: offline fail-open intended,
   IDEAS.md minimal, four-part order unchanged with PWA-hardening as #1). Plan
   ready for Pass 2 (gap analysis) in a fresh context. No code changed.
+- **2026-07-24 — Armchair de-risking of D1/D2/D5 (no device).** Chased the two
+  highest-value unknowns against primary sources. **D2 moves (settled):** WebKit's
+  Tracking Prevention doc documents a home-screen-app exemption from the 7-day
+  script-writeable-storage cap → persisted localStorage is durable-by-default for
+  our installed origin; degrade is a rare backstop, not a first-class path.
+  Asterisk: exemption covers the interaction cap only, not quota-pressure/long
+  power-off eviction → keep the backstop wired. **D5 stays open (gate stays):** no
+  source addresses PRF in `display-mode: standalone` vs a Safari tab — the absence
+  is the finding, so fallback-(b)-first sequencing (build 1a refactor + fixtures
+  now, gate persistence on device) is the right hedge. Also resolved the
+  hmac-secret trap: forum 782466 closes with the spec being clarified that
+  `hmac-secret` is not required, so `prf.enabled` is a meaningless has-a-secret
+  signal — read `results.first` (as `vault.ts` already does). Corroborated the
+  iOS 18.4 floor (Corbado) and the 32-byte/same-salt-deterministic secret shape
+  (Yubico); cross-launch stability remains unproven by any source → D5 criterion
+  stays the round-trip. **D1 mechanism corroborated** by the sessionStorage
+  lifetime definition but no direct standalone-swipe-kill report → stays a device
+  probe. New sources:
+  - WebKit — Tracking Prevention (home-screen storage exemption; ITP 7-day cap):
+    https://webkit.org/tracking-prevention/
+  - passkeys.dev — iOS & iPadOS platform reference (PRF version floors):
+    https://passkeys.dev/device-support/
+  - Apple Developer Forums 710157 — PWA data persistence beyond 7 days
+    (*unverified — not fetched; treat as scattered-report only*):
+    https://developer.apple.com/forums/thread/710157
+  No code changed; edits landed in Verified Assumptions (PRF trap resolution) and
+  the Unverified list (D1/D2 armchair annotations).
+- **2026-07-24 — Readiness plan + reorder (owner-confirmed).** Surfaced that Phase
+  0's write-set ("none, observation only") cannot satisfy D5's round-trip criterion
+  — the device session needs a probe harness on the device. Added **Phase 0-prep**
+  (device-independent): execute the 1a refactor first, build a throwaway probe page
+  (`probe.html` / `src/probe/page.ts`) on the real crypto core, capture the D5 blob
+  as the 1a fixture, deploy via PR preview (`skylite.croft.ing/pr-preview/pr-<N>/`),
+  and write a device-test script. **Reorder:** the 1a refactor moves before the
+  device session (it is behavior-preserving for the shipping audit vault, so
+  carries no device risk); **D5's gate moves from 1a to 1b** (explorer persistence
+  built on the core). Corrected the Concurrency Map spine, Phase 0 "done when",
+  and Phase 1a "Depends on". Confirmed the deploy path: GitHub Pages at
+  `skylite.croft.ing`, per-PR previews at `/pr-preview/pr-<N>/` (HTTPS, relative
+  asset paths, `rpId = skylite.croft.ing` identical to prod so the D5 finding
+  transfers). No runtime code changed yet — Phase 0-prep is the next execution
+  step.
+- **2026-07-24 — Phase 1a executed (A1 done).** Extracted the generic crypto core
+  from `src/crypto/vault.ts`: new exports `wrapJson(value, {material, info})` /
+  `unwrapJson(wrapped, {material, info})` (replacing the private
+  `wrapPrivateKey`/`unwrapPrivateKey`), `passphraseMaterial`, `prfEnroll({salt,
+  label, displayName})`, `prfGet`, and the `WrapContext` type. Domain separation
+  is by HKDF `info`; `aesFromMaterial(material, info)` now takes the label. Audit
+  info kept byte-for-byte `skylite-audit-vault-v1` (named const `AUDIT_VAULT_INFO`).
+  Fresh-random 12-byte IV per wrap preserved. `prfGet`'s no-`results.first` branch
+  now `log.warn`s '[vault] PRF returned no hmac-secret' before throwing (routed
+  through `src/log.ts`). `createVault`/`unlockVault` rebuilt on the core (pure
+  refactor). TDD: RED-first `tests/unit/vault-core.test.ts` (4 named tests:
+  round-trip, two-labels-distinct, fresh-IV, pre-refactor-blob-unwraps), and the
+  cross-version fixture `tests/fixtures/audit-vault-pre-refactor.json` generated
+  from the PRE-refactor code (throwaway generator, since removed). **Evidence
+  (fresh run):** typecheck clean, eslint clean, unit 203/203 (incl. the 4 new +
+  audit-key + search-archive regression), build ok (9 pages, budget ok), e2e
+  110/110 — including `audit-passkey.spec.ts`, which drives the real PRF path via a
+  virtual authenticator, so the `prfEnroll`/`prfGet` label refactor is proven
+  behavior-preserving, not only the passphrase path. Next: A2 (probe harness).
 
 ### Pass 2: Gap Analysis — 2026-07-24
 **Found:**
@@ -706,3 +1126,93 @@ surfaces; confirm it still passes after edits.
   encryption ≠ posture-3 account passkey" distinction all survive review.
 - Phase 0 device gates (esp. D5 PRF-in-PWA) remain the correct blocking checks.
 - Reading the garden stays authless and unaffected.
+
+### Pass 3: Quality Gates — 2026-07-24
+Spot-checked the live code (HEAD 365fa8b): all touch-point files exist; test
+conventions confirmed (`tests/unit/*.test.ts` vitest, `tests/e2e/*.spec.ts`
+playwright); `mysky/page.ts:82` + `telescope/page.ts:296` sync reads re-verified;
+`src/log.ts` API + the OAuth-redirect gotcha confirmed; `WRAP_INFO` single
+constant + random-IV confirmed at `vault.ts:25,62,72`; existing `vault.test.ts`
+exercises only the passphrase path.
+
+**TDD ordering:**
+- Named the specific RED-first tests for every phase rather than leaving them
+  generic. Phase 1a: added distinct-key, fresh-IV, and pre-refactor-fixture
+  round-trip tests (the last is mutation-resistant — a same-run wrap/unwrap would
+  survive a derivation-change mutation; the fixture won't). Phase 1b: named the
+  five unit cases incl. the third edge (unwrap-failure → clear) and the
+  no-passphrase-path invariant, so the fallback branch isn't a single-point
+  assertion. Wiring tests unchanged and still exercise real entry points (1c
+  loads all three pages; 1a's guard is the untouched audit suite).
+
+**Observability:**
+- The plan had **zero** logging content; `src/log.ts` exists and its header names
+  crypto/OAuth as must-log boundaries, yet neither `vault.ts` nor
+  `explorer-auth.ts` logs today. Added `log.warn`/`log.error`/`log.info` calls to
+  Phases 1a (hmac-secret trap), 1b (fallback-b + unwrap-failure), and 1c (unlock
+  success / no-PRF degrade). Chose warn/error for the degrade traps because
+  `?debug=1` does not survive the OAuth redirect and warn/error always emit.
+  Prohibited copying the file's empty-`catch {}` swallow pattern into crypto
+  paths (house rule: fail loud).
+
+**Debugging readiness:**
+- Sequential commit-per-phase gives natural checkpoints; the D5 keep-as-fixture
+  blob now also seeds the Phase 1a fixture test, so a device finding is captured
+  as a committed regression guard rather than lost after the probe.
+
+**Validation calibration:**
+- Upgraded Phase 1a from **Moderate → Broad** and added a **required on-device
+  real-PRF unlock** to its Done-when. Rationale: 1a's hermetic guard exercises
+  only the passphrase path and round-trips within one run, so it is blind to a
+  real-PRF derivation regression that could brick a live sponsor's at-rest audit
+  key. This closes the gap where 1a could otherwise "close on hermetic tests
+  alone." 1b/1c on-device confirms unchanged (1c already Broad + mandatory
+  device gate; 1b's device confirm is explicitly folded into 1c).
+
+**Concurrency honesty:**
+- Map confirmed; sequential plan. Re-checked write-set disjointness after Pass-3
+  additions — all new entries are committed test assets; no new runtime module,
+  no new shared mutable state, no parallel set introduced. Retained in-memory
+  wrapping key is per-runtime process state, not cross-phase. No re-entry
+  verification required (no parallel set). Added an explicit Pass-3 re-check note
+  to the Concurrency Map.
+
+**Discovery (Phase 0):**
+- D1–D6 each have a concrete question, probe, success criterion, and disposition;
+  D5 is correctly the blocking gate. Confirmed D5's `keep-as-fixture` disposition
+  now wires into a named Phase 1a test. No Phase 0 task can be resolved during
+  planning — all six are genuine device-behavior probes.
+
+**Coherence:**
+- Plan still solves the original problem (session survives cold launch, hearts
+  keep working) and scope did not creep — Pass 3 added guards and diagnostics,
+  not new features. Surfaced one genuine **new design gap** (finding F: silent
+  re-encrypt of the rotated token) and one **new invariant** (audit label must
+  stay byte-stable), both as tagged open questions.
+
+**Documentation impact:**
+- Reconciled two internal contradictions: (1) IDEAS.md annotation and the RUN
+  summary are both Phase 4 (Pass 1 mislabelled IDEAS.md "Phase 1"); (2) all stub
+  edits are Phase 4, keeping Phase 0's write-set honestly empty (Phase 0 records
+  findings in this plan doc under the Discovery Exemption, not the stub). Added a
+  grep record for `docs/telescope-search.md` (referenced by `vault.ts`; not made
+  stale by the behavior-preserving 1a refactor). custody.md remains correctly
+  scheduled in Phase 1c (the phase that makes the behavior real).
+
+**Security review:**
+- Added an explicit **Security model** section (threat model + five testable
+  invariants) — previously the invariants were scattered across Reasoning and the
+  Open Questions. New concrete findings folded into phases: domain-separated
+  wrapping keys (invariant 2, Phase 1a), fresh-random-IV preservation (invariant
+  3, Phase 1a), `clearExplorerSession` must clear BOTH layers so no undecryptable
+  secret lingers at rest (invariant 4, Phase 1b), the pre-refactor fixture +
+  on-device unlock proving the refactor can't regress the sponsor's key
+  (invariant 5, Phase 1a), and the biometric-or-nothing / no-passphrase-path
+  invariant made a test (invariant 1, Phase 1b).
+
+**Confirmed ready:** yes (pending device gates). All open questions confirmed by
+the owner — the two Pass-3 items resolved at their recommended severities
+(finding F → PHASE-GATED Phase 1b, with the retained-in-memory-wrapping-key
+approach endorsed; audit-label stability → ADVISORY). No BLOCKING owner
+decisions remain. The only execution blockers are Phase 0's device gates (D1
+sessionStorage wipe, D5 PRF-in-PWA), which are device probes, not plan defects.
