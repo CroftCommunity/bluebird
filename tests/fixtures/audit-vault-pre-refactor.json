@@ -1,0 +1,22 @@
+{
+  "_comment": "Produced by the PRE-refactor vault.ts (passphrase path) so the Phase 1a crypto-core refactor cannot silently change the HKDF info/salt, PBKDF2 params, or AES-GCM shape. The refactored passphraseMaterial + unwrapJson must recover expectedPrivateJwk from wrapped under info=hkdfInfo.",
+  "hkdfInfo": "skylite-audit-vault-v1",
+  "passphrase": "phase-1a-fixture-passphrase",
+  "salt": "ardn1uTSl+HlYMjw6ckf0g==",
+  "iterations": 600000,
+  "wrapped": {
+    "iv": "cTy6bucvCztJcXGV",
+    "ct": "P9uqOG7tN+dqiQSW3JSHvlQ/ijTdyOYpcFpg/wDwCULhlHS3Ff35OGJ8cMcQOiiLmhvtNPoD2B6LCVRNDQOOF8F6+vsChaUKN2TBirMTDmddtZJQ+in/NEE5i8kbowOZo4G9bxbzpbV8FZrvnEBtIfbJAUXaRIanqaoLB4c+GaQt8xfm1Icnyry/UqoFOpVFUMrzPjpwRO96CvCF/qke/Zvpd20GQqNdswxlljvpiTwjCJZKbqW6ZOdtNJMJpCC7hvrdFnx4ZRW+JWQIkoxQ9ybDSQMeDNIwzBm8ZnrXIH4ZsM/c"
+  },
+  "expectedPrivateJwk": {
+    "key_ops": [
+      "deriveBits"
+    ],
+    "ext": true,
+    "kty": "EC",
+    "x": "LZ6Yrbt2QKV3-vSmpvYGorjm2WFvbFAmMsC7kiGXp2Q",
+    "y": "CB8mzpfVOOLbmkNQwyq4SfRRgP0V-8BUaujWkEq6W-E",
+    "crv": "P-256",
+    "d": "qtl54kbu5Va_eKQ5E6PTy-_0LFOcIg8uhF4CZILqHAI"
+  }
+}
