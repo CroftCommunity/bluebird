@@ -1,0 +1,79 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self'; manifest-src 'self'; base-uri 'none'; object-src 'none'; form-action 'none'; frame-ancestors 'none'"
+    />
+    <title>Skylite — device probe (D1/D5)</title>
+    <meta name="description" content="Throwaway Phase 0 device probe: sessionStorage cold-launch (D1) and WebAuthn PRF round-trip (D5)." />
+    <meta name="robots" content="noindex,nofollow" />
+    <link rel="stylesheet" href="%STYLES%" integrity="%STYLES_SRI%" crossorigin="anonymous" />
+    <meta name="theme-color" content="#FFFFFF" />
+    <meta name="color-scheme" content="light" />
+    <link rel="manifest" href="manifest.webmanifest" />
+    <link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png" />
+    <link rel="apple-touch-icon" href="icons/apple-touch-icon-180.png" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-title" content="Skylite Probe" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+    <style>
+      /* Inline layout is fine here: this page never merges and needs no brand
+         tokens. (CSP allows 'unsafe-inline' for style on THIS page only.) */
+      main { max-width: 44rem; margin: 0 auto; padding: 1rem; font: 15px/1.5 system-ui, sans-serif; }
+      section { border: 1px solid #ccc; border-radius: 8px; padding: 0.75rem 1rem; margin: 0.75rem 0; }
+      h2 { font-size: 1.05rem; margin: 0 0 0.5rem; }
+      button { font: inherit; padding: 0.4rem 0.7rem; margin: 0.2rem 0.3rem 0.2rem 0; border-radius: 6px; border: 1px solid #888; background: #f4f4f4; }
+      .out { display: block; white-space: pre-wrap; word-break: break-all; background: #f7f7f7; border-radius: 6px; padding: 0.4rem 0.6rem; margin: 0.3rem 0; min-height: 1.2em; font-family: ui-monospace, monospace; font-size: 13px; }
+      .k { color: #555; }
+      pre[data-log] { white-space: pre-wrap; word-break: break-all; background: #111; color: #b8f; padding: 0.6rem; border-radius: 6px; font-size: 12px; max-height: 16rem; overflow: auto; }
+    </style>
+  </head>
+  <body>
+    <main>
+      <h1>Skylite device probe</h1>
+      <p class="k">
+        Throwaway harness for the Phase 0 device gates. Environment:
+        <b data-standalone>?</b> · WebAuthn: <b data-webauthn>?</b> · build <code data-version-stamp>%VERSION%</code>
+      </p>
+
+      <section>
+        <h2>D1 — sessionStorage vs localStorage across cold launch</h2>
+        <p class="k">Tap Stamp, then swipe-kill and relaunch. sessionStorage should be empty; localStorage should keep the value.</p>
+        <button type="button" data-d1-stamp>Stamp both stores</button>
+        <span class="k">sessionStorage:</span><code class="out" data-d1-session></code>
+        <span class="k">localStorage:</span><code class="out" data-d1-local></code>
+      </section>
+
+      <section>
+        <h2>D5 — WebAuthn PRF round-trip</h2>
+        <p class="k">On device: Enroll → Get PRF ×2 (stability + trap) → Wrap → swipe-kill → relaunch → Unlock. Desktop (no passkey): Simulate → Wrap → Unwrap.</p>
+        <button type="button" data-sim>Simulate material (no WebAuthn)</button>
+        <button type="button" data-enroll>Enroll passkey (PRF)</button>
+        <button type="button" data-getprf>Get PRF ×2 + inspect</button>
+        <span class="k">material:</span><code class="out" data-material></code>
+        <span class="k">PRF inspect:</span><code class="out" data-prf-dump></code>
+        <button type="button" data-wrap>Wrap test blob</button>
+        <span class="k">wrapped:</span><code class="out" data-wrapped></code>
+        <button type="button" data-unwrap-current>Unwrap (current material)</button>
+        <button type="button" data-unlock>Unlock (re-derive via PRF)</button>
+        <span class="k">plaintext:</span><code class="out" data-plaintext></code>
+        <span class="k">round-trip:</span><code class="out" data-roundtrip></code>
+      </section>
+
+      <section>
+        <h2>A3 — capture fixture</h2>
+        <button type="button" data-fixture-btn>Copy fixture JSON</button>
+        <code class="out" data-fixture></code>
+      </section>
+
+      <section>
+        <h2>log</h2>
+        <pre data-log></pre>
+      </section>
+    </main>
+    <script type="module" src="%PROBE_JS%" integrity="%PROBE_JS_SRI%" crossorigin="anonymous"></script>
+  </body>
+</html>

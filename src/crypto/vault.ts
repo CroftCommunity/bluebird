@@ -11,8 +11,16 @@
 //     key from a sponsor passphrase. The fallback where PRF is unavailable.
 // The private key JWK is AES-256-GCM wrapped either way; wrong secret → GCM auth
 // fails and unlock throws.
+//
+// Phase 1a note: the wrap/unwrap + key-material primitives are a GENERIC core
+// (`wrapJson`/`unwrapJson`/`passphraseMaterial`/`prfEnroll`/`prfGet`) so a second
+// consumer (the explorer session, `src/social`) can reuse the exact PRF + AES-GCM
+// code. Domain separation is by the HKDF `info` label (`skylite-audit-vault-v1`
+// for this audit vault, a distinct label per other consumer) — distinct labels
+// derive distinct AES keys from the same raw material.
 
 import { generateAuditKeypair } from './sealedbox.js';
+import { log } from '../log.js';
 
 function subtle(): SubtleCrypto {
   const c = globalThis.crypto;
@@ -22,7 +30,9 @@ function subtle(): SubtleCrypto {
 
 const enc = new TextEncoder();
 const dec = new TextDecoder();
-const WRAP_INFO = enc.encode('skylite-audit-vault-v1');
+/** HKDF `info` for THIS audit vault. Must stay byte-for-byte so a live sponsor's
+ * already-stored vault still unlocks after the refactor. */
+const AUDIT_VAULT_INFO = 'skylite-audit-vault-v1';
 export const PBKDF2_ITERATIONS = 600_000;
 
 function b64(bytes: ArrayBuffer | Uint8Array): string {
@@ -54,12 +64,21 @@ export interface Vault {
   iterations?: number;
 }
 
-// --- wrapping the private key with raw key material ---------------------------
+// --- generic crypto core: wrap/unwrap arbitrary JSON with raw key material ----
 
-async function aesFromMaterial(material: Uint8Array): Promise<CryptoKey> {
+/** Context for a wrap/unwrap. `info` is the domain-separation label fed to HKDF —
+ * distinct labels derive distinct AES keys from the same raw material. */
+export interface WrapContext {
+  /** Raw key material: a PRF secret or PBKDF2 output. */
+  material: Uint8Array;
+  /** Domain-separation label (e.g. `skylite-audit-vault-v1`). */
+  info: string;
+}
+
+async function aesFromMaterial(material: Uint8Array, info: string): Promise<CryptoKey> {
   const hkdf = await subtle().importKey('raw', material as BufferSource, 'HKDF', false, ['deriveKey']);
   return subtle().deriveKey(
-    { name: 'HKDF', hash: 'SHA-256', salt: new Uint8Array(0), info: WRAP_INFO },
+    { name: 'HKDF', hash: 'SHA-256', salt: new Uint8Array(0), info: enc.encode(info) },
     hkdf,
     { name: 'AES-GCM', length: 256 },
     false,
@@ -67,26 +86,28 @@ async function aesFromMaterial(material: Uint8Array): Promise<CryptoKey> {
   );
 }
 
-async function wrapPrivateKey(privateKeyJwk: JsonWebKey, material: Uint8Array): Promise<{ iv: string; ct: string }> {
-  const key = await aesFromMaterial(material);
+/** AES-256-GCM-wrap any JSON-serializable value. Fresh random 12-byte IV per call. */
+export async function wrapJson(value: unknown, ctx: WrapContext): Promise<{ iv: string; ct: string }> {
+  const key = await aesFromMaterial(ctx.material, ctx.info);
   const iv = globalThis.crypto.getRandomValues(new Uint8Array(12));
-  const ct = await subtle().encrypt({ name: 'AES-GCM', iv }, key, enc.encode(JSON.stringify(privateKeyJwk)));
+  const ct = await subtle().encrypt({ name: 'AES-GCM', iv }, key, enc.encode(JSON.stringify(value)));
   return { iv: b64(iv), ct: b64(ct) };
 }
 
-async function unwrapPrivateKey(wrapped: { iv: string; ct: string }, material: Uint8Array): Promise<JsonWebKey> {
-  const key = await aesFromMaterial(material);
+/** Recover a value wrapped by {@link wrapJson}. Wrong material/info → GCM auth fails → throws. */
+export async function unwrapJson<T>(wrapped: { iv: string; ct: string }, ctx: WrapContext): Promise<T> {
+  const key = await aesFromMaterial(ctx.material, ctx.info);
   const pt = await subtle().decrypt(
     { name: 'AES-GCM', iv: unb64(wrapped.iv) as BufferSource },
     key,
     unb64(wrapped.ct) as BufferSource,
   );
-  return JSON.parse(dec.decode(pt)) as JsonWebKey;
+  return JSON.parse(dec.decode(pt)) as T;
 }
 
 // --- passphrase material (PBKDF2) --------------------------------------------
 
-async function passphraseMaterial(passphrase: string, salt: Uint8Array, iterations: number): Promise<Uint8Array> {
+export async function passphraseMaterial(passphrase: string, salt: Uint8Array, iterations: number): Promise<Uint8Array> {
   const base = await subtle().importKey('raw', enc.encode(passphrase), 'PBKDF2', false, ['deriveBits']);
   const bits = await subtle().deriveBits(
     { name: 'PBKDF2', hash: 'SHA-256', salt: salt as BufferSource, iterations },
@@ -112,7 +133,7 @@ export function webauthnAvailable(): boolean {
   );
 }
 
-async function prfGet(credentialId: string, salt: Uint8Array): Promise<Uint8Array> {
+export async function prfGet(credentialId: string, salt: Uint8Array): Promise<Uint8Array> {
   const challenge = globalThis.crypto.getRandomValues(new Uint8Array(32));
   const assertion = (await navigator.credentials.get({
     publicKey: {
@@ -125,18 +146,36 @@ async function prfGet(credentialId: string, salt: Uint8Array): Promise<Uint8Arra
   })) as PublicKeyCredential | null;
   if (!assertion) throw new Error('WebAuthn unlock was cancelled');
   const first = (assertion.getClientExtensionResults() as PrfResults).prf?.results?.first;
-  if (!first) throw new Error('This passkey does not support PRF — use a passphrase instead');
+  if (!first) {
+    // The hmac-secret trap: `prf.enabled` can be true while `results.first` is
+    // absent (spec-conformant per Apple forum 782466). `enabled` is meaningless;
+    // the presence of `results.first` is the only trustworthy signal. Log before
+    // throwing so the fallback path is diagnosable from the console alone
+    // (warn always emits; ?debug=1 would not survive an OAuth redirect).
+    log.warn('[vault] PRF returned no hmac-secret (results.first absent) — treating as no-PRF');
+    throw new Error('This passkey does not support PRF — use a passphrase instead');
+  }
   return new Uint8Array(first);
 }
 
-async function prfEnroll(salt: Uint8Array): Promise<{ credentialId: string; material: Uint8Array }> {
+/** WebAuthn credential labelling — distinguishes the audit-key credential from a
+ * session credential in the authenticator UI. */
+export interface PrfEnrollOptions {
+  salt: Uint8Array;
+  /** WebAuthn credential `user.name`. */
+  label: string;
+  /** WebAuthn credential `user.displayName`. */
+  displayName: string;
+}
+
+export async function prfEnroll(opts: PrfEnrollOptions): Promise<{ credentialId: string; material: Uint8Array }> {
   const challenge = globalThis.crypto.getRandomValues(new Uint8Array(32));
   const userId = globalThis.crypto.getRandomValues(new Uint8Array(16));
   const cred = (await navigator.credentials.create({
     publicKey: {
       challenge,
       rp: { name: 'Skylite', id: location.hostname },
-      user: { id: userId, name: 'skylite-audit', displayName: 'Skylite search-history key' },
+      user: { id: userId, name: opts.label, displayName: opts.displayName },
       pubKeyCredParams: [
         { type: 'public-key', alg: -7 },
         { type: 'public-key', alg: -257 },
@@ -148,7 +187,7 @@ async function prfEnroll(salt: Uint8Array): Promise<{ credentialId: string; mate
   if (!cred) throw new Error('WebAuthn enrollment was cancelled');
   const credentialId = b64(new Uint8Array(cred.rawId));
   // PRF output is reliably available on a subsequent get(), so fetch it there.
-  const material = await prfGet(credentialId, salt);
+  const material = await prfGet(credentialId, opts.salt);
   return { credentialId, material };
 }
 
@@ -161,12 +200,16 @@ export async function createVault(opts: { method: VaultMethod; passphrase?: stri
   if (opts.method === 'passphrase') {
     if (!opts.passphrase) throw new Error('A passphrase is required');
     const material = await passphraseMaterial(opts.passphrase, salt, PBKDF2_ITERATIONS);
-    const wrapped = await wrapPrivateKey(privateKeyJwk, material);
+    const wrapped = await wrapJson(privateKeyJwk, { material, info: AUDIT_VAULT_INFO });
     return { method: 'passphrase', publicKeyJwk, wrapped, salt: b64(salt), iterations: PBKDF2_ITERATIONS };
   }
 
-  const { credentialId, material } = await prfEnroll(salt);
-  const wrapped = await wrapPrivateKey(privateKeyJwk, material);
+  const { credentialId, material } = await prfEnroll({
+    salt,
+    label: 'skylite-audit',
+    displayName: 'Skylite search-history key',
+  });
+  const wrapped = await wrapJson(privateKeyJwk, { material, info: AUDIT_VAULT_INFO });
   return { method: 'webauthn-prf', publicKeyJwk, wrapped, salt: b64(salt), credentialId };
 }
 
@@ -180,7 +223,7 @@ export async function unlockVault(vault: Vault, opts: { passphrase?: string } = 
     if (!vault.credentialId) throw new Error('This vault has no passkey');
     material = await prfGet(vault.credentialId, unb64(vault.salt));
   }
-  return unwrapPrivateKey(vault.wrapped, material);
+  return unwrapJson<JsonWebKey>(vault.wrapped, { material, info: AUDIT_VAULT_INFO });
 }
 
 // --- device-local storage (sponsor device only) ------------------------------
