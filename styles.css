@@ -1169,13 +1169,23 @@ body {
 /* --- build stamp --- */
 .build {
   position: fixed;
-  inset: auto 0 max(0.4rem, env(safe-area-inset-bottom)) 0;
+  bottom: max(0.4rem, env(safe-area-inset-bottom));
+  left: 50%;
+  transform: translateX(-50%);
   display: flex;
   gap: 0.5ch;
   align-items: baseline;
   justify-content: center;
   font-size: 0.72rem;
   color: var(--ink-dim);
+  /* The stamp floats over page content, so its text must sit on a KNOWN
+     background — without this it inherits whatever is behind it (on sponsor.html,
+     a CTA-orange button → 2.35:1). A solid --bg backdrop makes contrast
+     deterministic: --ink-dim on --bg is 5.50:1 (light) / 7.93:1 (dark). Rendered
+     as a centered pill to keep occlusion minimal. */
+  background: var(--bg);
+  padding: 0.15rem 0.7rem;
+  border-radius: 999px;
   pointer-events: none;
 }
 
