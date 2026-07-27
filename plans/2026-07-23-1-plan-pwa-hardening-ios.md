@@ -1102,6 +1102,20 @@ surfaces; confirm it still passes after edits.
   (10 pages, budget ok). **A4 remains** — needs the push + PR to get a preview URL
   (outward-facing; awaiting go-ahead), then the desktop-Safari tab baseline. After
   A4, the device session runs the B1 script.
+- **2026-07-27 — A4 pushed; preview live; pre-existing CI red flagged.** Pushed
+  `pwa-hardening-ios` and opened draft PR #33 (CroftCommunity/skylite). The
+  preview workflow deployed in 18s; the probe is live and serving —
+  `https://skylite.croft.ing/pr-preview/pr-33/probe.html` returns HTTP 200 with
+  the correct title. **CI is red, but the failure is inherited from `main`, not
+  introduced here:** `tests/e2e/a11y.spec.ts` reports `color-contrast (serious)`
+  on `sponsor.html` (light + dark). Confirmed identical failure on main's latest
+  CI (run 30052394794, commit `2057767` "Sponsor UX"), and it passes locally in
+  both themes — an environment-specific axe discrepancy (CI Chromium vs local),
+  pre-dating this branch. The a11y scan uses a fixed page list that does NOT
+  include `probe.html`, and `sponsor.html` is byte-identical to main here. So
+  Phase 1a + the probe are green in their own scope; the red is an unrelated
+  pre-existing sponsor-UX a11y regression to be fixed separately. A4's remaining
+  half (desktop-Safari tab baseline) and the device session are the human steps.
 
 ### Pass 2: Gap Analysis — 2026-07-24
 **Found:**
