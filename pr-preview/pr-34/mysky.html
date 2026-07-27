@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <!-- Reads followed authors' feeds (public AppView) + their images (cdn.bsky.app),
+         and — when the explorer has an account — writes follow records to her PDS
+         (plc.directory for resolution; bsky.social + bsky-network PDS hosts). -->
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data: https://cdn.bsky.app https://*.cdn.bsky.app; connect-src 'self' https://public.api.bsky.app https://plc.directory https://bsky.social https://*.host.bsky.network; manifest-src 'self'; base-uri 'none'; object-src 'none'; form-action 'none'; frame-ancestors 'none'"
+    />
+    <title>Skylite — My Sky</title>
+    <link rel="manifest" href="manifest.webmanifest" />
+    <link rel="stylesheet" href="styles.css?v=v1%200.1.0%2B75b2435" integrity="sha384-8zUoB2wtHZ6rNA2e3uuSfUugdfF5TqXDZLRvV2x+ZY2AUCAl0liAoKGLUSNgTxq4" crossorigin="anonymous" />
+    <meta name="theme-color" content="#FFFFFF" />
+    <link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png" />
+    <link rel="apple-touch-icon" href="icons/apple-touch-icon-180.png" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-title" content="Skylite" />
+  </head>
+  <body>
+    <header class="topbar">
+      <span class="topbar__mark" data-header-mark aria-hidden="true"></span>
+      <h1 class="topbar__wordmark">
+        <svg class="wordmark" viewBox="0 0 300 72" role="img" aria-label="Skylite" xmlns="http://www.w3.org/2000/svg"><text x="2" y="56" fill="currentColor" font-family="system-ui,-apple-system,'Segoe UI',Roboto,sans-serif" font-weight="800" font-size="60" textLength="292" lengthAdjust="spacingAndGlyphs">Skylite</text></svg>
+      </h1>
+      <nav class="topbar__nav">
+        <a href="index.html">Garden</a>
+        <a href="saves.html">Saves</a>
+        <a href="help.html">How it works</a>
+      </nav>
+      <button type="button" class="topbar__theme" data-theme-toggle aria-label="Switch theme"><span class="topbar__theme-icon" data-theme-icon aria-hidden="true">☀</span></button>
+    </header>
+    <p class="garden__note">My Sky is the people you followed — your own picks, not the garden. It stays on this device.</p>
+    <main class="garden" data-mysky aria-live="polite"></main>
+    <footer class="build">
+      <span class="build__label">build</span>
+      <code data-version-stamp>v1 0.1.0+75b2435</code>
+      <a class="build__croft" href="https://croft.ing" aria-label="A Croft project">Croft</a>
+    </footer>
+    <script type="module" src="assets/page-CPKQM6RG.js" integrity="sha384-ngFqJZptY5VCsAN9XPczc6ROFtGLX8I0A8Fy/mVN/ARUlniuKn1oJZGeCZvdbDzA" crossorigin="anonymous"></script>
+  </body>
+</html>
