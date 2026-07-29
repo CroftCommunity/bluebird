@@ -73,10 +73,10 @@ test.describe('Sponsor OAuth (hermetic end-to-end)', () => {
     // Write.
     await page.route('**/xrpc/com.atproto.repo.putRecord', (r: Route) => {
       putBody = r.request().postDataJSON() as Record<string, unknown>;
-      return r.fulfill(json({ uri: `at://${DID}/ing.croft.skylite.config/rk`, cid: 'bafy' }));
+      return r.fulfill(json({ uri: `at://${DID}/ing.croft.bluebird.config/rk`, cid: 'bafy' }));
     });
 
-    await page.goto('/sponsor.html');
+    await page.goto('/patrol.html');
 
     // Author one explorer before signing in (survives the redirect round-trip).
     await page.locator('[data-add-explorer]').click();
@@ -95,12 +95,12 @@ test.describe('Sponsor OAuth (hermetic end-to-end)', () => {
     await expect(page.locator('[data-publish-msg]').first()).toContainText('Published');
 
     expect(putBody).not.toBeNull();
-    expect((putBody as unknown as { collection: string }).collection).toBe('ing.croft.skylite.config');
+    expect((putBody as unknown as { collection: string }).collection).toBe('ing.croft.bluebird.config');
     expect((putBody as unknown as { repo: string }).repo).toBe(DID);
   });
 
   test('a normal load is not treated as a callback', async ({ page }) => {
-    await page.goto('/sponsor.html');
+    await page.goto('/patrol.html');
     await expect(page.locator('[data-signin="out"]')).toBeVisible();
     await expect(page.locator('[data-signin-btn]')).toBeVisible();
   });

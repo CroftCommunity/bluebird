@@ -32,7 +32,7 @@ function feed(text: string): unknown {
 async function seedBound(page: import('@playwright/test').Page): Promise<void> {
   await page.addInitScript(() => {
     localStorage.setItem(
-      'skylite.binding',
+      'bluebird.binding',
       JSON.stringify({ sponsorDid: 'did:plc:test', rkey: 'abc', pdsHost: 'https://pds.host.bsky.network' }),
     );
   });

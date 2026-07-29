@@ -1,8 +1,8 @@
 /**
- * §Telescope search history — the accountability indicator (docs/telescope-search.md).
+ * §Telescope search history — the accountability indicator (docs/trail-map-search.md).
  * When the sponsor left `logHistory` on, every search ATTEMPT (including blocked
  * ones) is recorded on the device so the sponsor can see what was searched. This
- * is deliberately visible, not secret — Skylite's honesty stance. It lives on the
+ * is deliberately visible, not secret — Bluebird's honesty stance. It lives on the
  * device; account-synced/remote history is staged.
  */
 
@@ -12,7 +12,7 @@ export interface SearchEntry {
   blocked: boolean;
 }
 
-const KEY = 'skylite.search.history';
+const KEY = 'bluebird.search.history';
 /** Retention: the device keeps the last 30 days, up to 500 entries. */
 const MAX_ENTRIES = 500;
 const MAX_AGE_MS = 30 * 24 * 60 * 60 * 1000;

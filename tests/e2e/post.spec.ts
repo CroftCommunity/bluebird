@@ -4,7 +4,7 @@ import { FIXTURE_POSTS } from '../fixtures/authorFeed.js';
 // §B3 post-view page + native share. Hermetic: getPosts is fulfilled from
 // fixtures, so a single shared post renders with zero real network. The label
 // floor still applies (a labeled post is "not available"), and share targets the
-// Skylite permalink — never bsky.app.
+// Bluebird permalink — never bsky.app.
 
 const A1 = FIXTURE_POSTS.A1;
 
@@ -51,7 +51,7 @@ test.describe('§B3 post-view', () => {
     expect(called).toBe(false);
   });
 
-  test('share targets the Skylite permalink via the native sheet', async ({ page }) => {
+  test('share targets the Bluebird permalink via the native sheet', async ({ page }) => {
     await page.route('**/xrpc/app.bsky.feed.getPosts*', (r) => mockGetPosts(r, [A1]));
     // Install a fake Web Share API that records the payload.
     await page.addInitScript(() => {

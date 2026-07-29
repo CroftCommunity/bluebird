@@ -1,5 +1,5 @@
 // Minimal structural types for the slice of `app.bsky.feed.getAuthorFeed` that
-// Skylite reads. Grounded against the getAuthorFeed lexicon + the embed/richtext
+// Bluebird reads. Grounded against the getAuthorFeed lexicon + the embed/richtext
 // lexicons (bluesky-social/atproto). We model only what the garden renders; the
 // AppView sends more fields, which we ignore. Everything optional is genuinely
 // optional in the wire format.

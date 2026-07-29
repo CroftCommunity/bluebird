@@ -4,9 +4,9 @@ import { test, expect } from '@playwright/test';
 
 test.describe('Sponsor multi-explorer dashboard (S2)', () => {
   test('shows the setup intro, a guide link, and a sponsor identity section', async ({ page }) => {
-    await page.goto('/sponsor.html');
+    await page.goto('/patrol.html');
     await expect(page.getByRole('heading', { name: 'Set up a garden' })).toBeVisible();
-    await expect(page.locator('[data-guide-link]')).toHaveAttribute('href', 'guide.html');
+    await expect(page.locator('[data-guide-link]')).toHaveAttribute('href', 'ski-school.html');
     await expect(page.getByRole('heading', { name: 'You (the sponsor)' })).toBeVisible();
     // The security checklist moved to the guide — it is not on the dashboard.
     await expect(page.getByRole('heading', { name: 'First, secure your account' })).toHaveCount(0);
@@ -15,7 +15,7 @@ test.describe('Sponsor multi-explorer dashboard (S2)', () => {
   });
 
   test('creates two explorers side by side, each with its own random rkey', async ({ page }) => {
-    await page.goto('/sponsor.html');
+    await page.goto('/patrol.html');
     await page.locator('[data-add-explorer]').click();
     await page.locator('[data-add-explorer]').click();
     const cards = page.locator('[data-explorer]');
@@ -27,7 +27,7 @@ test.describe('Sponsor multi-explorer dashboard (S2)', () => {
   });
 
   test('editing a nickname updates the card and the exported record body', async ({ page }) => {
-    await page.goto('/sponsor.html');
+    await page.goto('/patrol.html');
     await page.locator('[data-add-explorer]').click();
     const card = page.locator('[data-explorer]').first();
     await card.getByPlaceholder('e.g. Little Bear').fill('Comet');
@@ -39,7 +39,7 @@ test.describe('Sponsor multi-explorer dashboard (S2)', () => {
   });
 
   test('a per-explorer provisioning link carries the sponsor DID and the record rkey', async ({ page }) => {
-    await page.goto('/sponsor.html');
+    await page.goto('/patrol.html');
     // The manual (no-account) DID entry lives under the advanced disclosure.
     await page.locator('[data-advanced-identity] > summary').click();
     await page.getByPlaceholder('did:plc:…').fill('did:plc:sponsor1');
@@ -54,7 +54,7 @@ test.describe('Sponsor multi-explorer dashboard (S2)', () => {
   });
 
   test('explorers persist across reloads and can be removed', async ({ page }) => {
-    await page.goto('/sponsor.html');
+    await page.goto('/patrol.html');
     await page.locator('[data-add-explorer]').click();
     await expect(page.locator('[data-explorer]')).toHaveCount(1);
 
@@ -68,7 +68,7 @@ test.describe('Sponsor multi-explorer dashboard (S2)', () => {
   });
 
   test('flipping the localOnly switch is reflected in the record', async ({ page }) => {
-    await page.goto('/sponsor.html');
+    await page.goto('/patrol.html');
     await page.locator('[data-add-explorer]').click();
     const card = page.locator('[data-explorer]').first();
     await card.locator('.g-toggle--big input[type="checkbox"]').first().uncheck(); // localOnly off

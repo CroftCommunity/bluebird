@@ -3,7 +3,7 @@
 // PRIVATE key at rest so a stolen sponsor device/localStorage can't read a
 // child's search archive.
 //
-// Two protection methods (docs/telescope-search.md):
+// Two protection methods (docs/trail-map-search.md):
 //   · webauthn-prf — the platform authenticator (passkey / PIN / biometric)
 //     derives a stable secret via the WebAuthn PRF extension; that secret wraps
 //     the private key. Nothing brute-forceable is stored. [live path: verify-in-run]
@@ -22,7 +22,7 @@ function subtle(): SubtleCrypto {
 
 const enc = new TextEncoder();
 const dec = new TextDecoder();
-const WRAP_INFO = enc.encode('skylite-audit-vault-v1');
+const WRAP_INFO = enc.encode('bluebird-audit-vault-v1');
 export const PBKDF2_ITERATIONS = 600_000;
 
 function b64(bytes: ArrayBuffer | Uint8Array): string {
@@ -135,8 +135,8 @@ async function prfEnroll(salt: Uint8Array): Promise<{ credentialId: string; mate
   const cred = (await navigator.credentials.create({
     publicKey: {
       challenge,
-      rp: { name: 'Skylite', id: location.hostname },
-      user: { id: userId, name: 'skylite-audit', displayName: 'Skylite search-history key' },
+      rp: { name: 'Bluebird', id: location.hostname },
+      user: { id: userId, name: 'bluebird-audit', displayName: 'Bluebird search-history key' },
       pubKeyCredParams: [
         { type: 'public-key', alg: -7 },
         { type: 'public-key', alg: -257 },
@@ -185,7 +185,7 @@ export async function unlockVault(vault: Vault, opts: { passphrase?: string } = 
 
 // --- device-local storage (sponsor device only) ------------------------------
 
-const KEY = 'skylite.audit.vault';
+const KEY = 'bluebird.audit.vault';
 
 export function saveVault(vault: Vault): void {
   try {

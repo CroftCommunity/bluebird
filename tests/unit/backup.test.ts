@@ -62,7 +62,7 @@ describe('buildBackup', () => {
 });
 
 describe('parseBackup', () => {
-  it('rejects a non-Skylite object', () => {
+  it('rejects a non-Bluebird object', () => {
     expect(parseBackup({ hello: 1 })).toBeNull();
     expect(parseBackup(null)).toBeNull();
     expect(parseBackup('nope')).toBeNull();

@@ -1,0 +1,28 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" role="img" aria-label="Bluebird">
+  <title>Bluebird</title>
+  <!--
+    The primary Bluebird mark: ONE continuous line. It reads two ways at once —
+    a slalom S-curve descending a slope, and, where it lifts at the base, a small
+    winged silhouette deliberately ambiguous between a bird and a butterfly.
+
+    Single <path>, single stroke, no fill: it can double as a stroke-drawing
+    loading animation later (animate stroke-dashoffset along this one path).
+    Do not add a second path — the "one line" is the whole idea.
+  -->
+  <path
+    d="M30 14
+       C 58 26, 40 40, 66 50
+       C 92 60, 60 74, 84 86
+       C 92 90, 84 98, 74 96
+       C 66 94, 62 88, 60 82
+       C 58 88, 54 94, 46 96
+       C 36 98, 28 90, 36 86
+       C 60 74, 28 60, 54 50
+       C 80 40, 62 26, 30 14 Z"
+    fill="none"
+    stroke="#3BA3E8"
+    stroke-width="5"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+  />
+</svg>

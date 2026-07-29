@@ -1,8 +1,8 @@
 import { describe, it, expect } from 'vitest';
 import { queryAllowed } from '../../src/search/policy.js';
-import { SEARCH_DEFAULTS, type SkyliteSearch } from '../../src/config/types.js';
+import { SEARCH_DEFAULTS, type BluebirdSearch } from '../../src/config/types.js';
 
-const S = (over: Partial<SkyliteSearch> = {}): SkyliteSearch => ({ ...SEARCH_DEFAULTS, ...over });
+const S = (over: Partial<BluebirdSearch> = {}): BluebirdSearch => ({ ...SEARCH_DEFAULTS, ...over });
 
 describe('queryAllowed — blocklist (negative gate)', () => {
   it('refuses a query containing a seeded blocked term (substring, protective)', () => {

@@ -1,9 +1,9 @@
-import type { SkyliteConfig } from './types.js';
+import type { BluebirdConfig } from './types.js';
 
 /**
  * What an explorer's device is *allowed to do*, derived ONLY from the two-switch
  * model's capability switch (`localOnly`) and related data switches — NEVER from
- * `skin` (SKYLITE-DIRECTIVES §2: "NO capability may key on skin"). The
+ * `skin` (BLUEBIRD-DIRECTIVES §2: "NO capability may key on skin"). The
  * `capabilities-key-on-localOnly-never-skin` invariant test asserts exactly this:
  * flipping `skin` leaves every field here unchanged.
  *
@@ -29,7 +29,7 @@ export interface Capabilities {
   canFollowLocally: boolean;
 }
 
-export function capabilities(config: SkyliteConfig): Capabilities {
+export function capabilities(config: BluebirdConfig): Capabilities {
   const hasAccount = !config.localOnly;
   return {
     canPersistLikes: hasAccount,

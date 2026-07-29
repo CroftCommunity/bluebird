@@ -13,8 +13,8 @@ import {
 import { generateDpopKey, exportDpopKey } from '../../src/atproto/oauth/dpop.js';
 
 const CFG = {
-  clientId: 'https://skylite.croft.ing/oauth/client-metadata.json',
-  redirectUri: 'https://skylite.croft.ing/sponsor.html',
+  clientId: 'https://bluebird.croft.ing/oauth/client-metadata.json',
+  redirectUri: 'https://bluebird.croft.ing/patrol.html',
   scope: 'atproto transition:generic',
 };
 
@@ -150,17 +150,17 @@ describe('putRecord (DPoP-bound write)', () => {
       if (tries === 1) {
         return Promise.resolve(json({ error: 'use_dpop_nonce' }, { status: 401, headers: { 'DPoP-Nonce': 'nn' } }));
       }
-      return Promise.resolve(json({ uri: 'at://did:plc:alice/ing.croft.skylite.config/rk', cid: 'bafy' }));
+      return Promise.resolve(json({ uri: 'at://did:plc:alice/ing.croft.bluebird.config/rk', cid: 'bafy' }));
     }) as typeof fetch;
 
     // Use a real generated key so createDpopProof can sign.
     const realKey = await exportDpopKey(await generateDpopKey());
-    const result = await putRecord({ ...session, dpopKey: realKey }, { collection: 'ing.croft.skylite.config', rkey: 'rk', record: { a: 1 } }, fetchImpl);
+    const result = await putRecord({ ...session, dpopKey: realKey }, { collection: 'ing.croft.bluebird.config', rkey: 'rk', record: { a: 1 } }, fetchImpl);
 
     expect(tries).toBe(2); // retried after the nonce challenge
     expect(sawAuth).toBe('DPoP AT');
     expect(sawProof).toBe(true);
-    expect(result.uri).toContain('ing.croft.skylite.config/rk');
+    expect(result.uri).toContain('ing.croft.bluebird.config/rk');
     expect(result.session.dpopNonce).toBe('nn');
   });
 });
@@ -183,11 +183,11 @@ describe('createRecord / deleteRecord (likes)', () => {
     let body: Record<string, unknown> = {};
     const fetchImpl = ((_i: RequestInfo | URL, init?: RequestInit) => {
       body = JSON.parse(typeof init?.body === 'string' ? init.body : '{}') as Record<string, unknown>;
-      return Promise.resolve(json({ uri: 'at://did:plc:kid/ing.croft.skylite.like/3k', cid: 'c' }));
+      return Promise.resolve(json({ uri: 'at://did:plc:kid/ing.croft.bluebird.like/3k', cid: 'c' }));
     }) as typeof fetch;
-    const { uri } = await createRecord(await realSession(), { collection: 'ing.croft.skylite.like', record: { subject: 'x' } }, fetchImpl);
-    expect(uri).toContain('ing.croft.skylite.like/3k');
-    expect(body.collection).toBe('ing.croft.skylite.like');
+    const { uri } = await createRecord(await realSession(), { collection: 'ing.croft.bluebird.like', record: { subject: 'x' } }, fetchImpl);
+    expect(uri).toContain('ing.croft.bluebird.like/3k');
+    expect(body.collection).toBe('ing.croft.bluebird.like');
     expect(body.repo).toBe('did:plc:kid');
   });
 
@@ -197,8 +197,8 @@ describe('createRecord / deleteRecord (likes)', () => {
       body = JSON.parse(typeof init?.body === 'string' ? init.body : '{}') as Record<string, unknown>;
       return Promise.resolve(json({}));
     }) as typeof fetch;
-    await deleteRecord(await realSession(), { collection: 'ing.croft.skylite.like', rkey: '3k' }, fetchImpl);
-    expect(body).toEqual({ repo: 'did:plc:kid', collection: 'ing.croft.skylite.like', rkey: '3k' });
+    await deleteRecord(await realSession(), { collection: 'ing.croft.bluebird.like', rkey: '3k' }, fetchImpl);
+    expect(body).toEqual({ repo: 'did:plc:kid', collection: 'ing.croft.bluebird.like', rkey: '3k' });
   });
 });
 

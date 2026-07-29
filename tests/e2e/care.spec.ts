@@ -8,7 +8,7 @@ async function localConfigWithHelp(page: Page, help: unknown): Promise<void> {
   await page.addInitScript(
     (h) => {
       localStorage.setItem(
-        'skylite.config.local',
+        'bluebird.config.local',
         JSON.stringify({ version: 1, paused: false, updatedAt: '', channels: [], help: h }),
       );
     },
@@ -48,7 +48,7 @@ test.describe('Help handoff (IDEAS.md §3)', () => {
   });
 });
 
-test.describe('How Skylite works', () => {
+test.describe('How Bluebird works', () => {
   test('explains what is public vs private and offers help', async ({ page }) => {
     await page.goto('/help.html');
     await expect(page.getByRole('heading', { name: "What's public and what's private" })).toBeVisible();

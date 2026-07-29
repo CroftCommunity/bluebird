@@ -127,7 +127,7 @@ export async function fetchAudit(
   return auditGarden(feeds);
 }
 
-/** What Skylite does with each label it acts on (its own honest descriptions). */
+/** What Bluebird does with each label it acts on (its own honest descriptions). */
 export const LABEL_MEANINGS: { value: string; description: string; action: string }[] = [
   { value: 'porn', description: 'Adult sexual content.', action: 'Hidden from the garden entirely.' },
   { value: 'sexual', description: 'Sexually suggestive content.', action: 'Hidden from the garden entirely.' },

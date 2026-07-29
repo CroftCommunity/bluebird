@@ -1,7 +1,7 @@
 # PR previews
 
 Every open pull request gets a live, throwaway copy of the built site at
-`https://skylite.croft.ing/pr-preview/pr-<N>/`, removed
+`https://bluebird.croft.ing/pr-preview/pr-<N>/`, removed
 automatically when the PR closes. This is the Croft standard preview mechanism,
 shared with arecipe and croft-pwa.
 

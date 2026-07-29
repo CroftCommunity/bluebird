@@ -1,7 +1,7 @@
 import type { Label, PostView, RecordEmbedView } from '../atproto/types.js';
 
 /**
- * The **label floor** (SKYLITE-DIRECTIVES §3): label-bearing posts are EXCLUDED
+ * The **label floor** (BLUEBIRD-DIRECTIVES §3): label-bearing posts are EXCLUDED
  * (not blurred) everywhere — garden, My Sky, Telescope, embeds, post-view. This
  * is the cheap, real, no-server part of the safety stance. The inclusion list is
  * the primary ceiling; the label floor is the backstop for when an approved (or,

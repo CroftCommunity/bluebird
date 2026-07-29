@@ -1,5 +1,5 @@
 import { installTheme } from '../brand/theme.js';
-import { skyliteVersion } from '../version.js';
+import { bluebirdVersion } from '../version.js';
 import { el, clear } from '../render/dom.js';
 import { registerServiceWorker } from '../pwa/register.js';
 import { mountGarden } from '../garden.js';
@@ -51,7 +51,7 @@ async function render(root: HTMLElement): Promise<void> {
     clear(root);
     root.append(
       el('p', { class: 'garden__status', 'data-mysky-empty': 'true' }, [
-        'Your Sky is empty. Tap ＋ Follow on someone in the garden to see them here.',
+        'Your Mountain is empty. Tap ＋ Follow on someone in the garden to see them here.',
       ]),
     );
     return;
@@ -77,7 +77,7 @@ async function render(root: HTMLElement): Promise<void> {
 function boot(): void {
   installTheme();
   const stamp = document.querySelector<HTMLElement>('[data-version-stamp]');
-  if (stamp) stamp.textContent = skyliteVersion();
+  if (stamp) stamp.textContent = bluebirdVersion();
   registerServiceWorker();
   explorerSession = getExplorerSession();
 

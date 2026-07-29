@@ -1,17 +1,18 @@
 import { seal } from '../crypto/sealedbox.js';
 import { createRecord, ensureFresh, type OAuthSession } from '../atproto/oauth/client.js';
+import type { TrustTier } from '../config/types.js';
 
 /**
  * §Telescope encrypted search-history archive (phase 2). When the sponsor turned
  * the archive on (config.search.auditPubKeyJwk present) and the explorer has an
  * account, each search attempt is sealed to the sponsor's audit PUBLIC key and
- * written to the explorer's OWN repo (ing.croft.skylite.search). The device can
+ * written to the explorer's OWN repo (ing.croft.bluebird.search). The device can
  * seal but never open; only the sponsor's private key reads it (docs/
- * telescope-search.md). Best-effort — a failed write never affects the search;
+ * trail-map-search.md). Best-effort — a failed write never affects the search;
  * the on-device log is always the source of truth.
  */
 
-export const SEARCH_NSID = 'ing.croft.skylite.search';
+export const SEARCH_NSID = 'ing.croft.bluebird.search';
 
 /**
  * The payload sealed inside each record — "encrypt everything". The precise
@@ -31,6 +32,12 @@ export interface SealedSearchRecord {
   $type?: typeof SEARCH_NSID;
   enc: { epk: JsonWebKey; iv: string; ct: string };
   createdAt: string;
+  /**
+   * Trust tier the search ran under (green/blue/black), cleartext by design so
+   * Patrol tooling and third-party audits can read the trust context without the
+   * sponsor's private key. A trust rating, not a content rating.
+   */
+  tier: TrustTier;
 }
 
 /**
@@ -48,9 +55,10 @@ export async function buildSealedSearchRecord(
   payload: SearchPayload,
   auditPubKeyJwk: JsonWebKey,
   createdAtIso: string,
+  tier: TrustTier,
 ): Promise<SealedSearchRecord> {
   const enc = await seal(JSON.stringify(payload), auditPubKeyJwk);
-  return { $type: SEARCH_NSID, enc, createdAt: toUtcDay(createdAtIso) };
+  return { $type: SEARCH_NSID, enc, createdAt: toUtcDay(createdAtIso), tier };
 }
 
 /**
@@ -60,12 +68,18 @@ export async function buildSealedSearchRecord(
  */
 export async function archiveSearch(
   payload: SearchPayload,
-  deps: { session: OAuthSession | null; auditPubKeyJwk?: JsonWebKey; nowIso: string; fetchImpl?: typeof fetch },
+  deps: {
+    session: OAuthSession | null;
+    auditPubKeyJwk?: JsonWebKey;
+    nowIso: string;
+    tier: TrustTier;
+    fetchImpl?: typeof fetch;
+  },
 ): Promise<OAuthSession | null> {
-  const { session, auditPubKeyJwk, nowIso, fetchImpl } = deps;
+  const { session, auditPubKeyJwk, nowIso, tier, fetchImpl } = deps;
   if (!session || !auditPubKeyJwk) return session;
   try {
-    const record = await buildSealedSearchRecord(payload, auditPubKeyJwk, nowIso);
+    const record = await buildSealedSearchRecord(payload, auditPubKeyJwk, nowIso, tier);
     const fresh = await ensureFresh(session, fetchImpl);
     const { session: next } = await createRecord(fresh, { collection: SEARCH_NSID, record }, fetchImpl);
     return next;

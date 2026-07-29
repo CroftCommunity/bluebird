@@ -6,8 +6,8 @@ import {
   type OAuthSession,
   type PendingAuth,
 } from '../atproto/oauth/client.js';
-import { SKYLITE_CONFIG_NSID } from '../config/types.js';
-import type { SkyliteConfig } from '../config/types.js';
+import { BLUEBIRD_CONFIG_NSID } from '../config/types.js';
+import type { BluebirdConfig } from '../config/types.js';
 
 /**
  * Sponsor-side OAuth glue. Bluesky OAuth is the ONLY sign-in path (app passwords
@@ -16,16 +16,16 @@ import type { SkyliteConfig } from '../config/types.js';
  * authorization redirect there too.
  *
  * The base scope `atproto transition:generic` is used today; narrowing to a
- * per-collection grant (limited to ing.croft.skylite.config) is the documented
+ * per-collection grant (limited to ing.croft.bluebird.config) is the documented
  * verify-in-run item.
  */
 
-export const SKYLITE_CLIENT_ID = 'https://skylite.croft.ing/oauth/client-metadata.json';
-export const SKYLITE_SCOPE = 'atproto transition:generic';
+export const BLUEBIRD_CLIENT_ID = 'https://bluebird.croft.ing/oauth/client-metadata.json';
+export const BLUEBIRD_SCOPE = 'atproto transition:generic';
 
-const KEY_PENDING = 'skylite.oauth.pending';
-const KEY_SESSION = 'skylite.oauth.session';
-const KEY_HANDLE = 'skylite.oauth.handle';
+const KEY_PENDING = 'bluebird.oauth.pending';
+const KEY_SESSION = 'bluebird.oauth.session';
+const KEY_HANDLE = 'bluebird.oauth.handle';
 
 /** The typed sign-in value, kept only if it's a handle (not a DID), for display. */
 function normalizeHandle(handleOrDid: string): string | null {
@@ -34,7 +34,7 @@ function normalizeHandle(handleOrDid: string): string | null {
 }
 
 function cfg(): { clientId: string; redirectUri: string; scope: string } {
-  return { clientId: SKYLITE_CLIENT_ID, redirectUri: `${window.location.origin}/sponsor.html`, scope: SKYLITE_SCOPE };
+  return { clientId: BLUEBIRD_CLIENT_ID, redirectUri: `${window.location.origin}/patrol.html`, scope: BLUEBIRD_SCOPE };
 }
 
 function ss(): Storage | null {
@@ -94,9 +94,9 @@ export async function finishSignInFromUrl(): Promise<OAuthSession | null> {
 }
 
 /** Publish an explorer's config record into the sponsor's PDS over DPoP. */
-export async function publishRecord(session: OAuthSession, rkey: string, record: SkyliteConfig): Promise<string> {
+export async function publishRecord(session: OAuthSession, rkey: string, record: BluebirdConfig): Promise<string> {
   const fresh = await ensureFresh(session); // proactive refresh so an expired token just works
-  const { session: next, uri } = await putRecord(fresh, { collection: SKYLITE_CONFIG_NSID, rkey, record });
+  const { session: next, uri } = await putRecord(fresh, { collection: BLUEBIRD_CONFIG_NSID, rkey, record });
   ss()?.setItem(KEY_SESSION, JSON.stringify(next));
   return uri;
 }

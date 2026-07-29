@@ -66,11 +66,11 @@ type Status = 'loading' | 'ready' | 'empty' | 'error';
 function statusMessage(status: Status): string {
   switch (status) {
     case 'loading':
-      return 'Opening the window…';
+      return 'Warming up the lift…';
     case 'empty':
-      return 'Nothing new in the garden right now.';
+      return 'No fresh snow yet. Check back tomorrow.';
     case 'error':
-      return "Couldn't reach the sky. Try again in a little while.";
+      return 'Whiteout. Hang tight.';
     default:
       return '';
   }

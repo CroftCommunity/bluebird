@@ -1,17 +1,14 @@
 /*
-  Skylite design tokens — the ONLY place raw hex may appear. Semantic,
+  Bluebird design tokens — the ONLY place raw hex may appear. Semantic,
   theme-paired custom properties. Every fill carries its intended ink; the
   pairs are contrast-tested (tests/unit/brand-tokens.test.ts).
 
-  Palette source: owner brand boards (assets/brand/source/palette-*.png).
-  Adjustments made for WCAG AA (recorded in RUN-BRAND-SUMMARY.md):
-   - --ink-muted light: named greys (Aero Grey #A1BAC5 = 2.03:1, Sky Silver
-     #C0CCD6 = 1.63:1 on white) fail; use a darker navy-grey #5A6B7A (5.50:1).
-   - --ink-muted dark: named dark greys are dark-on-dark; use Aero Grey
-     #A1BAC5 (7.93:1 on charcoal).
-   - CTA: white-on-orange is forbidden (2.33:1). Light CTA is orange fill with
-     NAVY ink (5.37:1). Dark CTA is Rich Monarch with white ink (4.17:1, held
-     to large-text AA; CTA buttons render >=1.125rem bold).
+  Palette: a bluebird day on the mountain — clear sky blue over warm snow, with
+  deep evergreen ink. Adjusted by eye for WCAG AA (the contrast test is the
+  gate); final tuning of the palette by eye is on the human checklist.
+
+  Two-layer vocabulary: token NAMES stay durable (colour + role nouns), never
+  mountain terms. The mountain metaphor lives in UI copy, not here.
 
   Theming: light is the default, always — the app does not follow the device's
   system dark mode. Dark applies only when the explorer explicitly picks it via
@@ -19,25 +16,46 @@
 */
 
 :root {
+  /* ---- Brand palette (the new semantic hues) ---------------------------- */
+  --sky: #3BA3E8;        /* bluebird-day blue — the clear saturated sky */
+  --snow: #FAF6EF;       /* warm off-white — fresh snow under morning light */
+  --evergreen: #123A2A;  /* deep forest green — text & accents */
+
+  /* Trail-rating markers: the three trust tiers, drawn as the mountain draws
+     them — green circle (easiest / inside the garden), blue square (more / one
+     hop beyond), black diamond (expert / the open network). A trust rating,
+     never a content rating. */
+  --trail-green: #2F9E44;
+  --trail-blue: #1C7ED6;
+  --trail-black: #212529;
+
+  /* Ski patrol wears the one loud colour on the mountain, so everyone can find
+     help fast. SCOPE RULE (enforced by convention + review): --patrol may ONLY
+     be used on sponsor/Patrol surfaces (patrol.html and Patrol-only
+     components). It must never appear on an explorer-facing surface — the calm
+     of the mountain depends on the loud colour meaning exactly one thing. */
+  --patrol: #E8590C;     /* safety orange */
+
+  /* ---- Semantic tokens (what components consume) ------------------------ */
   /* Light theme (default) */
-  --bg: #FFFFFF;          /* Cloud White */
-  --bg-raised: #F1F8FB;   /* Aero Mist */
-  --bg-sunken: #C0CCD6;   /* Sky Silver */
+  --bg: #FAF6EF;          /* Snow — warm off-white */
+  --bg-raised: #FFFFFF;   /* raised cards, a touch brighter than the snow */
+  --bg-sunken: #EDE6D8;   /* recessed wells */
 
-  --ink: #1C335C;         /* Twilight Navy — body text, 12.52:1 on --bg */
-  --ink-muted: #5A6B7A;   /* navy-grey — 5.50:1 on --bg */
+  --ink: #123A2A;         /* Evergreen — body text, deep and legible on snow */
+  --ink-muted: #4B5D53;   /* muted evergreen-grey */
 
-  --accent: #2D8BCC;      /* Skylite Blue */
-  --accent-ink: #FFFFFF;  /* large text only, 3.70:1 */
-  --link: #1B6FB0;        /* text-safe blue — 4.96:1 on --bg-raised (accent is a fill) */
-  --cta: #FF8C00;         /* Monarch Orange */
-  --cta-ink: #1C335C;     /* Twilight Navy on orange, 5.37:1 */
-  --highlight: #FFDD00;   /* Sunbeam Yellow */
-  --highlight-ink: #1C335C;
+  --accent: #2D8BCC;      /* Sky (AA-safe interactive fill; white ink, large) */
+  --accent-ink: #FFFFFF;  /* large text only */
+  --link: #1B6FB0;        /* text-safe blue on raised surfaces */
+  --cta: #3BA3E8;         /* Bluebird sky — calm primary action, never loud */
+  --cta-ink: #123A2A;     /* Evergreen on sky (white-on-sky fails AA; forbidden) */
+  --highlight: #FFDD00;   /* Sunbeam — momentary highlight */
+  --highlight-ink: #123A2A;
 
-  --border: #C0CCD6;      /* Sky Silver — decorative separation */
-  --navy: #1C335C;        /* Twilight Navy — wordmark, deep ink */
-  --danger: #C0392B;      /* error text — 5.44:1 on --bg */
+  --border: #DAD2C3;      /* warm decorative separation */
+  --navy: #123A2A;        /* deep ink — wordmark, deepest evergreen */
+  --danger: #C0392B;      /* error text */
   --header-mark: url("/icons/brand/header-light.png");
 
   --radius: 20px;
@@ -48,25 +66,28 @@
 /* Dark is opt-in only: it applies when the explorer picks it via the theme
    toggle (data-theme="dark"). The app never auto-switches to system dark. */
 :root[data-theme="dark"] {
-  --bg: #212121;
-  --bg-raised: #2A2A2A;
-  --bg-sunken: #1C1C1C;
+  --bg: #172420;
+  --bg-raised: #1F2E28;
+  --bg-sunken: #101A16;
 
   --ink: #FFFFFF;
-  --ink-muted: #A1BAC5;
+  --ink-muted: #A9C3B5;
 
-  --accent: #1976D2;
+  --accent: #1E88E5;
   --accent-ink: #FFFFFF;
   --link: #7FB3E3;
-  --cta: #C24C00;
+  --cta: #2A72AE;         /* calm blue action (white ink ≥4.5); orange stays a Patrol-only token */
   --cta-ink: #FFFFFF;
   --highlight: #F1C40F;
-  --highlight-ink: #212121;
+  --highlight-ink: #172420;
 
-  --border: #3A3A3A;
-  --navy: #0E1A33;
+  --border: #33403A;
+  --navy: #0E2019;
   --danger: #FF9A9A;
   --header-mark: url("/icons/brand/header-dark.png");
+
+  /* A black-diamond marker vanishes on a dark slope; lift it to read. */
+  --trail-black: #E9ECEF;
 
   color-scheme: dark;
 }

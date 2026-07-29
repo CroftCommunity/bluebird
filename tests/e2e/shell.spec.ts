@@ -10,7 +10,7 @@ test.describe('Phase 0 shell', () => {
 
   test('an un-set-up device sees the landing wordmark (not the explorer chrome)', async ({ page }) => {
     await page.goto('/');
-    await expect(page.getByRole('heading', { name: 'Skylite' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Bluebird' })).toBeVisible();
     // The explorer-surface "Get help" button is NOT shown to a stranger (§S1:
     // product surface and project docs never share navigation).
     await expect(page.getByRole('button', { name: 'Get help' })).toBeHidden();
@@ -30,7 +30,7 @@ test.describe('Phase 0 shell', () => {
     const res = await request.get('/manifest.webmanifest');
     expect(res.ok()).toBeTruthy();
     const manifest = (await res.json()) as { name: string; icons: unknown[] };
-    expect(manifest.name).toBe('Skylite');
+    expect(manifest.name).toBe('Bluebird');
     expect(manifest.icons.length).toBeGreaterThan(0);
   });
 });

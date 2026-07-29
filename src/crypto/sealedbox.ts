@@ -1,5 +1,5 @@
 // Sealed box — "privacy in public" for the search-history archive
-// (docs/telescope-search.md). Anyone with the sponsor's PUBLIC key can seal a
+// (docs/trail-map-search.md). Anyone with the sponsor's PUBLIC key can seal a
 // message; only the holder of the matching PRIVATE key can open it. The
 // explorer's device seals each search payload to the sponsor's public key and
 // writes the ciphertext to her public repo; on the public AppView it is inert.
@@ -20,7 +20,7 @@ function subtle(): SubtleCrypto {
 }
 
 const ECDH = { name: 'ECDH', namedCurve: 'P-256' } as const;
-const HKDF_INFO = new TextEncoder().encode('skylite-search-archive-v1');
+const HKDF_INFO = new TextEncoder().encode('bluebird-search-archive-v1');
 
 export interface SealedBox {
   /** Ephemeral public key (JWK) for this message's ECDH. */

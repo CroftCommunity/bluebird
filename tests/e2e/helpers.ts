@@ -50,6 +50,6 @@ export async function seedExplorer(
     staleHours: 72,
   };
   await page.addInitScript((c) => {
-    window.localStorage.setItem('skylite.config.local', JSON.stringify(c));
+    window.localStorage.setItem('bluebird.config.local', JSON.stringify(c));
   }, config);
 }

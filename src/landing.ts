@@ -7,13 +7,13 @@ import { wordmark } from './brand/wordmark.js';
  * (no binding, no local config). A device arriving via a provisioning link is
  * bound before this runs, so it skips the landing and lands in the garden.
  *
- * The copy below is carried BYTE-VERBATIM from SKYLITE-DIRECTIVES §S1 and is
+ * The copy below is carried BYTE-VERBATIM from BLUEBIRD-DIRECTIVES §S1 and is
  * marked [confirm before publish — every line]. It is laid out, never rewritten.
  * Product surface and project docs never share navigation (§S1): the explorer
  * topbar/help chrome is hidden here; the footer carries the project docs.
  */
 
-/** Try to bind this device from a pasted Skylite link/code, then open the garden. */
+/** Try to bind this device from a pasted Bluebird link/code, then open the garden. */
 function openFromPasted(raw: string): string | null {
   const text = raw.trim();
   if (!text) return 'Paste the link or code you were given.';
@@ -30,7 +30,7 @@ function openFromPasted(raw: string): string | null {
     }
   }
   const binding = params ? parseProvisioning(params) : null;
-  if (!binding) return "That doesn't look like a Skylite link.";
+  if (!binding) return "That doesn't look like a Bluebird link.";
   setBinding(binding);
   // Reload at the app root — main.ts now sees a bound device and opens the garden.
   window.location.assign(window.location.origin + '/');
@@ -43,7 +43,7 @@ function doorB(): HTMLElement {
     type: 'text',
     class: 'landing__paste-input',
     placeholder: 'Paste your link or code',
-    'aria-label': 'Your Skylite link or code',
+    'aria-label': 'Your Bluebird link or code',
     'data-paste-input': 'true',
   });
   const msg = el('span', { class: 'landing__paste-msg', 'data-paste-msg': 'true', role: 'alert' });
@@ -79,13 +79,13 @@ export function renderLanding(container: HTMLElement): void {
   clear(container);
   container.classList.add('landing');
 
-  const doorA = el('a', { class: 'landing__door', href: 'sponsor.html', 'data-door': 'sponsor' }, [
+  const doorA = el('a', { class: 'landing__door', href: 'patrol.html', 'data-door': 'sponsor' }, [
     'I look after someone',
   ]);
 
   container.append(
     el('section', { class: 'landing__hero' }, [
-      // Owner hero render (assets/brand/source/hero-shadowbox.png), cropped to the
+      // Owner hero render (assets/brand/archive/source/hero-shadowbox.png), cropped to the
       // framed window — the baked wordmark is excluded so the crisp SVG wordmark
       // below is never duplicated. Decorative: the <h1> carries the name.
       el('img', {
@@ -96,7 +96,7 @@ export function renderLanding(container: HTMLElement): void {
         decoding: 'async',
       }),
       el('h1', { class: 'landing__title' }, [wordmark()]),
-      el('p', { class: 'landing__subtitle' }, ['A butterfly garden window.']),
+      el('p', { class: 'landing__subtitle' }, ['A bluebird day on Bluesky.']),
     ]),
 
     el('p', { class: 'landing__lede' }, [
@@ -105,7 +105,7 @@ export function renderLanding(container: HTMLElement): void {
 
     el('p', { class: 'landing__para' }, [
       el('strong', {}, ['How it works.']),
-      ' A sponsor tends a garden: the set of voices an explorer sees. Explorers read, save, and share what they find. One switch matters: "on this device only." While it is on, nothing about the explorer ever leaves the device. Turning it off, together, when the time is right, adds hearts that friends can see.',
+      ' A sponsor tends a garden: the set of voices an explorer sees. Explorers read, save, and share what they find. One switch matters: Cabin Mode ("on this device only"). While it is on, nothing about the explorer ever leaves the device. Turning it off, together, when the time is right, adds hearts that friends can see.',
     ]),
 
     el('div', { class: 'landing__doors' }, [doorA, doorB()]),

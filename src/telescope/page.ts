@@ -1,5 +1,5 @@
 import { installTheme } from '../brand/theme.js';
-import { skyliteVersion } from '../version.js';
+import { bluebirdVersion } from '../version.js';
 import { el, clear } from '../render/dom.js';
 import { registerServiceWorker } from '../pwa/register.js';
 import { renderPausedLock, renderStaleLock } from '../render/locks.js';
@@ -15,7 +15,7 @@ import { archiveSearch } from '../search/archive.js';
 import { makeFollowUi } from '../social/follow-ui.js';
 import { getExplorerSession, persistExplorerSession } from '../social/explorer-auth.js';
 import type { OAuthSession } from '../atproto/oauth/client.js';
-import type { SkyliteApprovedFeed, SkyliteConfig } from '../config/types.js';
+import type { BluebirdApprovedFeed, BluebirdConfig } from '../config/types.js';
 
 /**
  * §Telescope — sponsor-curated discovery. Two rungs on one page:
@@ -24,7 +24,7 @@ import type { SkyliteApprovedFeed, SkyliteConfig } from '../config/types.js';
  *    (config.search.tier: 'discovery' | 'open'). Queries are gated by the
  *    trust-gradient policy (src/search/policy.ts) BEFORE the read, results are
  *    label-floored AFTER, and — when logHistory is on — every attempt is recorded
- *    for the sponsor. See docs/telescope-search.md.
+ *    for the sponsor. See docs/trail-map-search.md.
  * A discovery surface shows outside authors, so the same safety layers as the
  * garden apply, unchanged: label floor, no counts, gated links, navigation wall,
  * and the D1 follow control to pull a voice into My Sky.
@@ -45,7 +45,7 @@ function followUi() {
 
 // --- rung 1: approved feeds ---------------------------------------------------
 
-async function loadFeed(list: HTMLElement, feed: SkyliteApprovedFeed): Promise<void> {
+async function loadFeed(list: HTMLElement, feed: BluebirdApprovedFeed): Promise<void> {
   renderGardenInto(list, { posts: [], failedActors: [] }, 'loading');
   try {
     const res = await new AuthorFeedClient().getFeed(feed.uri, { limit: 30 });
@@ -58,7 +58,7 @@ async function loadFeed(list: HTMLElement, feed: SkyliteApprovedFeed): Promise<v
   }
 }
 
-function picker(feeds: SkyliteApprovedFeed[], onPick: (f: SkyliteApprovedFeed) => void): HTMLElement {
+function picker(feeds: BluebirdApprovedFeed[], onPick: (f: BluebirdApprovedFeed) => void): HTMLElement {
   const row = el('div', { class: 'telescope__picker', 'data-telescope-picker': 'true' });
   feeds.forEach((feed, i) => {
     const btn = el('button', {
@@ -81,7 +81,7 @@ function picker(feeds: SkyliteApprovedFeed[], onPick: (f: SkyliteApprovedFeed) =
 
 /** The set of authors the sponsor's approved feeds surface — the ceiling for the
  *  'discovery' tier (search stays within these voices). Fetched once, cached. */
-async function discoveryAuthors(feeds: SkyliteApprovedFeed[]): Promise<Set<string>> {
+async function discoveryAuthors(feeds: BluebirdApprovedFeed[]): Promise<Set<string>> {
   if (discoveryAuthorCache) return discoveryAuthorCache;
   const set = new Set<string>();
   const client = new AuthorFeedClient();
@@ -102,11 +102,11 @@ function renderResults(results: HTMLElement, status: string, posts: ReturnType<t
     return;
   }
   if (status === 'error') {
-    results.append(el('p', { class: 'garden__status', 'data-search-status': 'error' }, ["Couldn't search just now. Try again in a little while."]));
+    results.append(el('p', { class: 'garden__status', 'data-search-status': 'error' }, ['Whiteout. Hang tight.']));
     return;
   }
   if (posts.length === 0) {
-    results.append(el('p', { class: 'garden__status', 'data-search-status': 'empty' }, ['Nothing found for that. Try another word.']));
+    results.append(el('p', { class: 'garden__status', 'data-search-status': 'empty' }, ['No tracks out there for that. Try another word.']));
     return;
   }
   const list = el('div', { class: 'garden__list', 'data-garden-list': 'true' });
@@ -120,7 +120,7 @@ function renderResults(results: HTMLElement, status: string, posts: ReturnType<t
  * offers the EXISTING get-help handoff (prefilled to the sponsor). Copy v1
  * [confirm before publish — every line].
  */
-function carePanel(config: SkyliteConfig): HTMLElement {
+function carePanel(config: BluebirdConfig): HTMLElement {
   const help = el(
     'button',
     { type: 'button', class: 'telescope__care-help', 'data-search-care-help': 'true' },
@@ -136,7 +136,7 @@ function carePanel(config: SkyliteConfig): HTMLElement {
   ]);
 }
 
-async function runSearch(query: string, config: SkyliteConfig, results: HTMLElement, msg: HTMLElement): Promise<void> {
+async function runSearch(query: string, config: BluebirdConfig, results: HTMLElement, msg: HTMLElement): Promise<void> {
   const verdict = queryAllowed(query, config.search);
   if (config.search.logHistory && query.trim()) {
     const now = Date.now();
@@ -149,6 +149,7 @@ async function runSearch(query: string, config: SkyliteConfig, results: HTMLElem
         session: explorerSession,
         ...(config.search.auditPubKeyJwk ? { auditPubKeyJwk: config.search.auditPubKeyJwk } : {}),
         nowIso: new Date(now).toISOString(),
+        tier: config.tier,
       },
     ).then((s) => {
       if (s && s !== explorerSession) {
@@ -205,11 +206,11 @@ function historyList(): HTMLElement | null {
   ]);
 }
 
-function searchSection(config: SkyliteConfig): HTMLElement {
+function searchSection(config: BluebirdConfig): HTMLElement {
   const input = el('input', {
     type: 'search',
     class: 'telescope__search-input',
-    placeholder: config.search.tier === 'discovery' ? 'Search your feeds…' : 'Search the sky…',
+    placeholder: config.search.tier === 'discovery' ? 'Search your trails…' : 'Search the mountain…',
     'aria-label': 'Search',
     'data-search-input': 'true',
   });
@@ -235,7 +236,7 @@ function searchSection(config: SkyliteConfig): HTMLElement {
     config.search.tier === 'discovery'
       ? 'Search stays within the feeds your sponsor approved.'
       : 'Search is open. The calm rules still apply — nothing unsafe gets through, and blocked words are turned away.';
-  // Honesty copy for the encrypted archive (docs/telescope-search.md). The scope
+  // Honesty copy for the encrypted archive (docs/trail-map-search.md). The scope
   // is deliberately "what", not whether/when (§RUN-TRUEUP Phase 1).
   const archiveNote = config.search.auditPubKeyJwk
     ? 'Your sponsor can read what you search here. It is stored scrambled, so no one else can read what you searched.'
@@ -291,7 +292,7 @@ async function render(root: HTMLElement): Promise<void> {
 function boot(): void {
   installTheme();
   const stamp = document.querySelector<HTMLElement>('[data-version-stamp]');
-  if (stamp) stamp.textContent = skyliteVersion();
+  if (stamp) stamp.textContent = bluebirdVersion();
   registerServiceWorker();
   explorerSession = getExplorerSession();
 

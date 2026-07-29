@@ -6,7 +6,7 @@ import { join } from 'node:path';
 // PWA payload — only derived, optimized assets ship. This runs in the e2e tier,
 // after `npm run build`, so it inspects a real dist/.
 
-const SOURCE_DIR = 'assets/brand/source';
+const SOURCE_DIR = 'assets/brand/archive/source';
 const DIST = 'dist';
 
 function walk(dir: string): string[] {

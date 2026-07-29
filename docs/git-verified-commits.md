@@ -1,7 +1,7 @@
 # Git identity & verified commits — a portable guide
 
 A checklist for keeping commits **attributed and verified** when an AI agent
-(Claude) and a human share a repo. Written for Skylite; the rules are
+(Claude) and a human share a repo. Written for Bluebird; the rules are
 repo-agnostic — copy this file into any repo and follow it.
 
 ## TL;DR
@@ -55,7 +55,7 @@ End each commit message body with:
 Co-Authored-By: Claude <noreply@anthropic.com>
 ```
 
-Skylite additionally appends a session link trailer supplied by the harness.
+Bluebird additionally appends a session link trailer supplied by the harness.
 Keep model identifiers, marketing names, and internal tokens **out** of commit
 messages, PR titles/bodies, and code — attribution trailers only.
 
@@ -85,7 +85,7 @@ moved under you.
 
 ## The post-merge branch restart (how the tip becomes GitHub's commit)
 
-Skylite's workflow reuses one long-lived branch name across successive PRs. After
+Bluebird's workflow reuses one long-lived branch name across successive PRs. After
 a PR merges:
 
 ```sh

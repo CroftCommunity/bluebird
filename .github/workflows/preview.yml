@@ -1,5 +1,5 @@
 # Per-PR preview deploys. Each open pull request gets a live, throwaway copy of
-# the built site at https://skylite.croft.ing/pr-preview/pr-<N>/
+# the built site at https://bluebird.croft.ing/pr-preview/pr-<N>/
 # for review; it is removed automatically when the PR closes.
 #
 # Why this works cleanly here: every asset path is relative, the manifest scope
@@ -108,7 +108,7 @@ jobs:
         if: steps.resolve.outputs.skip == 'false' && steps.resolve.outputs.closed == 'false'
       - run: npm run build
         if: steps.resolve.outputs.skip == 'false' && steps.resolve.outputs.closed == 'false'
-      # skylite ships a CNAME (skylite.croft.ing) at the branch root. Drop it from
+      # bluebird ships a CNAME (bluebird.croft.ing) at the branch root. Drop it from
       # the preview build so a pr-preview/ subtree never carries a file that
       # pretends to own the custom domain (Pages ignores a nested CNAME anyway).
       - run: rm -f dist/CNAME
@@ -142,7 +142,7 @@ jobs:
             const closed = process.env.CLOSED === 'true';
             const sha = (process.env.SHA || '').slice(0, 7);
             const pr = Number(process.env.PR);
-            const url = `https://skylite.croft.ing/pr-preview/pr-${pr}/`;
+            const url = `https://bluebird.croft.ing/pr-preview/pr-${pr}/`;
             const body = closed
               ? `${marker}\nPreview for this PR was removed (PR closed).`
               : `${marker}\n**Live preview:** ${url}\n\nUpdated for \`${sha}\`.`;

@@ -34,7 +34,7 @@ test.describe('S7 label audit', () => {
     await page.addInitScript(
       (rkey) => {
         localStorage.setItem(
-          'skylite.sponsor.explorers',
+          'bluebird.sponsor.explorers',
           JSON.stringify({
             [rkey]: {
               version: 2,
@@ -62,7 +62,7 @@ test.describe('S7 label audit', () => {
   test('shows label meanings and replays the filter over public data', async ({ page }) => {
     await page.goto(`/audit.html?r=${RKEY}`);
 
-    // (a) Meanings table is present with the labels Skylite acts on.
+    // (a) Meanings table is present with the labels Bluebird acts on.
     await expect(page.locator('[data-audit-meanings]')).toContainText('porn');
     await expect(page.locator('[data-audit-meanings]')).toContainText('Hidden from the garden entirely.');
 

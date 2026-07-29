@@ -2,7 +2,7 @@ import { el } from './dom.js';
 
 /**
  * D7 — external links are gated. Tapping any link in a post opens a "this leaves
- * Skylite" interstitial naming the destination domain; only an explicit tap
+ * Bluebird" interstitial naming the destination domain; only an explicit tap
  * continues. The walled garden shouldn't have unmarked doors.
  */
 
@@ -40,7 +40,7 @@ export function showLeaveInterstitial(url: string): void {
   const dismiss = (): void => overlay.remove();
 
   const stay = el('button', { class: 'leave__stay', type: 'button', 'data-leave-stay': 'true' }, [
-    'Stay in Skylite',
+    'Stay in Bluebird',
   ]);
   stay.addEventListener('click', dismiss);
 
@@ -54,9 +54,9 @@ export function showLeaveInterstitial(url: string): void {
 
   const dialog = el(
     'div',
-    { class: 'leave__dialog', role: 'dialog', 'aria-modal': 'true', 'aria-label': 'Leaving Skylite' },
+    { class: 'leave__dialog', role: 'dialog', 'aria-modal': 'true', 'aria-label': 'Leaving Bluebird' },
     [
-      el('p', { class: 'leave__title' }, ['This link leaves Skylite']),
+      el('p', { class: 'leave__title' }, ['This link leaves Bluebird']),
       el('p', { class: 'leave__domain', 'data-leave-domain': 'true' }, [domain]),
       el('div', { class: 'leave__actions' }, [stay, go]),
     ],

@@ -1,13 +1,13 @@
 import { describe, it, expect } from 'vitest';
 import { capabilities } from '../../src/config/capabilities.js';
 import { newExplorerConfig } from '../../src/config/parse.js';
-import type { SkyliteConfig } from '../../src/config/types.js';
+import type { BluebirdConfig } from '../../src/config/types.js';
 
-// Named invariant: capabilities-key-on-localOnly-never-skin (SKYLITE-DIRECTIVES
+// Named invariant: capabilities-key-on-localOnly-never-skin (BLUEBIRD-DIRECTIVES
 // §0 + §2). Written before the code it guards. `skin` is purely cosmetic and
 // must NEVER change what the device is allowed to do.
 
-function withSkin(base: SkyliteConfig, skin: SkyliteConfig['skin']): SkyliteConfig {
+function withSkin(base: BluebirdConfig, skin: BluebirdConfig['skin']): BluebirdConfig {
   return { ...base, skin };
 }
 
@@ -23,7 +23,7 @@ describe('capabilities-key-on-localOnly-never-skin', () => {
   });
 
   it('is identical across skins with every data switch flipped on', () => {
-    const base: SkyliteConfig = {
+    const base: BluebirdConfig = {
       ...newExplorerConfig('a'),
       localOnly: false,
       showFriendsHearts: true,

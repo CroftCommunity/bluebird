@@ -9,7 +9,7 @@ test.describe('brand: manifest + icons + splash', () => {
     const res = await request.get('/manifest.webmanifest');
     expect(res.ok()).toBeTruthy();
     const m = (await res.json()) as { name: string; icons: { sizes: string; purpose?: string }[]; theme_color: string };
-    expect(m.name).toBe('Skylite');
+    expect(m.name).toBe('Bluebird');
     const sizes = m.icons.map((i) => i.sizes);
     expect(sizes).toContain('192x192');
     expect(sizes).toContain('512x512');
@@ -59,16 +59,16 @@ test.describe('brand: header mark + wordmark', () => {
     await expect.poll(() => headerMarkUrl(page)).toContain('header-light.png');
 
     // Dark is opt-in (data-theme), not driven by the system color scheme.
-    await page.evaluate(() => localStorage.setItem('skylite.theme', 'dark'));
+    await page.evaluate(() => localStorage.setItem('bluebird.theme', 'dark'));
     await page.reload();
     await expect.poll(() => headerMarkUrl(page)).toContain('header-dark.png');
   });
 
-  test('the wordmark is a crisp inline SVG labelled Skylite', async ({ page }) => {
+  test('the wordmark is a crisp inline SVG labelled Bluebird', async ({ page }) => {
     await page.goto('/');
-    const mark = page.locator('.topbar__wordmark svg.wordmark[aria-label="Skylite"]');
+    const mark = page.locator('.topbar__wordmark svg.wordmark[aria-label="Bluebird"]');
     await expect(mark).toBeVisible();
     // Vector: a <text> element, not a raster.
-    await expect(mark.locator('text')).toHaveText('Skylite');
+    await expect(mark.locator('text')).toHaveText('Bluebird');
   });
 });

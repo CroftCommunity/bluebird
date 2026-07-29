@@ -1,12 +1,12 @@
 import type { InclusionEntry } from '../feed/inclusion.js';
-import type { SkyliteConfig } from './types.js';
+import type { BluebirdConfig } from './types.js';
 
 /**
  * The explorer's effective inclusion list: the union of accounts across ENABLED
  * channels, de-duplicated by actor. Toggling a channel off removes its accounts
  * from the garden — this is "channel toggles change the garden" (Phase 2).
  */
-export function effectiveInclusion(config: SkyliteConfig): InclusionEntry[] {
+export function effectiveInclusion(config: BluebirdConfig): InclusionEntry[] {
   const seen = new Set<string>();
   const out: InclusionEntry[] = [];
   for (const channel of config.channels) {

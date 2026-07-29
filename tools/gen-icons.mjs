@@ -1,17 +1,25 @@
-// Generates placeholder Skylite app icons as real PNGs (night-sky palette from
-// CONCEPT.md §4: deep-indigo sky, a crescent moon, a few stars). Zero deps — a
-// hand-rolled truecolor+alpha PNG encoder — so CI never fetches an image lib.
-// Placeholder only: the finished skylight artwork is a manual design follow-up.
+// Generates the Bluebird app icon set as real PNGs, zero deps — a hand-rolled
+// truecolor+alpha PNG encoder — so CI never fetches an image lib.
 //
 //   node tools/gen-icons.mjs
 //
+// The icon is the simplest possible read at small sizes: a bluebird silhouette
+// centred on a solid green field (the green circle IS the easiest-run trail
+// marker; a full-bleed green field masks to that circle on a home screen).
+// The slalom brand mark (assets/brand/bluebird-mark.svg) is deliberately NOT the
+// icon — it will not read at 48px.
+//
+// Splash startup images are the .jpg set derived by scripts/gen-brand-assets.mjs
+// (sharp) and are not (re)generated here.
 import { deflateSync } from 'node:zlib';
 import { writeFileSync, mkdirSync } from 'node:fs';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-const outDir = join(dirname(fileURLToPath(import.meta.url)), '..', 'icons');
-mkdirSync(outDir, { recursive: true });
+const iconsDir = join(dirname(fileURLToPath(import.meta.url)), '..', 'icons');
+const headerDir = join(iconsDir, 'brand');
+mkdirSync(iconsDir, { recursive: true });
+mkdirSync(headerDir, { recursive: true });
 
 // --- CRC32 (PNG chunk checksum) ---
 const CRC_TABLE = (() => {
@@ -44,7 +52,6 @@ function encodePng(width, height, pixels /* Uint8ClampedArray RGBA */) {
   ihdr.writeUInt32BE(height, 4);
   ihdr[8] = 8; // bit depth
   ihdr[9] = 6; // color type RGBA
-  // 10,11,12 = compression, filter, interlace = 0
   const stride = width * 4;
   const raw = Buffer.alloc((stride + 1) * height);
   for (let y = 0; y < height; y++) {
@@ -61,123 +68,90 @@ function encodePng(width, height, pixels /* Uint8ClampedArray RGBA */) {
   ]);
 }
 
-// --- draw one icon ---
-function draw(size) {
+// --- palette ---
+const GREEN = [47, 158, 68]; // --trail-green #2F9E44 (the easiest-run marker)
+const WHITE = [255, 255, 255];
+const EVERGREEN = [18, 58, 42]; // --evergreen #123A2A (dark bird, light header)
+
+// --- geometry helpers (normalized art coords, y-down, box ~[-0.5,0.5]) ---
+const inEllipse = (px, py, cx, cy, rx, ry) => ((px - cx) / rx) ** 2 + ((py - cy) / ry) ** 2 <= 1;
+function inTriangle(px, py, ax, ay, bx, by, cx, cy) {
+  const d1 = (px - bx) * (ay - by) - (ax - bx) * (py - by);
+  const d2 = (px - cx) * (by - cy) - (bx - cx) * (py - cy);
+  const d3 = (px - ax) * (cy - ay) - (cx - ax) * (py - ay);
+  const neg = d1 < 0 || d2 < 0 || d3 < 0;
+  const pos = d1 > 0 || d2 > 0 || d3 > 0;
+  return !(neg && pos);
+}
+
+/**
+ * A side-profile songbird silhouette (facing right, upswept tail, raised wing),
+ * as the UNION of a few primitives. Bold and closed so it survives down to 16px.
+ * Point in normalized art coords centred on (0,0).
+ */
+function inBird(x, y) {
+  if (inEllipse(x, y, -0.03, 0.06, 0.3, 0.2)) return true; // body
+  if (inEllipse(x, y, -0.02, -0.06, 0.2, 0.13)) return true; // raised wing over the back
+  if (inEllipse(x, y, 0.22, -0.1, 0.16, 0.16)) return true; // head
+  if (inTriangle(x, y, 0.36, -0.14, 0.52, -0.09, 0.36, -0.04)) return true; // beak
+  if (inTriangle(x, y, -0.28, 0.04, -0.54, -0.14, -0.4, 0.14)) return true; // upswept tail
+  return false;
+}
+
+/** 2x2 supersampled coverage of the bird mask at a pixel, in [0,1]. */
+function birdCoverage(nx, ny, step) {
+  let hit = 0;
+  for (const oy of [-0.25, 0.25]) for (const ox of [-0.25, 0.25]) {
+    if (inBird(nx + ox * step, ny + oy * step)) hit++;
+  }
+  return hit / 4;
+}
+
+/**
+ * Draw one square icon. `bg` fills the whole field (full-bleed → masks to the
+ * green circle on a home screen); `bird` is the silhouette colour. Pass bg=null
+ * for a transparent field (the themed header marks).
+ */
+function draw(size, bg, bird) {
   const px = new Uint8ClampedArray(size * size * 4);
-  const set = (x, y, r, g, b, a = 255) => {
-    if (x < 0 || y < 0 || x >= size || y >= size) return;
-    const i = (y * size + x) * 4;
-    // simple source-over onto existing
-    const ia = a / 255;
-    px[i] = px[i] * (1 - ia) + r * ia;
-    px[i + 1] = px[i + 1] * (1 - ia) + g * ia;
-    px[i + 2] = px[i + 2] * (1 - ia) + b * ia;
-    px[i + 3] = Math.max(px[i + 3], a);
-  };
-
-  // Deep-indigo sky background (fills the maskable bleed area too).
+  const art = 0.66 * size; // bird occupies the central ~66% (maskable safe zone)
+  const step = 1 / art;
   for (let y = 0; y < size; y++) {
     for (let x = 0; x < size; x++) {
-      const t = y / size;
-      const r = Math.round(20 + t * 12);
-      const g = Math.round(24 + t * 10);
-      const b = Math.round(74 + t * 26);
-      set(x, y, r, g, b, 255);
-    }
-  }
-
-  const cx = size / 2;
-  const cy = size / 2;
-  const R = size * 0.28; // keep art within maskable safe zone (~80%)
-
-  // Crescent moon: yellow disc minus an offset disc.
-  const moonX = cx + R * 0.15;
-  const moonY = cy;
-  const cutX = moonX + R * 0.55;
-  const cutY = moonY - R * 0.1;
-  for (let y = 0; y < size; y++) {
-    for (let x = 0; x < size; x++) {
-      const inMoon = (x - moonX) ** 2 + (y - moonY) ** 2 <= R * R;
-      const inCut = (x - cutX) ** 2 + (y - cutY) ** 2 <= (R * 0.9) ** 2;
-      if (inMoon && !inCut) set(x, y, 255, 214, 92, 255); // warm yellow
-    }
-  }
-
-  // A few stars.
-  const stars = [
-    [0.28, 0.3, 0.02],
-    [0.72, 0.7, 0.025],
-    [0.66, 0.28, 0.015],
-    [0.35, 0.68, 0.018],
-  ];
-  for (const [fx, fy, fr] of stars) {
-    const sx = fx * size;
-    const sy = fy * size;
-    const sr = Math.max(1, fr * size);
-    for (let y = -Math.ceil(sr); y <= sr; y++) {
-      for (let x = -Math.ceil(sr); x <= sr; x++) {
-        if (x * x + y * y <= sr * sr) set(Math.round(sx + x), Math.round(sy + y), 255, 255, 255, 235);
+      const i = (y * size + x) * 4;
+      if (bg) {
+        px[i] = bg[0];
+        px[i + 1] = bg[1];
+        px[i + 2] = bg[2];
+        px[i + 3] = 255;
+      }
+      const nx = (x + 0.5 - size / 2) / art;
+      const ny = (y + 0.5 - size / 2) / art;
+      const cov = birdCoverage(nx, ny, step);
+      if (cov > 0) {
+        const a = cov;
+        px[i] = px[i] * (1 - a) + bird[0] * a;
+        px[i + 1] = px[i + 1] * (1 - a) + bird[1] * a;
+        px[i + 2] = px[i + 2] * (1 - a) + bird[2] * a;
+        px[i + 3] = Math.max(px[i + 3], Math.round(a * 255));
       }
     }
   }
   return px;
 }
 
-for (const size of [180, 192, 512]) {
-  const png = encodePng(size, size, draw(size));
-  const name = size === 180 ? 'apple-touch-icon-180.png' : `icon-${size}.png`;
-  writeFileSync(join(outDir, name), png);
+// App icon set: full-bleed green + white bird.
+for (const size of [512, 192, 180, 32, 16]) {
+  const png = encodePng(size, size, draw(size, GREEN, WHITE));
+  const name =
+    size === 180 ? 'apple-touch-icon-180.png' : size <= 32 ? `favicon-${size}.png` : `icon-${size}.png`;
+  writeFileSync(join(iconsDir, name), png);
   console.log(`wrote icons/${name} (${png.length} bytes)`);
 }
 
-// --- iOS launch splashes (apple-touch-startup-image) ---
-// Night-sky gradient with a centered crescent moon. Placeholder art, real PNGs.
-function drawSplash(w, h) {
-  const px = new Uint8ClampedArray(w * h * 4);
-  const set = (x, y, r, g, b, a = 255) => {
-    if (x < 0 || y < 0 || x >= w || y >= h) return;
-    const i = (y * w + x) * 4;
-    const ia = a / 255;
-    px[i] = px[i] * (1 - ia) + r * ia;
-    px[i + 1] = px[i + 1] * (1 - ia) + g * ia;
-    px[i + 2] = px[i + 2] * (1 - ia) + b * ia;
-    px[i + 3] = 255;
-  };
-  for (let y = 0; y < h; y++) {
-    const t = y / h;
-    const r = Math.round(20 + t * 8);
-    const g = Math.round(22 + t * 6);
-    const b = Math.round(74 - t * 40);
-    for (let x = 0; x < w; x++) set(x, y, r, g, b, 255);
-  }
-  const cx = w / 2;
-  const cy = h / 2;
-  const R = Math.min(w, h) * 0.14;
-  const cutX = cx + R * 0.55;
-  const cutY = cy - R * 0.1;
-  for (let y = Math.floor(cy - R - 2); y <= cy + R + 2; y++) {
-    for (let x = Math.floor(cx - R - 2); x <= cx + R + 2; x++) {
-      const inMoon = (x - cx) ** 2 + (y - cy) ** 2 <= R * R;
-      const inCut = (x - cutX) ** 2 + (y - cutY) ** 2 <= (R * 0.9) ** 2;
-      if (inMoon && !inCut) set(x, y, 255, 214, 92, 255);
-    }
-  }
-  return px;
-}
-
-// [name, width, height] — common portrait iOS device pixel sizes.
-const SPLASHES = [
-  ['splash-2048x2732', 2048, 2732], // iPad Pro 12.9
-  ['splash-1640x2360', 1640, 2360], // iPad Air 10.9
-  ['splash-1620x2160', 1620, 2160], // iPad 10.2
-  ['splash-1290x2796', 1290, 2796], // iPhone 14/15 Pro Max
-  ['splash-1170x2532', 1170, 2532], // iPhone 12/13/14
-  ['splash-750x1334', 750, 1334], // iPhone SE/8
-];
-const splashDir = join(outDir, 'splash');
-mkdirSync(splashDir, { recursive: true });
-for (const [name, w, h] of SPLASHES) {
-  const png = encodePng(w, h, drawSplash(w, h));
-  writeFileSync(join(splashDir, `${name}.png`), png);
-  console.log(`wrote icons/splash/${name}.png (${png.length} bytes)`);
-}
+// Topbar header marks: bird-only on a transparent field, themed for each mode.
+// (light theme → dark bird; dark theme → white bird.) Filenames are unchanged so
+// the per-theme swap wiring (tokens.css --header-mark, e2e) keeps working.
+writeFileSync(join(headerDir, 'header-light.png'), encodePng(96, 96, draw(96, null, EVERGREEN)));
+writeFileSync(join(headerDir, 'header-dark.png'), encodePng(96, 96, draw(96, null, WHITE)));
+console.log('wrote icons/brand/header-light.png + header-dark.png (96px, transparent)');

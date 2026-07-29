@@ -27,7 +27,7 @@ test.describe('§Care-aware refusal (self-harm)', () => {
       searched = true;
       return r.fulfill({ json: { posts: [] } });
     });
-    await page.goto('/telescope.html');
+    await page.goto('/trailmap.html');
     await page.locator('[data-search-input]').fill('how to commit suicide');
     await page.locator('[data-search-go]').click();
 
@@ -52,7 +52,7 @@ test.describe('§Care-aware refusal (self-harm)', () => {
 
   test('a generic blocked query shows the plain refusal and NO care panel', async ({ page }) => {
     await seedExplorer(page, { search: OPEN, help: HELP });
-    await page.goto('/telescope.html');
+    await page.goto('/trailmap.html');
     await page.locator('[data-search-input]').fill('nsfw stuff');
     await page.locator('[data-search-go]').click();
 

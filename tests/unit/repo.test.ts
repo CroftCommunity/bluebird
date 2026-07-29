@@ -67,12 +67,12 @@ describe('RepoClient.getRecord', () => {
     });
     const res = await client.getRecord('https://pds.example', {
       repo: 'did:plc:abc',
-      collection: 'ing.croft.skylite.config',
+      collection: 'ing.croft.bluebird.config',
       rkey: 'self',
     });
     expect(seen?.pathname).toBe('/xrpc/com.atproto.repo.getRecord');
     expect(seen?.searchParams.get('repo')).toBe('did:plc:abc');
-    expect(seen?.searchParams.get('collection')).toBe('ing.croft.skylite.config');
+    expect(seen?.searchParams.get('collection')).toBe('ing.croft.bluebird.config');
     expect(seen?.searchParams.get('rkey')).toBe('self');
     expect(res.value).toEqual({ paused: false });
   });

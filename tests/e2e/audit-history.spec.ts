@@ -12,7 +12,7 @@ const KID_PDS = 'https://pds.host.bsky.network';
 
 test('sponsor decrypts an explorer’s encrypted search history', async ({ page }) => {
   // 1. Enable the archive on the sponsor device.
-  await page.goto('/sponsor.html');
+  await page.goto('/patrol.html');
   await page.locator('[data-add-explorer]').click();
   const rkey = await page.locator('[data-explorer]').first().getAttribute('data-explorer');
   const control = page.locator('[data-archive-control]');
@@ -22,11 +22,11 @@ test('sponsor decrypts an explorer’s encrypted search history', async ({ page 
 
   // 2. Read the published public key and seal a search to it (as the explorer would).
   const pubKeyJwk = await page.evaluate((): JsonWebKey => {
-    const v = JSON.parse(localStorage.getItem('skylite.audit.vault') ?? '{}') as { publicKeyJwk: JsonWebKey };
+    const v = JSON.parse(localStorage.getItem('bluebird.audit.vault') ?? '{}') as { publicKeyJwk: JsonWebKey };
     return v.publicKeyJwk;
   });
   const box = await seal(JSON.stringify({ q: 'volcanoes', blocked: false, tier: 'open' }), pubKeyJwk);
-  const sealedRecord = { uri: `at://${KID_DID}/ing.croft.skylite.search/1`, cid: 'c1', value: { enc: box, createdAt: '2026-07-15T00:00:00.000Z' } };
+  const sealedRecord = { uri: `at://${KID_DID}/ing.croft.bluebird.search/1`, cid: 'c1', value: { enc: box, createdAt: '2026-07-15T00:00:00.000Z' } };
 
   // 3. Mock the public reads the audit view makes.
   await page.route('**/xrpc/com.atproto.identity.resolveHandle*', (r: Route) => r.fulfill({ json: { did: KID_DID } }));
@@ -53,7 +53,7 @@ test('sponsor decrypts an explorer’s encrypted search history', async ({ page 
 });
 
 test('a wrong passphrase cannot decrypt the history', async ({ page }) => {
-  await page.goto('/sponsor.html');
+  await page.goto('/patrol.html');
   await page.locator('[data-add-explorer]').click();
   const rkey = await page.locator('[data-explorer]').first().getAttribute('data-explorer');
   const control = page.locator('[data-archive-control]');

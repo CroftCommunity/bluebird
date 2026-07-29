@@ -7,7 +7,7 @@ import type { Clip } from './clip.js';
  * throw into the explorer's UI.
  */
 
-const DB_NAME = 'skylite-saves';
+const DB_NAME = 'bluebird-saves';
 const STORE = 'clips';
 const VERSION = 1;
 

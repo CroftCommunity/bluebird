@@ -1,5 +1,5 @@
 import { installTheme } from '../brand/theme.js';
-import { skyliteVersion } from '../version.js';
+import { bluebirdVersion } from '../version.js';
 import { el, clear } from '../render/dom.js';
 import { registerServiceWorker } from '../pwa/register.js';
 import type { Clip } from './clip.js';
@@ -35,7 +35,7 @@ function renderClip(clip: Clip): HTMLElement {
     'Open post',
   ]);
 
-  // §B3 share — the Skylite permalink, native sheet or copy fallback.
+  // §B3 share — the Bluebird permalink, native sheet or copy fallback.
   const share = el('button', { class: 'clip__share', type: 'button', 'data-clip-share': clip.uri, 'aria-label': 'Share this post' }, ['↗ Share']);
   share.addEventListener('click', () => {
     void sharePost(clip.uri, { text: clip.text }).then((outcome: ShareOutcome) => {
@@ -68,7 +68,7 @@ async function render(): Promise<void> {
   if (clips.length === 0) {
     root.append(
       el('p', { class: 'garden__status', 'data-saves-empty': 'true' }, [
-        'Nothing saved yet. Tap ☆ Save on a post to keep it here.',
+        'Your Locker is empty. Tap ☆ Save on a post to keep it here.',
       ]),
     );
     return;
@@ -118,7 +118,7 @@ function renderBackup(): HTMLElement {
         void render();
       })
       .catch((e: unknown) => {
-        msg.textContent = e instanceof Error ? e.message : 'That file is not a Skylite backup.';
+        msg.textContent = e instanceof Error ? e.message : 'That file is not a Bluebird backup.';
       })
       .finally(() => {
         fileInput.value = '';
@@ -134,7 +134,7 @@ function renderBackup(): HTMLElement {
     el('h2', { class: 'saves-backup__title' }, ['Back up & restore']),
     el('p', { class: 'g-hint' }, [
       'A backup is one file with your saved posts and notes, your follows, and this device’s settings. ',
-      'Saves live only on this device — while “on this device only” is on, a backup is the only copy. Keep it somewhere safe.',
+      'Your Locker lives only on this device — while Cabin Mode is on, a backup is the only copy. Keep it somewhere safe.',
     ]),
     el('div', { class: 'g-row' }, [exportBtn, importBtn, fileInput]),
     msg,
@@ -144,7 +144,7 @@ function renderBackup(): HTMLElement {
 function boot(): void {
   installTheme();
   const stamp = document.querySelector<HTMLElement>('[data-version-stamp]');
-  if (stamp) stamp.textContent = skyliteVersion();
+  if (stamp) stamp.textContent = bluebirdVersion();
   registerServiceWorker();
   root = document.querySelector<HTMLElement>('[data-saves]');
   if (root) root.before(renderBackup());

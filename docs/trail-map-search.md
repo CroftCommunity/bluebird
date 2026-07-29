@@ -1,16 +1,31 @@
-# Telescope search — the trust gradient
+# Trail Map search — trail ratings
 
-Telescope has two rungs. **Rung 1** (shipped) browses the sponsor's *approved
+The Trail Map has two rungs. **Rung 1** (shipped) browses the sponsor's *approved
 feeds* — bounded by curation. **Rung 2** is *search*, and search is where the
 ceiling comes off: an explorer can type a query and reach authors nobody vetted.
 
-This doc is the model for rung 2. It is a **sponsor-set trust gradient**, not a
-single on/off switch, because the right amount of reach for an 11-year-old is
-not the right amount for a 16-year-old — and the sponsor is the one who knows.
+This doc is the model for rung 2. It is a **sponsor-set reach**, not a single
+on/off switch, because the right amount of reach for one explorer is not the
+right amount for another — and the sponsor is the one who knows.
+
+## Trail ratings (the trust tier)
+
+> Trail ratings are trust ratings, not content ratings: green is the garden your
+> Patrol tends, blue is one hop beyond it, black is the open mountain.
+
+The garden itself carries a **trust tier** — a durable colour noun in the config
+lexicon (`config.tier: green | blue | black`), drawn in the UI as the
+green-circle / blue-square / black-diamond trail markers. It is a *trust*
+distance from the tended garden, never a content-maturity rating, and it is baked
+into the protocol layer so Patrol tooling and third-party audits can read it.
+
+This is distinct from the search **reach** below (`search.tier`:
+`off | discovery | open`), which controls how far a query may travel. Reach is
+the mechanism; the trail rating is the trust posture it expresses.
 
 ## Philosophy: a shield, not a locked room
 
-Skylite is not trying to build a room no one can ever climb out of. That's
+Bluebird is not trying to build a room no one can ever climb out of. That's
 turtles-all-the-way-down, and it's not the point. The point is a **shield** for
 someone the sponsor *trusts* and *wants* to let explore — hobbies, subjects,
 interests — on terms both people understand.
@@ -135,7 +150,7 @@ honest shape is always "so no one else can read what you searched."
 
 ## Status
 
-**Built** (rung 2 is live on `/telescope.html`): the reach tier, both gates
+**Built** (rung 2 is live on `/trailmap.html`): the reach tier, both gates
 (blocklist substring, allowlist whole-word), the label floor on results,
 discovery author-bounding, and device-local search-history logging with a visible
 "your sponsor can see these" recent-searches list. The search box is hidden when
@@ -145,7 +160,7 @@ discovery author-bounding, and device-local search-history logging with a visibl
 - sealed box (#19); sponsor key vault (#20);
 - config exchange + sealed-record write (#21): `search.auditPubKeyJwk` is
   published in the config; when present and the explorer has an account, each
-  attempt is sealed to it and written to `ing.croft.skylite.search` in the
+  attempt is sealed to it and written to `ing.croft.bluebird.search` in the
   explorer's own repo (best-effort, mirroring likes/follows), 30-day/500 retention;
 - sponsor enables the archive (#22): create/reuse the audit keypair, publish the
   public key;
@@ -168,7 +183,7 @@ prunes the on-device log).
 **Live check, 2026-07-16 (partial).** A server-side pass (the app's own client
 code against the real network) confirmed `getFeed`, `getAuthorFeed` + the label
 floor, and the audit-read chain `resolveHandle → resolvePds →
-listRecords(ing.croft.skylite.search)` end to end against a real PDS. Still open:
+listRecords(ing.croft.bluebird.search)` end to end against a real PDS. Still open:
 `searchPosts` (the CDN in front of the public AppView returned 403 to the test
 egress — external, not code), the in-browser live tier, and the real PDS **write**
 + OAuth consent (OAuth-only; needs a real device). See RUN-TRUEUP-SUMMARY.md →

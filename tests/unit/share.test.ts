@@ -2,12 +2,12 @@ import { describe, it, expect } from 'vitest';
 import { postPermalink, sharePost } from '../../src/share/share.js';
 
 const URI = 'at://did:plc:abc/app.bsky.feed.post/xyz';
-const ORIGIN = 'https://skylite.example';
+const ORIGIN = 'https://bluebird.example';
 
 describe('postPermalink', () => {
-  it('builds a Skylite post-view URL with the encoded at:// uri', () => {
+  it('builds a Bluebird post-view URL with the encoded at:// uri', () => {
     expect(postPermalink(URI, ORIGIN)).toBe(
-      'https://skylite.example/post.html?uri=at%3A%2F%2Fdid%3Aplc%3Aabc%2Fapp.bsky.feed.post%2Fxyz',
+      'https://bluebird.example/post.html?uri=at%3A%2F%2Fdid%3Aplc%3Aabc%2Fapp.bsky.feed.post%2Fxyz',
     );
   });
 });
@@ -24,7 +24,7 @@ describe('sharePost', () => {
     };
     const out = await sharePost(URI, { origin: ORIGIN, nav });
     expect(out).toBe('shared');
-    expect(shared).toMatchObject({ url: postPermalink(URI, ORIGIN), title: 'Skylite' });
+    expect(shared).toMatchObject({ url: postPermalink(URI, ORIGIN), title: 'Bluebird' });
   });
 
   it('treats a user-cancelled sheet (AbortError) as dismissed, not failed', async () => {

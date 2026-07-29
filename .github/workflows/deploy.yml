@@ -28,6 +28,6 @@ jobs:
       - run: npm run build
       # Publish dist/ to the ROOT of gh-pages, PRESERVING pr-preview/ so a
       # production deploy never wipes a live preview. The CNAME in dist/ keeps the
-      # custom domain (skylite.croft.ing). Plain git — no third-party deploy action.
+      # custom domain (bluebird.croft.ing). Plain git — no third-party deploy action.
       # Pages source must be "Deploy from a branch → gh-pages / root". See docs/PREVIEWS.md.
       - run: bash scripts/pages-deploy.sh root dist "deploy ${{ github.sha }} to Pages"

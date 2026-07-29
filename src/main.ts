@@ -1,4 +1,4 @@
-import { skyliteVersion } from './version.js';
+import { bluebirdVersion } from './version.js';
 import { mountGarden } from './garden.js';
 import { renderPausedLock, renderStaleLock } from './render/locks.js';
 import { ingestProvisioningFromLocation, getBinding, getCachedConfig, getLocalConfig } from './config/binding.js';
@@ -125,7 +125,7 @@ async function start(): Promise<void> {
   installTheme(); // device-local theme (P2) — before anything paints branded chrome
 
   const stamp = document.querySelector<HTMLElement>('[data-version-stamp]');
-  if (stamp) stamp.textContent = skyliteVersion();
+  if (stamp) stamp.textContent = bluebirdVersion();
 
   registerServiceWorker();
   installBackgroundLock();

@@ -27,7 +27,7 @@ test('sponsor enables + reads encrypted history with a passkey (no passphrase)',
   });
 
   // 1. Enable the archive with the device passkey (no passphrase entered).
-  await page.goto('/sponsor.html');
+  await page.goto('/patrol.html');
   await page.locator('[data-add-explorer]').click();
   const rkey = await page.locator('[data-explorer]').first().getAttribute('data-explorer');
   const control = page.locator('[data-archive-control]');
@@ -35,18 +35,18 @@ test('sponsor enables + reads encrypted history with a passkey (no passphrase)',
   await expect(control.locator('[data-archive-off]')).toBeVisible();
 
   const vaultMethod = await page.evaluate(
-    () => (JSON.parse(localStorage.getItem('skylite.audit.vault') ?? '{}') as { method?: string }).method,
+    () => (JSON.parse(localStorage.getItem('bluebird.audit.vault') ?? '{}') as { method?: string }).method,
   );
   expect(vaultMethod).toBe('webauthn-prf');
 
   // 2. Seal a search to the published public key (as the explorer's device would).
   const pubKeyJwk = await page.evaluate((): JsonWebKey => {
-    const v = JSON.parse(localStorage.getItem('skylite.audit.vault') ?? '{}') as { publicKeyJwk: JsonWebKey };
+    const v = JSON.parse(localStorage.getItem('bluebird.audit.vault') ?? '{}') as { publicKeyJwk: JsonWebKey };
     return v.publicKeyJwk;
   });
   const box = await seal(JSON.stringify({ q: 'volcanoes', blocked: false, tier: 'open' }), pubKeyJwk);
   const sealedRecord = {
-    uri: `at://${KID_DID}/ing.croft.skylite.search/1`,
+    uri: `at://${KID_DID}/ing.croft.bluebird.search/1`,
     cid: 'c1',
     value: { enc: box, createdAt: '2026-07-15T00:00:00.000Z' },
   };

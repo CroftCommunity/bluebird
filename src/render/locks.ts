@@ -1,7 +1,7 @@
 import { el, clear } from './dom.js';
 
 /**
- * Calm, honest lock screens. Skylite is a safety tool, so these are gentle and
+ * Calm, honest lock screens. Bluebird is a safety tool, so these are gentle and
  * age-appropriate — never alarming, never blaming the explorer.
  */
 
@@ -12,7 +12,7 @@ export function renderPausedLock(container: HTMLElement): void {
     el('div', { class: 'lock', 'data-lock': 'paused' }, [
       el('span', { class: 'lock__glyph', 'aria-hidden': 'true' }, ['🌙']),
       el('h2', { class: 'lock__title' }, ['Paused for now']),
-      el('p', { class: 'lock__body' }, ['Your sponsor paused Skylite. It will come back on when they turn it on again.']),
+      el('p', { class: 'lock__body' }, ['Your sponsor paused Bluebird. It will come back on when they turn it on again.']),
     ]),
   );
 }
@@ -24,7 +24,7 @@ export function renderStaleLock(container: HTMLElement): void {
     el('div', { class: 'lock', 'data-lock': 'stale' }, [
       el('span', { class: 'lock__glyph', 'aria-hidden': 'true' }, ['☁️']),
       el('h2', { class: 'lock__title' }, ["Can't check in"]),
-      el('p', { class: 'lock__body' }, ["Skylite needs to reach the internet to check with your sponsor before opening. Try again when you're back online."]),
+      el('p', { class: 'lock__body' }, ["Bluebird needs to reach the internet to check with your sponsor before opening. Try again when you're back online."]),
     ]),
   );
 }

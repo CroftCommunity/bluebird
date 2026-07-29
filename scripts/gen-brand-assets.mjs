@@ -14,7 +14,7 @@ import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
-const SRC = join(root, 'assets/brand/source');
+const SRC = join(root, 'assets/brand/archive/source');
 const ICONS = join(root, 'icons');
 const HEADER = join(ICONS, 'brand');
 const SPLASH = join(ICONS, 'splash');

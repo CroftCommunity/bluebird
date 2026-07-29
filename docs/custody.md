@@ -38,9 +38,9 @@ more safety / more deliberate  ← ───────────────
   which the device does not have. So the explorer's "sign back in to like"
   becomes "ask your sponsor to sign you back in."
 - **Reading is never gated.** A lapsed session only grays out hearts/follows;
-  the garden, Saves, and sharing keep working.
+  the garden, the Locker, and sharing keep working.
 
-**Why this is the default.** Skylite's thesis is deliberate, sponsor-tended
+**Why this is the default.** Bluebird's thesis is deliberate, sponsor-tended
 access for someone who may be young or vulnerable. Sponsor-only custody means
 the explorer cannot be phished or socially-engineered out of their own
 credentials, graduation is a real event rather than a silent drift, and the
@@ -87,7 +87,7 @@ explorer is never blocked.
 
 ### (4) Full self-custody — *out of scope for the model*
 The explorer holds the password outright. This is really "graduated out of
-Skylite" — appropriate as an endpoint of the graduation story, not a mode we
+Bluebird" — appropriate as an endpoint of the graduation story, not a mode we
 operate.
 
 ---

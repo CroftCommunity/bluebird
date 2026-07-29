@@ -27,7 +27,7 @@ test.describe('§Telescope encrypted archive', () => {
   test('shows the "stored scrambled" honesty note when the archive is on', async ({ page }) => {
     await seedExplorer(page, { search: OPEN_ARCHIVE });
     await page.route('**/xrpc/app.bsky.feed.searchPosts*', (r: Route) => r.fulfill({ json: { posts: [] } }));
-    await page.goto('/telescope.html');
+    await page.goto('/trailmap.html');
     await expect(page.locator('[data-archive-note]')).toContainText('stored scrambled');
   });
 
@@ -53,7 +53,7 @@ test.describe('§Telescope encrypted archive', () => {
         },
       }),
     );
-    await page.goto('/telescope.html');
+    await page.goto('/trailmap.html');
     await page.locator('[data-search-input]').fill('space');
     await page.locator('[data-search-go]').click();
     await expect(page.getByText('Saturn')).toBeVisible();

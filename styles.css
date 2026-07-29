@@ -1,4 +1,4 @@
-/* Skylite — brand tokens live in tokens.css (the only place raw hex is allowed).
+/* Bluebird — brand tokens live in tokens.css (the only place raw hex is allowed).
    The legacy night-sky variable names below are now ALIASES onto the semantic
    tokens, so every existing rule re-themes for free (light/dark) with no hex
    here. RUN-BRAND P4 replaces these aliases with direct token usage. */
@@ -1176,6 +1176,9 @@ body {
   justify-content: center;
   font-size: 0.72rem;
   color: var(--ink-dim);
+  /* Opaque so the attribution keeps its contrast over whatever content scrolls
+     under this fixed bar (a11y: never muted text over a coloured button). */
+  background: var(--bg);
   pointer-events: none;
 }
 
@@ -1435,10 +1438,10 @@ body {
 }
 
 .topbar__refresh--spin .topbar__refresh-icon {
-  animation: skylite-spin 0.8s linear infinite;
+  animation: bluebird-spin 0.8s linear infinite;
 }
 
-@keyframes skylite-spin {
+@keyframes bluebird-spin {
   to {
     transform: rotate(360deg);
   }
@@ -1481,7 +1484,7 @@ body {
 }
 
 .pull--loading .pull__spinner {
-  animation: skylite-spin 0.8s linear infinite;
+  animation: bluebird-spin 0.8s linear infinite;
 }
 
 /* --- S2 sponsor multi-explorer dashboard --- */
@@ -1732,7 +1735,7 @@ body {
    that echoes bsky.app's flat, edge-to-edge, hairline-divided feed — the
    owner reference is assets/brand/reference/bsky-*.png. It is PURELY
    presentational: it re-lays the SAME post DOM and NEVER gates a capability
-   (capabilities-key-on-localOnly-never-skin), and — like every Skylite
+   (capabilities-key-on-localOnly-never-skin), and — like every Bluebird
    surface — it still shows NO like/repost/reply counts. The calm, spacious
    card look is the default "simple" skin; "full" trades the floating cards
    for a denser, more app-like reading feed. Token-only (no raw hex here), so

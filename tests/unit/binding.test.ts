@@ -23,14 +23,14 @@ describe('parseProvisioning', () => {
 
 describe('provisioningUrl', () => {
   it('builds a link with s, omitting r when self', () => {
-    const url = provisioningUrl('https://skylite.croft.ing/', { sponsorDid: 'did:plc:abc', rkey: 'self' });
+    const url = provisioningUrl('https://bluebird.croft.ing/', { sponsorDid: 'did:plc:abc', rkey: 'self' });
     const u = new URL(url);
     expect(u.searchParams.get('s')).toBe('did:plc:abc');
     expect(u.searchParams.get('r')).toBeNull();
   });
 
   it('includes r and pds when present', () => {
-    const url = provisioningUrl('https://skylite.croft.ing/', {
+    const url = provisioningUrl('https://bluebird.croft.ing/', {
       sponsorDid: 'did:plc:abc',
       rkey: 'custom',
       pdsHost: 'https://pds.example',

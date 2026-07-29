@@ -27,7 +27,7 @@ describe('sealed search record', () => {
   it('seals the whole payload; only the sponsor vault can read it', async () => {
     const vault = await createVault({ method: 'passphrase', passphrase: 'pw' });
     const payload = { q: 'volcanoes', blocked: false, tier: 'open', at: 1_752_570_000_000 };
-    const record = await buildSealedSearchRecord(payload, vault.publicKeyJwk, '2026-07-15T00:00:00.000Z');
+    const record = await buildSealedSearchRecord(payload, vault.publicKeyJwk, '2026-07-15T00:00:00.000Z', 'green');
 
     expect(record.$type).toBe(SEARCH_NSID);
     // The query text never appears in the record.
@@ -45,6 +45,7 @@ describe('sealed search record', () => {
       { q: 'volcanoes', blocked: false, tier: 'open', at: preciseMs },
       vault.publicKeyJwk,
       '2026-07-15T13:45:30.000Z',
+      'green',
     );
 
     // The cleartext createdAt exposes only the day — never the precise time.

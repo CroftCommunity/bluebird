@@ -1,8 +1,8 @@
 import type { InclusionEntry } from '../feed/inclusion.js';
 import { DEV_INCLUSION } from '../feed/inclusion.js';
 import { RepoClient } from '../atproto/repo.js';
-import { SKYLITE_CONFIG_NSID } from './types.js';
-import type { SkyliteConfig } from './types.js';
+import { BLUEBIRD_CONFIG_NSID } from './types.js';
+import type { BluebirdConfig } from './types.js';
 import { parseConfig, newExplorerConfig } from './parse.js';
 import { effectiveInclusion } from './inclusion.js';
 import { diffInclusion, hasChanges, type InclusionChange } from './diff.js';
@@ -42,15 +42,15 @@ export interface ResolvedGarden {
 }
 
 /** Wrap the Phase-1 dev inclusion list as a config for the unprovisioned demo. */
-export function devConfig(): SkyliteConfig {
+export function devConfig(): BluebirdConfig {
   return {
-    ...newExplorerConfig('Skylite demo'),
+    ...newExplorerConfig('Bluebird demo'),
     // The public demo keeps the tightest possible ceiling — only the included
     // accounts, no injected outside reposts. The showReposts switch itself
     // defaults true for real explorers (§2); this is just the demo's choice.
     showReposts: false,
     channels: [
-      { id: 'dev', name: 'Skylite demo', enabled: true, accounts: DEV_INCLUSION.entries.map((e) => ({ actor: e.actor, displayName: e.displayName })) },
+      { id: 'dev', name: 'Bluebird demo', enabled: true, accounts: DEV_INCLUSION.entries.map((e) => ({ actor: e.actor, displayName: e.displayName })) },
     ],
   };
 }
@@ -64,7 +64,7 @@ async function pollPds(repo: RepoClient, binding: Binding): Promise<PollResult> 
     const pdsHost = binding.pdsHost ?? (await repo.resolvePds(binding.sponsorDid));
     const rec = await repo.getRecord(pdsHost, {
       repo: binding.sponsorDid,
-      collection: SKYLITE_CONFIG_NSID,
+      collection: BLUEBIRD_CONFIG_NSID,
       rkey: binding.rkey,
     });
     const config = parseConfig(rec.value);
