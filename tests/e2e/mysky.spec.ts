@@ -41,7 +41,7 @@ test.describe('§D1 My Sky (device-local follows, no account)', () => {
     await expect(followBtn).toHaveAttribute('aria-pressed', 'true');
 
     // My Sky now shows that author's posts (read by DID, no account).
-    await page.goto('/mysky.html');
+    await page.goto('/my-mountain.html');
     await expect(page.getByText('Welcome to the sky!')).toBeVisible();
     await expect(page.locator('[data-mysky-empty]')).toHaveCount(0);
     // Friendly name (captured at follow time), never the raw DID.
@@ -51,7 +51,7 @@ test.describe('§D1 My Sky (device-local follows, no account)', () => {
   });
 
   test('My Sky is empty until you follow someone', async ({ page }) => {
-    await page.goto('/mysky.html');
+    await page.goto('/my-mountain.html');
     await expect(page.locator('[data-mysky-empty]')).toBeVisible();
   });
 
@@ -92,7 +92,7 @@ test.describe('§D1 My Sky (device-local follows, no account)', () => {
     await expect(quoteFollow).toHaveText('✓ In My Sky');
 
     // The quoted author is now in My Sky, by name.
-    await page.goto('/mysky.html');
+    await page.goto('/my-mountain.html');
     await expect(page.locator('[data-mysky-header]')).toContainText('Quoted Author');
   });
 
@@ -101,7 +101,7 @@ test.describe('§D1 My Sky (device-local follows, no account)', () => {
     await page.goto('/');
     await page.locator(`[data-follow-btn="${BSKY_DID}"]`).first().click();
 
-    await page.goto('/mysky.html');
+    await page.goto('/my-mountain.html');
     const followBtn = page.locator(`[data-follow-btn="${BSKY_DID}"]`).first();
     await expect(followBtn).toHaveText('✓ In My Sky');
     await followBtn.click(); // unfollow → onChange re-renders My Sky

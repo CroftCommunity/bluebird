@@ -20,27 +20,27 @@ test.describe('P2 theme mechanics', () => {
     await page.emulateMedia({ colorScheme: 'light' });
     await page.goto('/');
     expect(await dataTheme(page)).toBeNull(); // no override
-    expect(await bgToken(page)).toBe('#FFFFFF');
-    expect(await themeColor(page)).toBe('#FFFFFF');
+    expect(await bgToken(page)).toBe('#FAF6EF');
+    expect(await themeColor(page)).toBe('#FAF6EF');
 
     // System dark must NOT flip the app — light is the hard default.
     await page.emulateMedia({ colorScheme: 'dark' });
     await page.reload();
     expect(await dataTheme(page)).toBeNull();
-    expect(await bgToken(page)).toBe('#FFFFFF');
-    expect(await themeColor(page)).toBe('#FFFFFF');
+    expect(await bgToken(page)).toBe('#FAF6EF');
+    expect(await themeColor(page)).toBe('#FAF6EF');
   });
 
   test('a manual dark override persists across reload', async ({ page }) => {
     await page.emulateMedia({ colorScheme: 'light' });
     await page.goto('/');
     // Simulate the explorer choosing dark.
-    await page.evaluate(() => localStorage.setItem('skylite.theme', 'dark'));
+    await page.evaluate(() => localStorage.setItem('bluebird.theme', 'dark'));
     await page.reload();
 
     expect(await dataTheme(page)).toBe('dark'); // override applied
-    expect(await bgToken(page)).toBe('#212121');
-    expect(await themeColor(page)).toBe('#212121');
+    expect(await bgToken(page)).toBe('#172420');
+    expect(await themeColor(page)).toBe('#172420');
   });
 
   test('the topbar theme toggle flips the theme and persists', async ({ page }) => {
@@ -53,7 +53,7 @@ test.describe('P2 theme mechanics', () => {
     await expect(toggle).toBeVisible();
     await toggle.click();
     expect(await dataTheme(page)).toBe('dark');
-    expect(await bgToken(page)).toBe('#212121');
+    expect(await bgToken(page)).toBe('#172420');
 
     await page.reload();
     expect(await dataTheme(page)).toBe('dark'); // persisted
@@ -62,10 +62,10 @@ test.describe('P2 theme mechanics', () => {
   test('a live system change is ignored when there is no override', async ({ page }) => {
     await page.emulateMedia({ colorScheme: 'light' });
     await page.goto('/');
-    expect(await bgToken(page)).toBe('#FFFFFF');
+    expect(await bgToken(page)).toBe('#FAF6EF');
     // Flipping the device to dark must not change the app — light is the default.
     await page.emulateMedia({ colorScheme: 'dark' });
-    await expect.poll(() => bgToken(page)).toBe('#FFFFFF');
-    await expect.poll(() => themeColor(page)).toBe('#FFFFFF');
+    await expect.poll(() => bgToken(page)).toBe('#FAF6EF');
+    await expect.poll(() => themeColor(page)).toBe('#FAF6EF');
   });
 });

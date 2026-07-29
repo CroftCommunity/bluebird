@@ -27,7 +27,7 @@ test.describe('§Telescope search', () => {
   test('tier off shows no search box', async ({ page }) => {
     await seedExplorer(page, { approvedFeeds: [{ uri: FEED, name: 'Kids' }] }); // search tier defaults off
     await page.route('**/xrpc/app.bsky.feed.getFeed*', (r: Route) => r.fulfill({ json: { feed: [] } }));
-    await page.goto('/telescope.html');
+    await page.goto('/trailmap.html');
     await expect(page.locator('[data-search-input]')).toHaveCount(0);
   });
 
@@ -37,7 +37,7 @@ test.describe('§Telescope search', () => {
       post('r1', 'did:plc:carl', 'Carl', 'A photo of Saturn.'),
       post('r2', 'did:plc:bad', 'Bad', 'HIDE ME', [{ val: 'porn', src: 'did:plc:mod' }]),
     ]);
-    await page.goto('/telescope.html');
+    await page.goto('/trailmap.html');
     await page.locator('[data-search-input]').fill('space');
     await page.locator('[data-search-go]').click();
 
@@ -53,7 +53,7 @@ test.describe('§Telescope search', () => {
       searched = true;
       return r.fulfill({ json: { posts: [] } });
     });
-    await page.goto('/telescope.html');
+    await page.goto('/trailmap.html');
     await page.locator('[data-search-input]').fill('nsfw stuff');
     await page.locator('[data-search-go]').click();
 
@@ -67,7 +67,7 @@ test.describe('§Telescope search', () => {
   test('allowlist on: only approved topics run', async ({ page }) => {
     await seedExplorer(page, { search: { ...OPEN, useAllowlist: true } });
     await mockSearch(page, [post('r1', 'did:plc:carl', 'Carl', 'Dinosaur bones!')]);
-    await page.goto('/telescope.html');
+    await page.goto('/trailmap.html');
 
     await page.locator('[data-search-input]').fill('dinosaurs');
     await page.locator('[data-search-go]').click();
@@ -92,7 +92,7 @@ test.describe('§Telescope search', () => {
       post('r1', 'did:plc:carl', 'Carl', 'Carl on comets'),
       post('r2', 'did:plc:stranger', 'Stranger', 'Stranger on comets'),
     ]);
-    await page.goto('/telescope.html');
+    await page.goto('/trailmap.html');
     await page.locator('[data-search-input]').fill('comets');
     await page.locator('[data-search-go]').click();
 

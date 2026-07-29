@@ -8,7 +8,7 @@ import type { PostView } from '../atproto/types.js';
  * her own likes one-tap; the sponsor cannot — her repo is hers.
  */
 
-export const LIKE_NSID = 'ing.croft.skylite.like';
+export const LIKE_NSID = 'ing.croft.bluebird.like';
 
 export interface LikeRecord {
   $type?: typeof LIKE_NSID;
@@ -29,7 +29,7 @@ export function rkeyFromUri(uri: string): string {
 // --- local index of the explorer's own likes: postUri -> like record uri ------
 // So a one-tap unlike knows which record to delete without a round-trip.
 
-const KEY_LIKES = 'skylite.likes';
+const KEY_LIKES = 'bluebird.likes';
 
 function readIndex(): Record<string, string> {
   try {

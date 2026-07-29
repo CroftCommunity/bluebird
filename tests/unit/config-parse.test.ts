@@ -5,7 +5,7 @@ import { CONFIG_DEFAULTS } from '../../src/config/types.js';
 describe('parseConfig (two-switch v2)', () => {
   it('parses a full valid v2 config', () => {
     const c = parseConfig({
-      $type: 'ing.croft.skylite.config',
+      $type: 'ing.croft.bluebird.config',
       version: 2,
       displayName: 'Star',
       localOnly: false,

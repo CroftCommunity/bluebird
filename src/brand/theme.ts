@@ -9,7 +9,7 @@
 
 export type Theme = 'light' | 'dark';
 
-const KEY = 'skylite.theme';
+const KEY = 'bluebird.theme';
 
 function storage(): Storage | null {
   try {

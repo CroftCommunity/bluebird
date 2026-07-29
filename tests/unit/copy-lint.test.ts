@@ -30,18 +30,18 @@ function srcFiles(): string[] {
 const LIVING_SURFACES = [
   'index.html',
   'help.html',
-  'guide.html',
-  'sponsor.html',
+  'ski-school.html',
+  'patrol.html',
   'audit.html',
-  'telescope.html',
-  'mysky.html',
-  'saves.html',
+  'trailmap.html',
+  'my-mountain.html',
+  'locker.html',
   'post.html',
   'manifest.webmanifest',
 ].map((f) => join(ROOT, f));
 
 /** Living design docs (frozen history — the RUN summaries — is excluded). */
-const LIVING_DOCS = ['docs/telescope-search.md', 'docs/custody.md', 'docs/git-verified-commits.md'].map((f) =>
+const LIVING_DOCS = ['docs/trail-map-search.md', 'docs/custody.md', 'docs/git-verified-commits.md'].map((f) =>
   join(ROOT, f),
 );
 
@@ -105,7 +105,7 @@ describe('Phase 6 — every path referenced in README/docs exists in the tree', 
   }
 
   it('README + docs reference only paths that exist', () => {
-    const docs = ['README.md', 'docs/telescope-search.md', 'docs/custody.md', 'docs/git-verified-commits.md'];
+    const docs = ['README.md', 'docs/trail-map-search.md', 'docs/custody.md', 'docs/git-verified-commits.md'];
     const missing: string[] = [];
     for (const doc of docs) {
       const text = readFileSync(join(ROOT, doc), 'utf8');

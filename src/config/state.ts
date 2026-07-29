@@ -1,4 +1,4 @@
-import type { ConfigSource, SkyliteConfig } from './types.js';
+import type { ConfigSource, BluebirdConfig } from './types.js';
 
 /**
  * D5 — the offline/staleness gate for a PDS-provisioned device.
@@ -16,16 +16,16 @@ import type { ConfigSource, SkyliteConfig } from './types.js';
 export const DEFAULT_STALE_HOURS = 72;
 
 export interface CachedConfig {
-  config: SkyliteConfig;
+  config: BluebirdConfig;
   fetchedAt: number;
 }
 
 export type PollResult =
-  | { status: 'ok'; config: SkyliteConfig }
+  | { status: 'ok'; config: BluebirdConfig }
   | { status: 'unreachable' };
 
 export type Gate =
-  | { kind: 'active'; config: SkyliteConfig; source: ConfigSource; offline: boolean }
+  | { kind: 'active'; config: BluebirdConfig; source: ConfigSource; offline: boolean }
   | { kind: 'paused'; source: ConfigSource }
   | { kind: 'stale-locked'; lastFetchedAt: number | null };
 
@@ -55,7 +55,7 @@ export function resolvePdsGate(
 }
 
 /** Local-only / dev-fixture gate — no polling, just the pause flag. */
-export function resolveLocalGate(config: SkyliteConfig, source: ConfigSource): Gate {
+export function resolveLocalGate(config: BluebirdConfig, source: ConfigSource): Gate {
   if (config.paused) return { kind: 'paused', source };
   return { kind: 'active', config, source, offline: false };
 }

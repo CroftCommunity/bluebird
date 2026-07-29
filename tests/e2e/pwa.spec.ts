@@ -28,13 +28,13 @@ test.describe('Service worker', () => {
 });
 
 test.describe('D6 background lock', () => {
-  // Precompute the stored hash the way src/lock/pin.ts does: sha256("skylite:PIN").
+  // Precompute the stored hash the way src/lock/pin.ts does: sha256("bluebird:PIN").
   const PIN = '2468';
-  const pinHash = nodeHash('sha256').update(`skylite:${PIN}`).digest('hex');
+  const pinHash = nodeHash('sha256').update(`bluebird:${PIN}`).digest('hex');
 
   test.beforeEach(async ({ page }) => {
     await page.route('**/xrpc/app.bsky.feed.getAuthorFeed*', emptyFeeds);
-    await page.addInitScript((hash) => localStorage.setItem('skylite.pin', hash), pinHash);
+    await page.addInitScript((hash) => localStorage.setItem('bluebird.pin', hash), pinHash);
   });
 
   test('locks when backgrounded and unlocks with the correct PIN', async ({ page }) => {
@@ -63,7 +63,7 @@ test.describe('D6 background lock', () => {
 
   test('does not lock when no PIN is set', async ({ page, context }) => {
     await context.clearCookies();
-    await page.addInitScript(() => localStorage.removeItem('skylite.pin'));
+    await page.addInitScript(() => localStorage.removeItem('bluebird.pin'));
     await page.goto('/');
     await page.evaluate(() => {
       Object.defineProperty(document, 'hidden', { configurable: true, get: () => true });

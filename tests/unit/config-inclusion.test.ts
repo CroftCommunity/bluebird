@@ -1,9 +1,9 @@
 import { describe, it, expect } from 'vitest';
 import { effectiveInclusion } from '../../src/config/inclusion.js';
 import { newExplorerConfig } from '../../src/config/parse.js';
-import type { SkyliteConfig } from '../../src/config/types.js';
+import type { BluebirdConfig } from '../../src/config/types.js';
 
-function cfg(channels: SkyliteConfig['channels']): SkyliteConfig {
+function cfg(channels: BluebirdConfig['channels']): BluebirdConfig {
   return { ...newExplorerConfig(), channels };
 }
 

@@ -6,7 +6,7 @@ import { createVault, loadVault, saveVault, unlockVault, type Vault, type VaultM
  * explorer's config (search.auditPubKeyJwk) to turn the encrypted archive on, and
  * later unlocks the PRIVATE key (WebAuthn passkey/PIN/biometric or passphrase) to
  * read any explorer's sealed history. The private key never leaves this device;
- * lose it and the archives become unreadable (docs/telescope-search.md).
+ * lose it and the archives become unreadable (docs/trail-map-search.md).
  */
 
 /** The stored audit vault, if this device has one. */

@@ -14,7 +14,7 @@ interface Chan {
   accounts: { actor: string; displayName?: string }[];
 }
 function config(paused: boolean, channels: Chan[]): unknown {
-  return { $type: 'ing.croft.skylite.config', version: 1, paused, updatedAt: '2026-07-14T00:00:00Z', channels };
+  return { $type: 'ing.croft.bluebird.config', version: 1, paused, updatedAt: '2026-07-14T00:00:00Z', channels };
 }
 function feed(actor: string, text: string): unknown {
   return {
@@ -37,7 +37,7 @@ async function mockResolution(page: Page, record: unknown): Promise<void> {
     r.fulfill({ json: { id: DID, service: [{ id: '#atproto_pds', type: 'AtprotoPersonalDataServer', serviceEndpoint: PDS }] } }),
   );
   await page.route('**/xrpc/com.atproto.repo.getRecord*', (r: Route) =>
-    r.fulfill({ json: { uri: `at://${DID}/ing.croft.skylite.config/self`, value: record } }),
+    r.fulfill({ json: { uri: `at://${DID}/ing.croft.bluebird.config/self`, value: record } }),
   );
 }
 async function mockFeeds(page: Page, feeds: Record<string, unknown>): Promise<void> {
@@ -82,9 +82,9 @@ test.describe('Phase 2 sponsor config (hermetic)', () => {
 
   test('D5: stale cache while offline locks the garden', async ({ page }) => {
     await page.addInitScript((did) => {
-      localStorage.setItem('skylite.binding', JSON.stringify({ sponsorDid: did, rkey: 'self' }));
+      localStorage.setItem('bluebird.binding', JSON.stringify({ sponsorDid: did, rkey: 'self' }));
       localStorage.setItem(
-        'skylite.config.cache',
+        'bluebird.config.cache',
         JSON.stringify({
           config: { version: 1, paused: false, updatedAt: '', channels: [{ id: 'c', name: 'C', enabled: true, accounts: [{ actor: 'a.test' }] }] },
           fetchedAt: Date.now() - 100 * 60 * 60 * 1000, // 100h > 72h window
@@ -99,9 +99,9 @@ test.describe('Phase 2 sponsor config (hermetic)', () => {
 
   test('D5: fresh cache while offline shows the garden with an offline banner', async ({ page }) => {
     await page.addInitScript((did) => {
-      localStorage.setItem('skylite.binding', JSON.stringify({ sponsorDid: did, rkey: 'self' }));
+      localStorage.setItem('bluebird.binding', JSON.stringify({ sponsorDid: did, rkey: 'self' }));
       localStorage.setItem(
-        'skylite.config.cache',
+        'bluebird.config.cache',
         JSON.stringify({
           config: { version: 1, paused: false, updatedAt: '', channels: [{ id: 'c', name: 'C', enabled: true, accounts: [{ actor: 'a.test' }] }] },
           fetchedAt: Date.now() - 60 * 60 * 1000, // 1h — within window

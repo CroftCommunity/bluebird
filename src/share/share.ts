@@ -1,13 +1,13 @@
 /**
  * §B3 native share. Sharing is available in EVERY mode (capabilities.canShare is
- * always true — it needs no account). We share the Skylite **permalink** for a
+ * always true — it needs no account). We share the Bluebird **permalink** for a
  * post (a static, public-read page on our own origin), NOT the bsky.app URL — so
- * a shared link opens the calm, no-counts, label-floored Skylite view, never the
+ * a shared link opens the calm, no-counts, label-floored Bluebird view, never the
  * open app. When the Web Share API is unavailable, we fall back to copying the
  * link to the clipboard.
  */
 
-/** The Skylite post-view permalink for an at:// post URI. */
+/** The Bluebird post-view permalink for an at:// post URI. */
 export function postPermalink(uri: string, origin: string = location.origin): string {
   return `${origin}/post.html?uri=${encodeURIComponent(uri)}`;
 }
@@ -31,7 +31,7 @@ export async function sharePost(
 ): Promise<ShareOutcome> {
   const nav = opts.nav ?? (typeof navigator !== 'undefined' ? navigator : undefined);
   const url = postPermalink(uri, opts.origin);
-  const title = opts.title ?? 'Skylite';
+  const title = opts.title ?? 'Bluebird';
 
   if (nav && typeof nav.share === 'function') {
     try {

@@ -1,14 +1,14 @@
 {
-  "name": "Skylite",
-  "short_name": "Skylite",
-  "description": "A butterfly garden window — a calm, read-first window into Bluesky, grown for you by someone who cares about you.",
+  "name": "Bluebird",
+  "short_name": "Bluebird",
+  "description": "A gentle, read-first window into Bluesky.",
   "id": "./",
   "start_url": "index.html",
   "scope": "./",
   "display": "standalone",
   "orientation": "portrait",
-  "background_color": "#FFFFFF",
-  "theme_color": "#FFFFFF",
+  "background_color": "#FAF6EF",
+  "theme_color": "#FAF6EF",
   "icons": [
     {
       "src": "icons/icon-192.png",

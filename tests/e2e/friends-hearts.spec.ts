@@ -45,7 +45,7 @@ function mockListRecords(sawAuth: { value: boolean }) {
       json: {
         records: [
           {
-            uri: `at://${FRIEND_DID}/ing.croft.skylite.like/1`,
+            uri: `at://${FRIEND_DID}/ing.croft.bluebird.like/1`,
             cid: 'cidlike1',
             value: { subject: { uri: LIKED_URI, cid: 'x' }, createdAt: '2026-07-15T00:00:00Z' },
           },

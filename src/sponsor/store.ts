@@ -1,4 +1,4 @@
-import type { SkyliteConfig } from '../config/types.js';
+import type { BluebirdConfig } from '../config/types.js';
 import { parseConfig } from '../config/parse.js';
 
 /**
@@ -11,8 +11,8 @@ import { parseConfig } from '../config/parse.js';
  * Storage access is defensive — a disabled/full store degrades, never throws.
  */
 
-const KEY_EXPLORERS = 'skylite.sponsor.explorers';
-const KEY_IDENTITY = 'skylite.sponsor.identity';
+const KEY_EXPLORERS = 'bluebird.sponsor.explorers';
+const KEY_IDENTITY = 'bluebird.sponsor.identity';
 
 export interface SponsorIdentity {
   did?: string;
@@ -23,7 +23,7 @@ export interface SponsorIdentity {
 /** One authored explorer: its random rkey and its config record. */
 export interface ExplorerEntry {
   rkey: string;
-  config: SkyliteConfig;
+  config: BluebirdConfig;
 }
 
 type StorageLike = Pick<Storage, 'getItem' | 'setItem' | 'removeItem'>;
@@ -69,12 +69,12 @@ export function listExplorers(): ExplorerEntry[] {
 }
 
 function writeAll(entries: ExplorerEntry[]): void {
-  const map: Record<string, SkyliteConfig> = {};
+  const map: Record<string, BluebirdConfig> = {};
   for (const e of entries) map[e.rkey] = e.config;
   writeJson(KEY_EXPLORERS, map);
 }
 
-export function upsertExplorer(rkey: string, config: SkyliteConfig): void {
+export function upsertExplorer(rkey: string, config: BluebirdConfig): void {
   const entries = listExplorers().filter((e) => e.rkey !== rkey);
   entries.push({ rkey, config });
   writeAll(entries);
@@ -87,7 +87,7 @@ export function removeExplorer(rkey: string): void {
 // The explorer's ACCOUNT handle (sponsor-local, never in the public config) —
 // the audit view (phase 3) resolves it to a DID to read the explorer's sealed
 // search-history collection.
-const KEY_HANDLES = 'skylite.sponsor.explorer.handles';
+const KEY_HANDLES = 'bluebird.sponsor.explorer.handles';
 
 export function getExplorerHandle(rkey: string): string | undefined {
   const map = readJson<Record<string, string>>(KEY_HANDLES) ?? {};

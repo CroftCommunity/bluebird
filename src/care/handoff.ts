@@ -18,7 +18,7 @@ export function buildMailto(contact: HelpContact): string | null {
   const name = contact.contactName?.trim();
   const subject = encodeURIComponent('I want to talk');
   const body = encodeURIComponent(
-    `Hi${name ? ' ' + name : ''}, I saw something on Skylite and I'd like to talk about it.`,
+    `Hi${name ? ' ' + name : ''}, I saw something on Bluebird and I'd like to talk about it.`,
   );
   return `mailto:${email}?subject=${subject}&body=${body}`;
 }

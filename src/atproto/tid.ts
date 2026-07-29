@@ -1,6 +1,6 @@
 // A minimal TID (timestamp identifier) generator. The config lexicon's record
 // key is `tid`, so each explorer record gets a RANDOM, sortable rkey — never the
-// explorer's name (SKYLITE-DIRECTIVES §2). A TID is 13 base32-sortable chars
+// explorer's name (BLUEBIRD-DIRECTIVES §2). A TID is 13 base32-sortable chars
 // encoding (microseconds << 10 | clockId), high bit zero.
 
 const B32 = '234567abcdefghijklmnopqrstuvwxyz';

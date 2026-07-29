@@ -9,7 +9,7 @@ import { buildBackup, parseBackup, restoreBackup, type RestoreSummary } from './
 
 function backupFilename(iso: string): string {
   const day = /^\d{4}-\d{2}-\d{2}/.exec(iso)?.[0] ?? 'backup';
-  return `skylite-backup-${day}.json`;
+  return `bluebird-backup-${day}.json`;
 }
 
 /** Build the backup and hand it to the OS share sheet, or download it. */
@@ -26,7 +26,7 @@ export async function exportBackup(): Promise<'shared' | 'downloaded'> {
   };
   if (nav.canShare?.({ files: [shareFile] }) && nav.share) {
     try {
-      await nav.share({ files: [shareFile], title: 'Skylite backup' });
+      await nav.share({ files: [shareFile], title: 'Bluebird backup' });
       return 'shared';
     } catch {
       // User cancelled or share failed — fall through to a download.
@@ -51,9 +51,9 @@ export async function importBackupFile(file: File): Promise<RestoreSummary> {
   try {
     json = JSON.parse(text);
   } catch {
-    throw new Error('That file is not a Skylite backup.');
+    throw new Error('That file is not a Bluebird backup.');
   }
   const parsed = parseBackup(json);
-  if (!parsed) throw new Error('That file is not a Skylite backup.');
+  if (!parsed) throw new Error('That file is not a Bluebird backup.');
   return restoreBackup(parsed);
 }

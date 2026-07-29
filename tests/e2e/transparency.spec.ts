@@ -18,11 +18,11 @@ test.describe('§3 garden-change transparency', () => {
     await page.addInitScript(
       (cfg) => {
         localStorage.setItem(
-          'skylite.binding',
+          'bluebird.binding',
           JSON.stringify({ sponsorDid: 'did:plc:t', rkey: 'abc', pdsHost: 'https://pds.host.bsky.network' }),
         );
         // Prior cache holds just a.test; the poll below adds b.test.
-        localStorage.setItem('skylite.config.cache', JSON.stringify({ config: cfg, fetchedAt: Date.now() }));
+        localStorage.setItem('bluebird.config.cache', JSON.stringify({ config: cfg, fetchedAt: Date.now() }));
       },
       config(CHANNELS_ONE),
     );
@@ -41,10 +41,10 @@ test.describe('§3 garden-change transparency', () => {
     await page.addInitScript(
       (cfg) => {
         localStorage.setItem(
-          'skylite.binding',
+          'bluebird.binding',
           JSON.stringify({ sponsorDid: 'did:plc:t', rkey: 'abc', pdsHost: 'https://pds.host.bsky.network' }),
         );
-        localStorage.setItem('skylite.config.cache', JSON.stringify({ config: cfg, fetchedAt: Date.now() }));
+        localStorage.setItem('bluebird.config.cache', JSON.stringify({ config: cfg, fetchedAt: Date.now() }));
       },
       config(CHANNELS_ONE),
     );

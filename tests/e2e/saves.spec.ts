@@ -24,7 +24,7 @@ async function localConfig(page: import('@playwright/test').Page): Promise<void>
   // Unprovisioned would use the dev fixture (3 authors); pin to one local author.
   await page.addInitScript(() => {
     localStorage.setItem(
-      'skylite.config.local',
+      'bluebird.config.local',
       JSON.stringify({
         version: 1,
         paused: false,
@@ -49,7 +49,7 @@ test.describe('Saves (D4)', () => {
     await expect(saveBtn).toHaveText('★ Saved');
 
     // The clip is in the saves.
-    await page.goto('/saves.html');
+    await page.goto('/locker.html');
     const clip = page.locator('[data-clip]');
     await expect(clip).toHaveCount(1);
     await expect(clip).toContainText('CLIP ME');
@@ -70,7 +70,7 @@ test.describe('Saves (D4)', () => {
     await page.locator('[data-save-btn]').first().click();
     await expect(page.locator('[data-save-btn]').first()).toHaveText('★ Saved');
 
-    await page.goto('/saves.html');
+    await page.goto('/locker.html');
     await expect(page.locator('[data-clip]')).toHaveCount(1);
 
     // Export → capture the downloaded backup file.
@@ -80,14 +80,14 @@ test.describe('Saves (D4)', () => {
     const path = await download.path();
     const buffer = readFileSync(path);
     const backup = JSON.parse(buffer.toString()) as { $schema: string; saves: unknown[] };
-    expect(backup.$schema).toBe('skylite.backup');
+    expect(backup.$schema).toBe('bluebird.backup');
     expect(backup.saves).toHaveLength(1);
 
     // Simulate a fresh device: wipe the local Saves store.
     await page.evaluate(
       () =>
         new Promise<void>((resolve) => {
-          const req = indexedDB.deleteDatabase('skylite-saves');
+          const req = indexedDB.deleteDatabase('bluebird-saves');
           req.onsuccess = req.onerror = req.onblocked = (): void => resolve();
         }),
     );
@@ -96,7 +96,7 @@ test.describe('Saves (D4)', () => {
 
     // Import the backup → the clip and its origin return.
     await page.locator('[data-backup-import]').setInputFiles({
-      name: 'skylite-backup.json',
+      name: 'bluebird-backup.json',
       mimeType: 'application/json',
       buffer,
     });
@@ -112,7 +112,7 @@ test.describe('Saves (D4)', () => {
     // — the clip is readable in Saves — BEFORE navigating back. Without this the
     // save can race a too-quick navigation and never commit (flaky).
     await expect(page.locator('[data-save-btn]').first()).toHaveText('★ Saved');
-    await page.goto('/saves.html');
+    await page.goto('/locker.html');
     await expect(page.locator('[data-clip]')).toHaveCount(1);
     await page.goto('/');
     // On return, the button shows saved (async mark).

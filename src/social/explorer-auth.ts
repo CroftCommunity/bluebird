@@ -5,7 +5,7 @@ import {
   type OAuthSession,
   type PendingAuth,
 } from '../atproto/oauth/client.js';
-import { SKYLITE_CLIENT_ID } from '../sponsor/oauth.js';
+import { BLUEBIRD_CLIENT_ID } from '../sponsor/oauth.js';
 import { LIKE_NSID } from './likes.js';
 
 /**
@@ -20,13 +20,13 @@ import { LIKE_NSID } from './likes.js';
 // Granular scope: create/delete on the explorer's like + follow + (encrypted)
 // search-history collections ONLY. The exact atproto scope syntax is a
 // verify-in-run item; this is the intent.
-export const EXPLORER_SCOPE = `atproto repo:${LIKE_NSID} repo:ing.croft.skylite.follow repo:ing.croft.skylite.search`;
+export const EXPLORER_SCOPE = `atproto repo:${LIKE_NSID} repo:ing.croft.bluebird.follow repo:ing.croft.bluebird.search`;
 
-const KEY_PENDING = 'skylite.explorer.oauth.pending';
-const KEY_SESSION = 'skylite.explorer.oauth.session';
+const KEY_PENDING = 'bluebird.explorer.oauth.pending';
+const KEY_SESSION = 'bluebird.explorer.oauth.session';
 
 function cfg(): { clientId: string; redirectUri: string; scope: string } {
-  return { clientId: SKYLITE_CLIENT_ID, redirectUri: `${window.location.origin}/`, scope: EXPLORER_SCOPE };
+  return { clientId: BLUEBIRD_CLIENT_ID, redirectUri: `${window.location.origin}/`, scope: EXPLORER_SCOPE };
 }
 
 function ss(): Storage | null {

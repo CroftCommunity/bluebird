@@ -116,7 +116,7 @@ export function setFollowState(btn: HTMLButtonElement, followed: boolean): void 
 }
 
 /** §B3 share control — available in every mode (no account needed). Shares the
- *  Skylite permalink; falls back to copying the link, with gentle inline feedback. */
+ *  Bluebird permalink; falls back to copying the link, with gentle inline feedback. */
 function shareFeedback(outcome: ShareOutcome): string {
   switch (outcome) {
     case 'copied':

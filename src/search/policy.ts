@@ -1,8 +1,8 @@
-import type { SkyliteSearch } from '../config/types.js';
+import type { BluebirdSearch } from '../config/types.js';
 
 /**
  * §Telescope rung 2 — query gating. Pure, dependency-free, unit-tested. This is
- * the shield, not a cage (docs/telescope-search.md): the lists are SEEDS, not an
+ * the shield, not a cage (docs/trail-map-search.md): the lists are SEEDS, not an
  * exhaustive moderation corpus, and matching is word/substring — not semantic.
  * The blocklist errs protective (substring); the allowlist errs permissive
  * within topics (whole-word). The label floor is enforced separately, on results.
@@ -71,7 +71,7 @@ function tokens(query: string): string[] {
  * BOTH gates when both are active: permit iff (allowlist off OR matches allowlist)
  * AND (blocklist off OR not blocked). The label floor is applied later, to results.
  */
-export function queryAllowed(query: string, search: SkyliteSearch): QueryVerdict {
+export function queryAllowed(query: string, search: BluebirdSearch): QueryVerdict {
   const norm = normalize(query);
   if (!norm) return { ok: false, reason: 'empty' };
 

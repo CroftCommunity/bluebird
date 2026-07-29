@@ -1,9 +1,9 @@
 import { describe, it, expect } from 'vitest';
 import { resolvePdsGate, resolveLocalGate, type CachedConfig } from '../../src/config/state.js';
 import { newExplorerConfig } from '../../src/config/parse.js';
-import type { SkyliteConfig } from '../../src/config/types.js';
+import type { BluebirdConfig } from '../../src/config/types.js';
 
-function cfg(paused: boolean): SkyliteConfig {
+function cfg(paused: boolean): BluebirdConfig {
   return { ...newExplorerConfig(), paused };
 }
 

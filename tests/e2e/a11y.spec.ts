@@ -17,10 +17,10 @@ import AxeBuilder from '@axe-core/playwright';
 // shell gate. The pages below render deterministically offline.
 const PAGES = [
   '/help.html',
-  '/saves.html',
-  '/mysky.html',
-  '/telescope.html',
-  '/sponsor.html',
+  '/locker.html',
+  '/my-mountain.html',
+  '/trailmap.html',
+  '/patrol.html',
 ];
 
 for (const path of PAGES) {
@@ -28,7 +28,7 @@ for (const path of PAGES) {
     test(`a11y: ${path} (${theme}) — no serious/critical violations`, async ({ page }) => {
       await page.addInitScript((t) => {
         try {
-          if (t === 'dark') localStorage.setItem('skylite.theme', 'dark');
+          if (t === 'dark') localStorage.setItem('bluebird.theme', 'dark');
         } catch {
           /* private mode */
         }

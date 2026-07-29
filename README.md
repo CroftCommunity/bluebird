@@ -1,20 +1,28 @@
-# Skylite
+# Bluebird
 
-## Skylite today
+## Bluebird today
 
-**A butterfly garden window.** Skylite is a calm, read-first window into Bluesky,
-grown for you by someone who cares about you — no algorithm, no ads, no counts, no
-strangers. A **sponsor** tends a garden (the set of voices an **explorer** sees);
-the explorer reads, saves, and shares what they find. One switch matters, "on this
-device only": while it is on, nothing about the explorer ever leaves the device.
+**Bluebird for Bluesky.** Bluebird is a gentle, read-first window into Bluesky —
+no algorithm, no ads, no counts, no strangers. A **sponsor** tends a garden (the
+set of voices an **explorer** sees); the explorer reads, saves, and shares what
+they find. One switch matters, **Cabin Mode** ("on this device only"): while it
+is on, nothing about the explorer ever leaves the device.
 
-- **Live:** https://skylite.croft.ing (an installable PWA).
+A bluebird day is ski slang for a clear blue sky over fresh snow — the perfect day
+to be out on the mountain. The UI wears that mountain: the Lodge (home), the Trail
+Map (discovery), the Locker (saved posts), My Mountain (who you follow), Ski School
+(how it works), and Patrol (the sponsor surface).
+
+- **Live:** https://bluebird.croft.ing (an installable PWA).
 - **Roles:** *sponsor* (tends the garden, holds the account) and *explorer* (reads
   it). The vocabulary is role-based, never age-based.
+- **Trust tiers:** the garden carries a trail rating — green (inside the garden),
+  blue (one hop beyond), black (the open mountain). A trust rating, not a content
+  rating.
 
 ### How it's built
 
-Skylite is built in **runs** — small, self-contained slices of work, each landed
+Bluebird is built in **runs** — small, self-contained slices of work, each landed
 test-first (TDD) behind a hermetic gate (`lint · typecheck · unit · build · e2e`,
 never touching the network) and written up in a `RUN-*-SUMMARY.md` at the repo
 root. The run summaries are a historical record and are not rewritten after the
@@ -25,10 +33,11 @@ folder.
 
 | Where | What |
 |---|---|
-| [`docs/telescope-search.md`](docs/telescope-search.md) | Telescope search — the trust-gradient model + the encrypted search-history archive. |
+| [`docs/VOICE.md`](docs/VOICE.md) | The voice + vocabulary (mountain register, banned words, canonical sentences). |
+| [`docs/trail-map-search.md`](docs/trail-map-search.md) | Trail Map search — trail ratings + the encrypted search-history archive. |
 | [`docs/custody.md`](docs/custody.md) | Account custody & re-authentication — the spectrum and current posture. |
 | [`docs/git-verified-commits.md`](docs/git-verified-commits.md) | Keeping commits attributed & verified when an agent and a human share a repo. |
-| [`lexicons/`](lexicons/) | The `ing.croft.skylite.*` record schemas (config, like, follow, search). |
+| [`lexicons/`](lexicons/) | The `ing.croft.bluebird.*` record schemas (config, like, follow, search). |
 | `RUN-*-SUMMARY.md` | One per run — what shipped, red-to-green evidence, what it left open. |
 
 The idea-capture documents (`CONCEPT.md`, `IDEAS.md`, `PROVENANCE.md`, `seeds/`)
@@ -36,6 +45,9 @@ are the frozen historical seed the project grew from; they are preserved verbati
 and not updated as the code evolves.
 
 ---
+
+Bluebird grew from an earlier concept named Skylite; the original idea-capture is
+preserved verbatim below.
 
 ## Historical seed — the original idea-capture README
 

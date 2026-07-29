@@ -1,12 +1,12 @@
 import { installTheme } from './brand/theme.js';
-import { skyliteVersion } from './version.js';
+import { bluebirdVersion } from './version.js';
 import { registerServiceWorker } from './pwa/register.js';
 
 /** The sponsor guide — static reference copy (setup flow + account security). */
 function boot(): void {
   installTheme();
   const stamp = document.querySelector<HTMLElement>('[data-version-stamp]');
-  if (stamp) stamp.textContent = skyliteVersion();
+  if (stamp) stamp.textContent = bluebirdVersion();
   registerServiceWorker();
 }
 

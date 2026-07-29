@@ -1,6 +1,6 @@
 import type { Clip } from '../saves/clip.js';
 import type { Binding } from '../config/binding.js';
-import type { SkyliteConfig } from '../config/types.js';
+import type { BluebirdConfig } from '../config/types.js';
 import { parseConfig } from '../config/parse.js';
 import { listClips, saveClip } from '../saves/store.js';
 import {
@@ -23,7 +23,7 @@ import {
  * IndexedDB / localStorage; the defaults wire the real device stores.
  */
 
-export const BACKUP_SCHEMA = 'skylite.backup';
+export const BACKUP_SCHEMA = 'bluebird.backup';
 export const BACKUP_VERSION = 1;
 
 export interface BackupFile {
@@ -35,7 +35,7 @@ export interface BackupFile {
   localFollows: string[];
   settings: {
     binding?: Binding;
-    localConfig?: SkyliteConfig;
+    localConfig?: BluebirdConfig;
   };
 }
 
@@ -44,8 +44,8 @@ export interface BackupPorts {
   putClip: (c: Clip) => Promise<void>;
   getBinding: () => Binding | null;
   setBinding: (b: Binding) => void;
-  getLocalConfig: () => SkyliteConfig | null;
-  setLocalConfig: (c: SkyliteConfig) => void;
+  getLocalConfig: () => BluebirdConfig | null;
+  setLocalConfig: (c: BluebirdConfig) => void;
   getLocalFollows: () => string[];
   setLocalFollows: (dids: string[]) => void;
   now: () => number;
@@ -119,7 +119,7 @@ function parseBinding(v: unknown): Binding | null {
 /**
  * Defensively parse an untrusted backup file. An imported file may be anything —
  * a wrong file, a corrupt one — so every field degrades rather than throws.
- * Returns null only when the object is not recognizably a Skylite backup.
+ * Returns null only when the object is not recognizably a Bluebird backup.
  */
 export function parseBackup(v: unknown): BackupFile | null {
   if (!isObj(v) || v.$schema !== BACKUP_SCHEMA) return null;

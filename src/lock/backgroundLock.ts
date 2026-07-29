@@ -2,14 +2,14 @@ import { el } from '../render/dom.js';
 import { hasPin, verifyPin } from './pin.js';
 
 /**
- * D6 — lock on background, not just at open. When Skylite is backgrounded (iPad
+ * D6 — lock on background, not just at open. When Bluebird is backgrounded (iPad
  * set down, handed to a friend) and a device PIN is set, re-entry requires the
  * PIN. `visibilitychange` is the reliable backgrounding signal on iOS; we also
  * lock on `pagehide`. (Plain window `blur` is intentionally not used — it fires
  * on incidental focus loss and would lock spuriously.)
  *
  * With no session behind it, this gate is exactly what IDEAS.md §5 describes: a
- * lock on Skylite's own front door and nothing more.
+ * lock on Bluebird's own front door and nothing more.
  */
 
 let overlay: HTMLElement | null = null;

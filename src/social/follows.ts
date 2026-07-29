@@ -7,12 +7,12 @@ import { rkeyFromUri } from './likes.js';
  * in My Sky — distinct from the sponsor's garden. Device-local follows exist in
  * EVERY mode (capabilities.canFollowLocally is always true): the DID list on the
  * device is what My Sky reads. When the explorer has an account
- * (canPersistFollows), following ALSO writes an `ing.croft.skylite.follow`
+ * (canPersistFollows), following ALSO writes an `ing.croft.bluebird.follow`
  * record into her OWN repo (mirrors app.bsky.graph.follow: subject DID +
  * createdAt), and unfollowing deletes it. The sponsor never touches these.
  */
 
-export const FOLLOW_NSID = 'ing.croft.skylite.follow';
+export const FOLLOW_NSID = 'ing.croft.bluebird.follow';
 
 export interface FollowRecord {
   $type?: typeof FOLLOW_NSID;
@@ -43,7 +43,7 @@ export function removeLocalFollow(did: string): void {
 // --- index of the explorer's own follow records: did -> record uri ------------
 // So a one-tap unfollow knows which record to delete without a round-trip.
 
-const KEY_FOLLOW_RECORDS = 'skylite.follow.records';
+const KEY_FOLLOW_RECORDS = 'bluebird.follow.records';
 
 function readIndex(): Record<string, string> {
   try {
@@ -72,7 +72,7 @@ export function followRecordUriFor(did: string): string | undefined {
 // shows people by NAME. We remember the author's name when the explorer follows,
 // so My Sky reads as "AT Protocol", not "did:plc:…", even before a feed hydrates.
 
-const KEY_FOLLOW_NAMES = 'skylite.follow.names';
+const KEY_FOLLOW_NAMES = 'bluebird.follow.names';
 
 function readNames(): Record<string, string> {
   try {

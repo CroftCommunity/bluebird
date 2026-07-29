@@ -48,7 +48,7 @@ test.describe('§D Telescope (approved feeds)', () => {
       ],
     });
     await mockFeed(page);
-    await page.goto('/telescope.html');
+    await page.goto('/trailmap.html');
 
     // The picker lists the approved feeds; the first is current.
     const picker = page.locator('[data-telescope-picker]');
@@ -79,16 +79,16 @@ test.describe('§D Telescope (approved feeds)', () => {
           : { feed: [] },
       });
     });
-    await page.goto('/telescope.html');
+    await page.goto('/trailmap.html');
     await page.locator('[data-follow-btn="did:plc:carl"]').click();
-    await page.goto('/mysky.html');
+    await page.goto('/my-mountain.html');
     await expect(page.locator('[data-mysky-header]')).toContainText('Carl Sagan');
   });
 
   test('with no approved feeds, Telescope says so plainly', async ({ page }) => {
     await seedExplorer(page); // approvedFeeds: []
     await mockFeed(page);
-    await page.goto('/telescope.html');
+    await page.goto('/trailmap.html');
     await expect(page.locator('[data-telescope-status="empty"]')).toBeVisible();
   });
 });

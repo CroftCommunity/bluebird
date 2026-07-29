@@ -1,5 +1,5 @@
 import { installTheme } from '../brand/theme.js';
-import { skyliteVersion } from '../version.js';
+import { bluebirdVersion } from '../version.js';
 import { el, clear } from '../render/dom.js';
 import { registerServiceWorker } from '../pwa/register.js';
 import { AuthorFeedClient } from '../atproto/client.js';
@@ -9,7 +9,7 @@ import { savedUris } from '../saves/store.js';
 
 /**
  * §B3 post-view page (`/post.html?uri=at://…`). Renders one post in full — the
- * destination of a shared Skylite permalink, and of tapping a saved post. It is
+ * destination of a shared Bluebird permalink, and of tapping a saved post. It is
  * a PUBLIC, unauthenticated read (app.bsky.feed.getPosts): no account, no
  * session. The **label floor** still applies (labels.ts names post-view
  * explicitly): a label-bearing post is EXCLUDED here exactly as in the garden —
@@ -39,14 +39,14 @@ async function render(root: HTMLElement, client: AuthorFeedClient, uri: string):
     root.append(list);
     void savedUris().then((set) => markSavedPosts(root, set));
   } catch {
-    status(root, "Couldn't reach the sky. Try again in a little while.", 'error');
+    status(root, 'Whiteout. Hang tight.', 'error');
   }
 }
 
 function boot(): void {
   installTheme();
   const stamp = document.querySelector<HTMLElement>('[data-version-stamp]');
-  if (stamp) stamp.textContent = skyliteVersion();
+  if (stamp) stamp.textContent = bluebirdVersion();
   registerServiceWorker();
 
   const root = document.querySelector<HTMLElement>('[data-post-view]');

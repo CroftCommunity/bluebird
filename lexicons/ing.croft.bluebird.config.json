@@ -1,19 +1,24 @@
 {
   "lexicon": 1,
-  "id": "ing.croft.skylite.config",
-  "description": "Sponsor-authored control record for a single Skylite explorer device. One record per explorer, at a RANDOM record key (never the explorer's name). Lives in the sponsor's own ATProto repo and is read publicly (unauthenticated com.atproto.repo.getRecord) by the explorer's device. Carries the two switches (localOnly, skin), the pause switch, the curated inclusion list grouped into toggleable channels, curated friends, approved discovery feeds, and per-explorer switches. Contains NO age, birthday, school, or location and nothing private. Follows are NOT in this record; they belong to the explorer.",
+  "id": "ing.croft.bluebird.config",
+  "description": "Sponsor-authored control record for a single Bluebird explorer device. One record per explorer, at a RANDOM record key (never the explorer's name). Lives in the sponsor's own ATProto repo and is read publicly (unauthenticated com.atproto.repo.getRecord) by the explorer's device. Carries the two switches (localOnly, skin), the pause switch, the curated inclusion list grouped into toggleable channels, curated friends, approved discovery feeds, and per-explorer switches. Contains NO age, birthday, school, or location and nothing private. Follows are NOT in this record; they belong to the explorer.",
   "defs": {
     "main": {
       "type": "record",
       "key": "tid",
       "record": {
         "type": "object",
-        "required": ["version", "localOnly", "skin", "paused", "updatedAt", "channels"],
+        "required": ["version", "localOnly", "skin", "paused", "updatedAt", "channels", "tier"],
         "properties": {
           "version": {
             "type": "integer",
             "minimum": 1,
             "description": "Config schema version. 2 for the two-switch model."
+          },
+          "tier": {
+            "type": "string",
+            "enum": ["green", "blue", "black"],
+            "description": "Trust distance from the tended garden: green = inside the garden, blue = one hop beyond it, black = the open network. This is a trust rating, not a content-maturity rating."
           },
           "displayName": {
             "type": "string",
@@ -144,7 +149,7 @@
     },
     "search": {
       "type": "object",
-      "description": "Telescope rung 2 search trust-gradient (see docs/telescope-search.md).",
+      "description": "Telescope rung 2 search trust-gradient (see docs/trail-map-search.md).",
       "required": ["tier", "useAllowlist", "allowlistExtra", "useBlocklist", "blocklistExtra", "logHistory"],
       "properties": {
         "tier": {
@@ -157,7 +162,7 @@
         "useBlocklist": { "type": "boolean", "description": "Negative gate: queries with a blocked term are refused. Default true." },
         "blocklistExtra": { "type": "array", "items": { "type": "string" }, "description": "Sponsor additions to the seeded blocklist." },
         "logHistory": { "type": "boolean", "description": "Search history visible to the sponsor (accountability). Default true." },
-        "auditPubKeyJwk": { "type": "unknown", "description": "When set, the sponsor's audit PUBLIC key (EC P-256 JWK) for the encrypted search-history archive. Present ⇒ the explorer device seals each search to it (ing.croft.skylite.search); absent ⇒ history stays on-device. Never a private key." }
+        "auditPubKeyJwk": { "type": "unknown", "description": "When set, the sponsor's audit PUBLIC key (EC P-256 JWK) for the encrypted search-history archive. Present ⇒ the explorer device seals each search to it (ing.croft.bluebird.search); absent ⇒ history stays on-device. Never a private key." }
       }
     }
   }

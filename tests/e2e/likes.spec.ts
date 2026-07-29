@@ -27,7 +27,7 @@ function j(body: unknown, init: ResponseInit = {}): { status: number; headers: R
 async function seedSharingOn(page: Page): Promise<void> {
   await page.addInitScript(() => {
     localStorage.setItem(
-      'skylite.config.local',
+      'bluebird.config.local',
       JSON.stringify({
         version: 2,
         displayName: 'Star',
@@ -89,7 +89,7 @@ async function mockExplorerOAuth(page: Page): Promise<() => Record<string, unkno
   );
   await page.route('**/xrpc/com.atproto.repo.createRecord', (r: Route) => {
     lastWrite = r.request().postDataJSON() as Record<string, unknown>;
-    return r.fulfill(j({ uri: `at://${KID_DID}/ing.croft.skylite.like/3klike`, cid: 'bafylike' }));
+    return r.fulfill(j({ uri: `at://${KID_DID}/ing.croft.bluebird.like/3klike`, cid: 'bafylike' }));
   });
   await page.route('**/xrpc/com.atproto.repo.deleteRecord', (r: Route) => {
     lastWrite = r.request().postDataJSON() as Record<string, unknown>;
@@ -139,7 +139,7 @@ test.describe('B1/B2 likes', () => {
     // Like → creates a like record whose subject is the post.
     await heart.click();
     await expect(heart).toContainText('Liked');
-    await expect.poll(() => lastWrite()?.collection).toBe('ing.croft.skylite.like');
+    await expect.poll(() => lastWrite()?.collection).toBe('ing.croft.bluebird.like');
     const record = lastWrite()?.record as { subject?: { uri?: string } } | undefined;
     expect(record?.subject?.uri).toBe(POST.uri);
 

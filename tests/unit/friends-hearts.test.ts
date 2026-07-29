@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { RepoClient } from '../../src/atproto/repo.js';
 import { fetchFriendHearts, friendHeartsSentence } from '../../src/social/friends-hearts.js';
-import type { SkyliteFriend } from '../../src/config/types.js';
+import type { BluebirdFriend } from '../../src/config/types.js';
 
 function jsonResponse(body: unknown, status = 200): Response {
   return new Response(JSON.stringify(body), { status, headers: { 'content-type': 'application/json' } });
@@ -23,7 +23,7 @@ function mockRepo(likesByDid: Record<string, string[]>): RepoClient {
       }
       if (url.includes(pdsHostFor(did)) && url.includes('listRecords')) {
         const records = (likesByDid[did] ?? []).map((postUri, i) => ({
-          uri: `at://${did}/ing.croft.skylite.like/${i}`,
+          uri: `at://${did}/ing.croft.bluebird.like/${i}`,
           cid: `c${i}`,
           value: { subject: { uri: postUri, cid: 'x' }, createdAt: '2026-07-15T00:00:00Z' },
         }));
@@ -35,7 +35,7 @@ function mockRepo(likesByDid: Record<string, string[]>): RepoClient {
   return new RepoClient({ fetchImpl });
 }
 
-const friend = (did: string, displayName?: string): SkyliteFriend =>
+const friend = (did: string, displayName?: string): BluebirdFriend =>
   displayName ? { did, displayName } : { did };
 
 describe('fetchFriendHearts', () => {

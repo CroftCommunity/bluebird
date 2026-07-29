@@ -1,8 +1,8 @@
 import { installTheme } from './brand/theme.js';
-import { skyliteVersion } from './version.js';
+import { bluebirdVersion } from './version.js';
 import { el, clear } from './render/dom.js';
-import { SKYLITE_CONFIG_NSID } from './config/types.js';
-import type { SkyliteChannel, SkyliteConfig } from './config/types.js';
+import { BLUEBIRD_CONFIG_NSID } from './config/types.js';
+import type { BluebirdChannel, BluebirdConfig } from './config/types.js';
 import { newExplorerConfig } from './config/parse.js';
 import { provisioningUrl } from './config/binding.js';
 import { registerServiceWorker } from './pwa/register.js';
@@ -30,7 +30,7 @@ import type { OAuthSession } from './atproto/oauth/client.js';
  * authoring: one card per explorer, each a config record at a RANDOM rkey.
  * Create/edit/remove; per-explorer provisioning link (sponsorDid + rkey, no
  * secrets). Public-record hygiene is enforced inline. App passwords are rejected
- * everywhere (SKYLITE-DIRECTIVES §S2) — the old app-password publish path is
+ * everywhere (BLUEBIRD-DIRECTIVES §S2) — the old app-password publish path is
  * gone; records go into the sponsor's PDS out of band (or over OAuth, a
  * verify-in-run item) using the exported JSON below.
  */
@@ -78,13 +78,13 @@ function section(title: string, children: HTMLElement[], intro?: string): HTMLEl
 
 // --- record shaping ----------------------------------------------------------
 
-function recordBody(config: SkyliteConfig): SkyliteConfig {
-  return { $type: SKYLITE_CONFIG_NSID, ...config, updatedAt: new Date().toISOString() };
+function recordBody(config: BluebirdConfig): BluebirdConfig {
+  return { $type: BLUEBIRD_CONFIG_NSID, ...config, updatedAt: new Date().toISOString() };
 }
 
 // --- explorer card -----------------------------------------------------------
 
-function renderChannel(config: SkyliteConfig, channel: SkyliteChannel, index: number, save: () => void): HTMLElement {
+function renderChannel(config: BluebirdConfig, channel: BluebirdChannel, index: number, save: () => void): HTMLElement {
   const accounts = channel.accounts.map((acct, i) =>
     el('div', { class: 'g-account' }, [
       textInput(acct.actor, 'handle or did:…', (v) => {
@@ -129,7 +129,7 @@ function renderChannel(config: SkyliteConfig, channel: SkyliteChannel, index: nu
   ]);
 }
 
-function renderFriends(config: SkyliteConfig, save: () => void): HTMLElement {
+function renderFriends(config: BluebirdConfig, save: () => void): HTMLElement {
   const rows = config.friends.map((f, i) =>
     el('div', { class: 'g-account' }, [
       textInput(f.did, 'did:plc:… (friend, reciprocal)', (v) => {
@@ -158,7 +158,7 @@ function renderFriends(config: SkyliteConfig, save: () => void): HTMLElement {
   ]);
 }
 
-function renderFeeds(config: SkyliteConfig, save: () => void): HTMLElement {
+function renderFeeds(config: BluebirdConfig, save: () => void): HTMLElement {
   const rows = config.approvedFeeds.map((feed, i) =>
     el('div', { class: 'g-account' }, [
       textInput(feed.uri, 'at://…/app.bsky.feed.generator/…', (v) => {
@@ -186,7 +186,7 @@ function renderFeeds(config: SkyliteConfig, save: () => void): HTMLElement {
   ]);
 }
 
-function skinSelect(config: SkyliteConfig, save: () => void): HTMLSelectElement {
+function skinSelect(config: BluebirdConfig, save: () => void): HTMLSelectElement {
   const sel = el('select', { class: 'g-input' }, [
     el('option', { value: 'simple', ...(config.skin === 'simple' ? { selected: 'selected' } : {}) }, ['Simple']),
     el('option', { value: 'full', ...(config.skin === 'full' ? { selected: 'selected' } : {}) }, ['Full']),
@@ -198,8 +198,8 @@ function skinSelect(config: SkyliteConfig, save: () => void): HTMLSelectElement 
   return sel;
 }
 
-/** §Telescope rung 2 — the search trust-gradient controls (docs/telescope-search.md). */
-function searchSettings(config: SkyliteConfig, save: () => void): HTMLElement {
+/** §Telescope rung 2 — the search trust-gradient controls (docs/trail-map-search.md). */
+function searchSettings(config: BluebirdConfig, save: () => void): HTMLElement {
   const s = config.search;
   const tierSel = el('select', { class: 'g-input', 'data-search-tier': 'true' }, [
     el('option', { value: 'off', ...(s.tier === 'off' ? { selected: 'selected' } : {}) }, ['Off — approved feeds only']),
@@ -255,9 +255,9 @@ function searchSettings(config: SkyliteConfig, save: () => void): HTMLElement {
  * §Phase 3 — turn on the ENCRYPTED search-history archive. Creates (or reuses)
  * this device's audit keypair, protected by a passphrase, and publishes its
  * PUBLIC key into the config so the explorer device seals history to it. Only
- * this device's private key can ever read it (docs/telescope-search.md).
+ * this device's private key can ever read it (docs/trail-map-search.md).
  */
-function encryptedArchiveControl(config: SkyliteConfig, save: () => void): HTMLElement {
+function encryptedArchiveControl(config: BluebirdConfig, save: () => void): HTMLElement {
   const msg = el('span', { class: 'g-msg', role: 'status', 'data-archive-msg': 'true' });
   const wrap = el('div', { class: 'g-subcard', 'data-archive-control': 'true' });
 
@@ -317,7 +317,7 @@ function encryptedArchiveControl(config: SkyliteConfig, save: () => void): HTMLE
   return wrap;
 }
 
-function helpFields(config: SkyliteConfig, save: () => void): HTMLElement {
+function helpFields(config: BluebirdConfig, save: () => void): HTMLElement {
   const wrap = el('div', {});
   wrap.append(
     textInput(config.help?.contactName ?? '', 'e.g. Mum', (v) => {
@@ -332,7 +332,7 @@ function helpFields(config: SkyliteConfig, save: () => void): HTMLElement {
   return wrap;
 }
 
-function staleField(config: SkyliteConfig, save: () => void): HTMLInputElement {
+function staleField(config: BluebirdConfig, save: () => void): HTMLInputElement {
   const n = el('input', { type: 'number', min: '1', class: 'g-input', value: String(config.staleHours) });
   n.addEventListener('input', () => {
     const v = Number(n.value);
@@ -344,7 +344,7 @@ function staleField(config: SkyliteConfig, save: () => void): HTMLInputElement {
   return n;
 }
 
-function renderExplorerCard(rkey: string, config: SkyliteConfig, identity: SponsorIdentity): HTMLElement {
+function renderExplorerCard(rkey: string, config: BluebirdConfig, identity: SponsorIdentity): HTMLElement {
   const name = config.displayName || 'Unnamed explorer';
 
   const jsonArea = el('textarea', { class: 'g-json', readonly: 'readonly', rows: 8, 'data-record-json': rkey });
@@ -390,18 +390,18 @@ function renderExplorerCard(rkey: string, config: SkyliteConfig, identity: Spons
     ),
 
     section('Sharing', [
-      toggle('This device only — no account', config.localOnly, (v) => {
+      toggle('Cabin Mode — on this device only, no account', config.localOnly, (v) => {
         config.localOnly = v;
         save();
         rerender();
       }, true),
       el('p', { class: 'g-hint' }, [
         config.localOnly
-          ? 'On: the explorer has no account and nothing about them leaves their device. Turn this off (together, when the time is right) to give them hearts and shared follows — that creates a public account.'
+          ? 'On: what happens in the cabin stays in the cabin — the explorer has no account and nothing about them leaves their device. Turn this off (together, when the time is right) to give them hearts and shared follows — that creates a public account.'
           : 'Off: the explorer has an account, so their hearts and follows exist as public records.',
       ]),
       field('Look (cosmetic only — never changes what the device can do)', skinSelect(config, save)),
-      toggle('Pause Skylite for this explorer', config.paused, (v) => {
+      toggle('Pause Bluebird for this explorer', config.paused, (v) => {
         config.paused = v;
         save();
       }, true),
@@ -428,7 +428,7 @@ function renderExplorerCard(rkey: string, config: SkyliteConfig, identity: Spons
       el('p', { class: 'g-hint' }, [
         'Reposts pull in whole posts from outside the garden. Labels are the only safety layer for those outside authors. Turn off for the tightest garden.',
       ]),
-      toggle('Let a “this device only” explorer see friends’ hearts', config.showFriendsHearts, (v) => {
+      toggle('Let a Cabin Mode explorer see friends’ hearts', config.showFriendsHearts, (v) => {
         config.showFriendsHearts = v;
         save();
       }),
@@ -475,7 +475,7 @@ function renderExplorerCard(rkey: string, config: SkyliteConfig, identity: Spons
           el('code', {}, [rkey]),
           '. This record is public, like everything on the network.',
         ]),
-        field(`Record body (store as ${SKYLITE_CONFIG_NSID}/${rkey})`, jsonArea),
+        field(`Record body (store as ${BLUEBIRD_CONFIG_NSID}/${rkey})`, jsonArea),
       ]),
       el('p', {}, [
         el('a', { class: 'g-btn g-btn--ghost', href: `audit.html?r=${encodeURIComponent(rkey)}`, 'data-audit-link': rkey }, [
@@ -487,7 +487,7 @@ function renderExplorerCard(rkey: string, config: SkyliteConfig, identity: Spons
 }
 
 /** Publish-to-PDS control for one explorer — only when signed in over OAuth. */
-function publishRow(rkey: string, config: SkyliteConfig): HTMLElement {
+function publishRow(rkey: string, config: BluebirdConfig): HTMLElement {
   const session = getSession();
   if (!session) {
     return el('p', { class: 'g-hint', 'data-publish-signedout': rkey }, [
@@ -598,8 +598,8 @@ function renderIntro(): HTMLElement {
       'You build gardens here, on your own device — you don’t need the explorer’s device. For each explorer, pick what they see, then copy their link and send it. They open it on their device to start their garden.',
     ]),
     el('p', {}, [
-      el('a', { class: 'g-btn g-btn--ghost', href: 'guide.html', 'data-guide-link': 'true' }, [
-        'Read the sponsor guide (setup + securing your account)',
+      el('a', { class: 'g-btn g-btn--ghost', href: 'ski-school.html', 'data-guide-link': 'true' }, [
+        'Ski School — setup + securing your account',
       ]),
     ]),
   ]);
@@ -642,7 +642,7 @@ function applySession(session: OAuthSession): void {
 function boot(): void {
   installTheme();
   const stamp = document.querySelector<HTMLElement>('[data-version-stamp]');
-  if (stamp) stamp.textContent = skyliteVersion();
+  if (stamp) stamp.textContent = bluebirdVersion();
   registerServiceWorker();
   root = document.querySelector<HTMLElement>('[data-sponsor]');
   render();

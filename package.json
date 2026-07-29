@@ -1,5 +1,5 @@
 {
-  "name": "skylite",
+  "name": "bluebird",
   "version": "0.1.0",
   "private": true,
   "description": "A read-only, non-algorithmic, installable PWA window into Bluesky for one child.",

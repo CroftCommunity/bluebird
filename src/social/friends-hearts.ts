@@ -1,5 +1,5 @@
 import { RepoClient } from '../atproto/repo.js';
-import type { SkyliteFriend } from '../config/types.js';
+import type { BluebirdFriend } from '../config/types.js';
 import { LIKE_NSID } from './likes.js';
 
 /**
@@ -8,7 +8,7 @@ import { LIKE_NSID } from './likes.js';
  * is the see-but-not-be-seen "lurk" read: it needs NO account and NO credential,
  * so a localOnly explorer (with the sponsor's showFriendsHearts on) can see
  * friends' hearts without any repo of her own. The like records are public;
- * Skylite just shows them among friends, by name — never a global count.
+ * Bluebird just shows them among friends, by name — never a global count.
  */
 
 interface LikeValue {
@@ -22,7 +22,7 @@ export interface FriendHeartsDeps {
 
 /** Map of post URI -> friend display names who liked it (relational, not counts). */
 export async function fetchFriendHearts(
-  friends: SkyliteFriend[],
+  friends: BluebirdFriend[],
   deps: FriendHeartsDeps = {},
 ): Promise<Map<string, string[]>> {
   const repo = deps.repo ?? new RepoClient();

@@ -1,5 +1,5 @@
 import type { CachedConfig } from './state.js';
-import type { SkyliteConfig } from './types.js';
+import type { BluebirdConfig } from './types.js';
 import { parseConfig } from './parse.js';
 
 /**
@@ -18,10 +18,10 @@ export interface Binding {
   pdsHost?: string;
 }
 
-const KEY_BINDING = 'skylite.binding';
-const KEY_CACHE = 'skylite.config.cache';
-const KEY_LOCAL = 'skylite.config.local';
-const KEY_FOLLOWS = 'skylite.follows';
+const KEY_BINDING = 'bluebird.binding';
+const KEY_CACHE = 'bluebird.config.cache';
+const KEY_LOCAL = 'bluebird.config.local';
+const KEY_FOLLOWS = 'bluebird.follows';
 
 /**
  * Parse provisioning params (?s=<sponsorDid>&r=<rkey>&pds=<host>) into a Binding.
@@ -94,11 +94,11 @@ export function getCachedConfig(): CachedConfig | null {
 export function setCachedConfig(c: CachedConfig): void {
   writeJson(KEY_CACHE, c);
 }
-export function getLocalConfig(): SkyliteConfig | null {
+export function getLocalConfig(): BluebirdConfig | null {
   // Migrate on read: a device-local v1 record parses into the canonical shape.
   return parseConfig(readJson<unknown>(KEY_LOCAL));
 }
-export function setLocalConfig(c: SkyliteConfig): void {
+export function setLocalConfig(c: BluebirdConfig): void {
   writeJson(KEY_LOCAL, c);
 }
 /**

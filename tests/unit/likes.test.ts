@@ -21,7 +21,7 @@ describe('buildLikeRecord', () => {
 
 describe('rkeyFromUri', () => {
   it('takes the last path segment', () => {
-    expect(rkeyFromUri('at://did:plc:me/ing.croft.skylite.like/3krk')).toBe('3krk');
+    expect(rkeyFromUri('at://did:plc:me/ing.croft.bluebird.like/3krk')).toBe('3krk');
     expect(rkeyFromUri('')).toBe('');
   });
 });

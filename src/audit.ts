@@ -1,5 +1,5 @@
 import { installTheme } from './brand/theme.js';
-import { skyliteVersion } from './version.js';
+import { bluebirdVersion } from './version.js';
 import { el, clear } from './render/dom.js';
 import { registerServiceWorker } from './pwa/register.js';
 import { listExplorers, getExplorerHandle, setExplorerHandle, type ExplorerEntry } from './sponsor/store.js';
@@ -10,7 +10,7 @@ import { resolveHandleToDid, fetchSealedHistory, decryptHistory } from './search
 import { relativeTime } from './render/time.js';
 
 /**
- * S7 sponsor label-audit page. (a) Meanings: what Skylite does with each label
+ * S7 sponsor label-audit page. (a) Meanings: what Bluebird does with each label
  * it acts on. (b) Effectiveness: replays the exact garden fetch+filter on the
  * sponsor's device over public data, counting what the label floor hid per label
  * per account plus label-excluded embeds — with expandable examples. Nothing is
@@ -30,10 +30,10 @@ function meaningsSection(): HTMLElement {
   return el('section', { class: 'g-card', 'data-audit-meanings': 'true' }, [
     el('h2', {}, ['What each label means']),
     el('p', { class: 'g-hint' }, [
-      'These are the labels Skylite acts on, and what it does. Label meanings come from the moderation services in play (Bluesky’s default service at minimum).',
+      'These are the labels Bluebird acts on, and what it does. Label meanings come from the moderation services in play (Bluesky’s default service at minimum).',
     ]),
     el('table', { class: 'audit__table' }, [
-      el('thead', {}, [el('tr', {}, [el('th', {}, ['Label']), el('th', {}, ['Meaning']), el('th', {}, ['What Skylite does'])])]),
+      el('thead', {}, [el('tr', {}, [el('th', {}, ['Label']), el('th', {}, ['Meaning']), el('th', {}, ['What Bluebird does'])])]),
       el('tbody', {}, rows),
     ]),
   ]);
@@ -229,7 +229,7 @@ async function render(): Promise<void> {
 function boot(): void {
   installTheme();
   const stamp = document.querySelector<HTMLElement>('[data-version-stamp]');
-  if (stamp) stamp.textContent = skyliteVersion();
+  if (stamp) stamp.textContent = bluebirdVersion();
   registerServiceWorker();
   root = document.querySelector<HTMLElement>('[data-audit]');
   void render();

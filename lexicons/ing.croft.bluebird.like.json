@@ -1,6 +1,6 @@
 {
   "lexicon": 1,
-  "id": "ing.croft.skylite.like",
+  "id": "ing.croft.bluebird.like",
   "description": "An explorer's like of a post, written into the explorer's OWN repo (never the sponsor's). Mirrors app.bsky.feed.like — a subject strongRef plus createdAt — so a like/follow → mainline conversion tool is possible later (a spec note, not built). Only exists when the explorer has an account (localOnly off). The explorer can delete her own likes; the sponsor cannot.",
   "defs": {
     "main": {

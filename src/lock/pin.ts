@@ -1,11 +1,11 @@
 // D6 — the device lock is a local gate, not a credential. There is no session
-// behind it (Skylite reads are unauthenticated), so this is literally just a lock
-// on Skylite's own door. The PIN is stored only as a SHA-256 hash, never plain.
+// behind it (Bluebird reads are unauthenticated), so this is literally just a lock
+// on Bluebird's own door. The PIN is stored only as a SHA-256 hash, never plain.
 
-const KEY = 'skylite.pin';
+const KEY = 'bluebird.pin';
 
 export async function hashPin(pin: string): Promise<string> {
-  const data = new TextEncoder().encode(`skylite:${pin}`);
+  const data = new TextEncoder().encode(`bluebird:${pin}`);
   const buf = await crypto.subtle.digest('SHA-256', data);
   return Array.from(new Uint8Array(buf))
     .map((b) => b.toString(16).padStart(2, '0'))
