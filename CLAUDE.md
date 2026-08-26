@@ -35,10 +35,8 @@ summaries) is preserved verbatim and deliberately still says Skylite — do not 
 
 `npm test` (lint · typecheck · unit · build · e2e). Live smoke: `npm run e2e:live`.
 
-Known drift, low priority: `@playwright/test` declares `^1.49.1` while the lockfile
-resolves the canonical `1.61.1`. The declared range is stale, the running version is
-correct; align the range when next touching `package.json`
-(`CroftC/.claude/WEB-TESTING.md` — the range is the policy, the lockfile is the pin).
+Playwright follows the workspace canon: range `^1.61.1`, lockfile pinned `1.61.1`, with
+an `overrides` entry forcing a single `playwright-core` (`CroftC/.claude/WEB-TESTING.md`).
 
 ## Concurrent sessions (workspace norm)
 

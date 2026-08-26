@@ -18,7 +18,7 @@
   "devDependencies": {
     "@axe-core/playwright": "^4.12.1",
     "@eslint/js": "^9.17.0",
-    "@playwright/test": "^1.49.1",
+    "@playwright/test": "^1.61.1",
     "@types/node": "^22.10.5",
     "axe-core": "^4.12.1",
     "esbuild": "^0.24.2",
@@ -27,5 +27,8 @@
     "typescript": "^5.7.3",
     "typescript-eslint": "^8.19.1",
     "vitest": "^2.1.8"
+  },
+  "overrides": {
+    "playwright-core": "1.61.1"
   }
 }
