@@ -1,4 +1,4 @@
-# Bluebird (repo `skylite`) — agent orientation
+# Bluebird — agent orientation
 
 ## Identity (workspace architecture)
 
@@ -13,14 +13,13 @@ PAR + PKCE + DPoP, zero dependencies), registered prior art in
 **Consumes:** the public Bluesky AppView.
 Card + altitudes: `CroftC/.claude/ARCHITECTURE.md`.
 
-**Naming — read this before editing docs.** The product was renamed **Skylite → Bluebird**
-in PR #35 (`RUN-BLUEBIRD`, on `main`): lexicons are `ing.croft.bluebird.*`, pages renamed
-(telescope→trailmap, saves→locker, sponsor→patrol, mysky→my-mountain, guide→ski-school),
-palette is the mountain set, domain is `bluebird.croft.ing`. **The git repo and this
-directory are still named `skylite`** — that rename is the owner's call and has not
-happened. So: the product is Bluebird, the repo is `skylite`; say which you mean. The
-frozen historical seed (CONCEPT / IDEAS / PROVENANCE / seeds, old RUN summaries) is
-preserved verbatim and deliberately still says Skylite — do not "fix" it.
+**Naming — read this before editing docs.** Renamed **Skylite → Bluebird**: the product
+in PR #35 (`RUN-BLUEBIRD` — lexicons `ing.croft.bluebird.*`, pages renamed
+telescope→trailmap, saves→locker, sponsor→patrol, mysky→my-mountain, guide→ski-school,
+mountain palette, `bluebird.croft.ing`), and the **repo, remote, and directory on
+2026-08-26** (`CroftCommunity/bluebird`; GitHub redirects the old URL, but use the new
+one). The frozen historical seed (CONCEPT / IDEAS / PROVENANCE / seeds, old RUN
+summaries) is preserved verbatim and deliberately still says Skylite — do not "fix" it.
 
 ## Layout
 
@@ -44,7 +43,7 @@ correct; align the range when next touching `package.json`
 ## Concurrent sessions (workspace norm)
 
 Multiple agent sessions share the `CroftC/` workspace. Do multi-turn work in a dedicated
-worktree — `git -C skylite worktree add ../worktrees/skylite/<slug> -b claude/<slug>` —
+worktree — `git -C bluebird worktree add ../worktrees/bluebird/<slug> -b claude/<slug>` —
 never in this checkout (peer sessions stage with `git add -A`; loose files get swept into
 unrelated commits). Contested surfaces here: **landing on `main`** (a push deploys
 `bluebird.croft.ing`) and the OAuth module, which other repos port from. Open PRs live
