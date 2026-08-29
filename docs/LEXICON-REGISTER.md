@@ -131,12 +131,13 @@ workspace answering one question two ways is exactly what this register exists t
 
 ## Owed
 
-- **Publish the namespace** (`CroftC/.claude/LEXICONS.md` § 2) — one TXT record at
-  `_lexicon.croft.ing`, which takes precedence over the parking wildcard without removing
-  it. Until it exists, no other client can resolve `ing.croft.*`. The worked example,
-  verified 2026-08-29: `_lexicon.recipe.exchange` → `did:plc:4cx7…` → four
-  `com.atproto.lexicon.schema` records whose rkeys are the NSIDs. This is croft.ing-wide
-  work, not bluebird's alone — `ing.croft.*` is minted in at least four repos.
+- **Publish the namespace — tracked in `croft-stack/TODO.md`, not here.** `ing.croft.*` is
+  minted in five repos and resolves through one `_lexicon` TXT on croft.ing, so the work is
+  filed once, in the repo that owns the zone (`croft-stack/docs/DNS.md`). It needs an
+  account whose handle is `croft.ing` and two TXT records; nothing needs deleting despite
+  the parking wildcard at that name. Rule and measurement:
+  `CroftC/.claude/LEXICONS.md` § 2. Until it lands, no other client can resolve the
+  schemas in this repo.
 - **Answer the `follow`/`like` question**, above. Either record the reason for the
   duplication or retire both types for the official ones. It is much cheaper now than after
   explorers hold records.
