@@ -4,16 +4,19 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
     <!--
-      Local authoring makes no network calls; Bluesky OAuth (sign-in + publish)
+      Local authoring makes no network calls; atproto OAuth (sign-in + publish)
       adds the discovery + auth + PDS hosts to connect-src. bsky-network covers
-      Bluesky's own PDSes and entryway; arbitrary self-hosted PDS/auth origins
-      are not statically allowlistable (documented tradeoff, same as the reader).
+      Bluesky's own PDSes and entryway; the sign-in sheet's registered providers
+      (src/signin/providers.json — each its own authorization server) are listed
+      too, held in parity by tests/unit/signin-providers.test.ts; arbitrary
+      self-hosted PDS/auth origins are not statically allowlistable (documented
+      tradeoff, same as the reader).
       The authorize redirect is a top-level navigation, not connect-src. App
       passwords are never used.
     -->
     <meta
       http-equiv="Content-Security-Policy"
-      content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src 'self' https://public.api.bsky.app https://plc.directory https://bsky.social https://*.bsky.network; manifest-src 'self'; base-uri 'none'; object-src 'none'; form-action 'none'; frame-ancestors 'none'"
+      content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src 'self' https://public.api.bsky.app https://plc.directory https://bsky.social https://*.bsky.network https://blacksky.app https://eurosky.social https://northsky.social; manifest-src 'self'; base-uri 'none'; object-src 'none'; form-action 'none'; frame-ancestors 'none'"
     />
     <title>Bluebird — Patrol</title>
     <meta name="description" content="Set up and control an explorer's Bluebird garden." />

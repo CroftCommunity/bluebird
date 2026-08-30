@@ -2,6 +2,7 @@ import {
   beginAuthorization,
   completeAuthorization,
   ensureFresh,
+  type BeginOptions,
   type OAuthSession,
   type PendingAuth,
 } from '../atproto/oauth/client.js';
@@ -72,8 +73,9 @@ export async function refreshExplorerSessionOnOpen(): Promise<OAuthSession | nul
   }
 }
 
-export async function startExplorerSignIn(handleOrDid: string): Promise<void> {
-  const { authorizeUrl, pending } = await beginAuthorization(handleOrDid.trim(), cfg());
+/** `target` is a provider entryway (server first) or a handle/DID — the sheet's seam. */
+export async function startExplorerSignIn(target: string, options: BeginOptions = {}): Promise<void> {
+  const { authorizeUrl, pending } = await beginAuthorization(target.trim(), cfg(), {}, options);
   ss()?.setItem(KEY_PENDING, JSON.stringify(pending));
   window.location.assign(authorizeUrl);
 }
