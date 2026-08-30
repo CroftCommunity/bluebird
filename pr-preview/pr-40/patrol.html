@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <!--
+      Local authoring makes no network calls; Bluesky OAuth (sign-in + publish)
+      adds the discovery + auth + PDS hosts to connect-src. bsky-network covers
+      Bluesky's own PDSes and entryway; arbitrary self-hosted PDS/auth origins
+      are not statically allowlistable (documented tradeoff, same as the reader).
+      The authorize redirect is a top-level navigation, not connect-src. App
+      passwords are never used.
+    -->
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src 'self' https://public.api.bsky.app https://plc.directory https://bsky.social https://*.bsky.network; manifest-src 'self'; base-uri 'none'; object-src 'none'; form-action 'none'; frame-ancestors 'none'"
+    />
+    <title>Bluebird — Patrol</title>
+    <meta name="description" content="Set up and control an explorer's Bluebird garden." />
+    <link rel="stylesheet" href="styles.css?v=v1%200.1.0%2B9b82a1a" integrity="sha384-7wtWR+a17eLsHylz1ouQ4H5IEwIx27dkJ+9EE8wFgeXy1qbhTGRMes3P3+TRC4Wm" crossorigin="anonymous" />
+    <meta name="theme-color" content="#FAF6EF" />
+    <meta name="color-scheme" content="light" />
+    <link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png" />
+    <link rel="apple-touch-icon" href="icons/apple-touch-icon-180.png" />
+  </head>
+  <body class="sponsor-page">
+    <header class="topbar">
+      <span class="topbar__mark" data-header-mark aria-hidden="true"></span>
+      <h1 class="topbar__wordmark">
+        <svg class="wordmark" viewBox="0 0 300 72" role="img" aria-label="Bluebird" xmlns="http://www.w3.org/2000/svg"><text x="2" y="56" fill="currentColor" font-family="system-ui,-apple-system,'Segoe UI',Roboto,sans-serif" font-weight="800" font-size="60" textLength="292" lengthAdjust="spacingAndGlyphs">Bluebird</text></svg>
+      </h1>
+      <p class="topbar__tagline">Patrol</p>
+      <button type="button" class="topbar__theme" data-theme-toggle aria-label="Switch theme"><span class="topbar__theme-icon" data-theme-icon aria-hidden="true">☀</span></button>
+    </header>
+    <main class="sponsor" data-sponsor></main>
+    <footer class="build">
+      <span class="build__label">build</span>
+      <code data-version-stamp>v1 0.1.0+9b82a1a</code>
+      <a class="build__croft" href="https://croft.ing" aria-label="A Croft project">Croft</a>
+    </footer>
+    <script type="module" src="assets/sponsor-35W3RI5U.js" integrity="sha384-9YP5EXk/u1JkauzB5p0PN5ytbc7pnoTHoOQ0dtQSUhqOR8Na3t7IJPTRebFexMtA" crossorigin="anonymous"></script>
+  </body>
+</html>
