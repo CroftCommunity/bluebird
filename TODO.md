@@ -15,11 +15,11 @@ this repo; earlier deferrals live in `IDEAS.md` and the `RUN-*-SUMMARY.md` files
 - [ ] **Sign-in copy: the noun is "atmo provider", not Bluesky.** `src/social/like-ui.ts`
   says *Your Bluesky handle* and `src/sponsor.ts` *Sign in with Bluesky* for a field that
   takes a handle on any host; `src/sponsor.ts` also says *PDS host (optional)*. Use the
-  sheet's words and the verbatim gloss (DESIGN.md § Copy). Workspace audit check 44 FLAGs
+  sheet's words and the verbatim gloss (DESIGN.md § Copy). Workspace audit check 45 FLAGs
   this until it changes.
 - [ ] **Adopt the sign-in flow.** Both surfaces (sponsor page, explorer banner) are
   handle-only with no provider registry and no Create. Adopt the pattern in DESIGN.md
   § Flows › Sign in — registry with probed posture + live drift check, two panels split by
   posture, Create only where signups are open, the handle seam; reference
   `croft-pwa/src/signin/`. The container is this repo's call (page or sheet); the copy,
-  registry and both-direction Create rule are not. Check 44 NOTEs the missing registry.
+  registry and both-direction Create rule are not. Check 45 NOTEs the missing registry.
