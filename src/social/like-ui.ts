@@ -1,6 +1,7 @@
 import { likePost, unlikePost, likedPostUris } from './likes.js';
 import { setLikeState, type LikeUi } from '../render/post.js';
 import { el } from '../render/dom.js';
+import { openSignInSheet, type ChooseOptions } from '../signin/sheet.js';
 import type { OAuthSession } from '../atproto/oauth/client.js';
 import type { PostView } from '../atproto/types.js';
 
@@ -47,33 +48,30 @@ export function makeLikeUi(deps: LikeUiDeps): LikeUi {
   };
 }
 
-/** The gentle "sharing is on — sign in to add hearts" banner. */
-export function explorerSignInBanner(onSignIn: (handle: string) => void): HTMLElement {
-  const input = el('input', {
-    type: 'text',
-    class: 'signin__input',
-    placeholder: 'your handle, e.g. you.bsky.social',
-    'data-explorer-handle': 'true',
-    'aria-label': 'Your Bluesky handle',
-  });
+/** The gentle "sharing is on — sign in to add hearts" banner. Opens the sign-in sheet. */
+export function explorerSignInBanner(onSignIn: (target: string, options?: ChooseOptions) => void): HTMLElement {
   const msg = el('span', { class: 'signin__msg', 'data-explorer-signin-msg': 'true', role: 'status' });
   const btn = el('button', { type: 'button', class: 'signin__btn', 'data-explorer-signin': 'true' }, [
     'Sign in to add hearts',
   ]);
-  btn.addEventListener('click', () => {
-    if (!input.value.trim()) {
-      msg.textContent = 'Enter your handle.';
-      return;
-    }
-    msg.textContent = 'Redirecting to Bluesky…';
-    onSignIn(input.value);
-  });
-  return el('div', { class: 'banner signin', 'data-explorer-signin-banner': 'true' }, [
+  const banner = el('div', { class: 'banner signin', 'data-explorer-signin-banner': 'true' }, [
     el('span', { class: 'banner__glyph', 'aria-hidden': 'true' }, ['♡']),
     el('div', { class: 'signin__body' }, [
       el('p', { class: 'signin__lede' }, ['Sharing is on. Sign in to add hearts your friends can see.']),
-      el('div', { class: 'signin__row' }, [input, btn]),
+      el('div', { class: 'signin__row' }, [btn]),
       msg,
     ]),
   ]);
+  btn.addEventListener('click', () => {
+    openSignInSheet(banner, {
+      onChoose: (target, options) => {
+        msg.textContent = 'Opening your provider…';
+        onSignIn(target, options);
+      },
+      onEmptyHandle: () => {
+        msg.textContent = 'Enter your handle — for example you.example.com.';
+      },
+    });
+  });
+  return banner;
 }

@@ -122,14 +122,16 @@ test.describe('B1/B2 likes', () => {
     await expect(page.locator('[data-explorer-signin-banner]')).toBeVisible();
   });
 
-  test('sign in with Bluesky, then like and unlike a post', async ({ page }) => {
+  test('sign in by handle, then like and unlike a post', async ({ page }) => {
     await seedSharingOn(page);
     await mockFeed(page);
     const lastWrite = await mockExplorerOAuth(page);
 
     await page.goto('/');
-    await page.locator('[data-explorer-handle]').fill('kid.test');
     await page.locator('[data-explorer-signin]').click();
+    await page.locator('[data-provider-other]').click();
+    await page.locator('[data-provider-handle]').fill('kid.test');
+    await page.locator('[data-provider-handle-go]').click();
 
     // Signed in → hearts are active, banner gone.
     const heart = page.locator('[data-like-btn]');

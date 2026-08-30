@@ -19,7 +19,7 @@ function json(body: unknown, init: ResponseInit = {}): { status: number; headers
 }
 
 test.describe('Sponsor OAuth (hermetic end-to-end)', () => {
-  test('sign in with Bluesky, then publish an explorer record over DPoP', async ({ page }) => {
+  test('sign in by handle, then publish an explorer record over DPoP', async ({ page }) => {
     let parState = '';
     let parRedirect = '';
     let putBody: Record<string, unknown> | null = null;
@@ -82,9 +82,12 @@ test.describe('Sponsor OAuth (hermetic end-to-end)', () => {
     await page.locator('[data-add-explorer]').click();
     await expect(page.locator('[data-explorer]')).toHaveCount(1);
 
-    // Sign in with Bluesky.
-    await page.locator('[data-signin-handle]').fill('alice.test');
+    // Sign in by handle — the sheet's "Another provider" panel (the sheet itself
+    // is owned by tests/e2e/signin-sheet.spec.ts).
     await page.locator('[data-signin-btn]').click();
+    await page.locator('[data-provider-other]').click();
+    await page.locator('[data-provider-handle]').fill('alice.test');
+    await page.locator('[data-provider-handle-go]').click();
 
     // After the round-trip we're signed in, shown by handle (not the raw DID).
     await expect(page.locator('[data-signin="in"]')).toBeVisible();

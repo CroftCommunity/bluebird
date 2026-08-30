@@ -24,6 +24,7 @@ import {
   publishRecord,
 } from './sponsor/oauth.js';
 import type { OAuthSession } from './atproto/oauth/client.js';
+import { openSignInSheet } from './signin/sheet.js';
 
 /**
  * S2 sponsor dashboard — the sponsor's own device. Multi-explorer local
@@ -524,10 +525,8 @@ function renderSignedIn(session: OAuthSession): HTMLElement {
   ]);
 }
 
-/** Signed-out view: the primary sign-in path + an advanced no-account path. */
+/** Signed-out view: the sign-in sheet (the workspace pattern) + an advanced no-account path. */
 function renderSignedOut(identity: SponsorIdentity): HTMLElement {
-  const handle = textInput('', 'your handle, e.g. you.bsky.social', () => undefined);
-  handle.setAttribute('data-signin-handle', 'true');
   const msg = el('span', { class: 'g-msg', 'data-signin-msg': 'true' });
 
   const advancedMsg = el('span', { class: 'g-msg', 'data-apply-msg': 'true' });
@@ -543,7 +542,7 @@ function renderSignedOut(identity: SponsorIdentity): HTMLElement {
       }),
     ),
     field(
-      'PDS host (optional)',
+      'Provider host (optional)',
       textInput(identity.pdsHost ?? '', 'e.g. https://…', (v) => {
         setSponsorIdentity({ ...getSponsorIdentity(), pdsHost: v.trim() });
       }),
@@ -560,23 +559,32 @@ function renderSignedOut(identity: SponsorIdentity): HTMLElement {
     ]),
   ]);
 
-  return el('div', { class: 'g-signin', 'data-signin': 'out' }, [
-    field('Sign in with Bluesky', handle, 'Opens Bluesky in this window, then brings you right back here. No app passwords.'),
+  const wrap = el('div', { class: 'g-signin', 'data-signin': 'out' });
+  wrap.append(
+    el('p', { class: 'g-hint' }, [
+      'Opens your atmo provider in this window, then brings you right back here. No app passwords.',
+    ]),
     el('div', { class: 'g-row' }, [
-      button('Sign in with Bluesky', 'g-btn g-btn--primary', () => {
-        if (!handle.value.trim()) {
-          msg.textContent = 'Enter your handle or DID.';
-          return;
-        }
-        msg.textContent = 'Redirecting to Bluesky…';
-        void startSignIn(handle.value).catch((e: unknown) => {
-          msg.textContent = e instanceof Error ? e.message : 'Sign-in failed.';
+      // One seam for every choice the sheet offers: a provider entryway (server
+      // first, DID from the token) or a handle (identity first).
+      button('Sign in or create an account', 'g-btn g-btn--primary', () => {
+        openSignInSheet(wrap, {
+          onChoose: (target, options) => {
+            msg.textContent = 'Opening your provider…';
+            void startSignIn(target, options ?? {}).catch((e: unknown) => {
+              msg.textContent = e instanceof Error ? e.message : 'Sign-in failed.';
+            });
+          },
+          onEmptyHandle: () => {
+            msg.textContent = 'Enter your handle — for example you.example.com.';
+          },
         });
       }, { 'data-signin-btn': 'true' }),
       msg,
     ]),
     advanced,
-  ]);
+  );
+  return wrap;
 }
 
 function renderIdentity(identity: SponsorIdentity): HTMLElement {

@@ -264,3 +264,63 @@ describe('refresh + ensureFresh (keeping re-auth rare)', () => {
     await expect(refresh(await session({ refreshToken: undefined as unknown as string }))).rejects.toThrow(/new sign-in/);
   });
 });
+
+// A provider button on the sign-in sheet starts OAuth at the provider's ENTRYWAY
+// with no handle — the person picks a server, not an identity, and the identity
+// comes back in the token's `sub`. croft-pwa/docs/DESIGN.md § Flows › Sign in.
+describe('beginAuthorization at a provider entryway (no handle)', () => {
+  function providerFetch(): { fetchImpl: typeof fetch; calls: string[]; parBodies: URLSearchParams[] } {
+    const calls: string[] = [];
+    const parBodies: URLSearchParams[] = [];
+    const fetchImpl = ((input: RequestInfo | URL, init?: RequestInit) => {
+      const url = typeof input === 'string' ? input : input instanceof URL ? input.href : input.url;
+      calls.push(url);
+      if (url.includes('oauth-protected-resource')) return Promise.resolve(json({ authorization_servers: ['https://auth.example'] }));
+      if (url.includes('oauth-authorization-server')) return Promise.resolve(json(DISCOVERY['auth.example/.well-known/oauth-authorization-server']));
+      if (url.includes('/par')) {
+        parBodies.push(new URLSearchParams(typeof init?.body === 'string' ? init.body : ''));
+        return Promise.resolve(json({ request_uri: 'urn:req:prov', expires_in: 60 }, { status: 201 }));
+      }
+      if (url.includes('/token')) return Promise.resolve(json({ access_token: 'AT', token_type: 'DPoP', sub: 'did:plc:alice' }));
+      if (url.includes('plc.directory/did:plc:alice')) return Promise.resolve(json(DISCOVERY['plc.directory/did:plc:alice']));
+      return Promise.resolve(new Response('nope', { status: 404 }));
+    }) as typeof fetch;
+    return { fetchImpl, calls, parBodies };
+  }
+
+  it('skips handle resolution, sends no login_hint, and leaves the DID to the callback', async () => {
+    const { fetchImpl, calls, parBodies } = providerFetch();
+    const { authorizeUrl, pending } = await beginAuthorization('https://pds.example', { ...CFG, fetchImpl });
+    expect(authorizeUrl).toContain('https://auth.example/authorize');
+    expect(calls.some((u) => u.includes('resolveHandle') || u.includes('plc.directory'))).toBe(false);
+    expect(parBodies[0]?.has('login_hint')).toBe(false);
+    expect(parBodies[0]?.has('prompt')).toBe(false);
+    expect(pending.did).toBe('');
+    expect(pending.pds).toBe('https://pds.example');
+  });
+
+  it('prompt=create reaches the PAR when asked for, and only then', async () => {
+    const { fetchImpl, parBodies } = providerFetch();
+    await beginAuthorization('https://pds.example', { ...CFG, fetchImpl }, {}, { prompt: 'create' });
+    expect(parBodies[0]?.get('prompt')).toBe('create');
+  });
+
+  it('the callback takes the DID from the token subject and resolves its real PDS', async () => {
+    const { fetchImpl } = providerFetch();
+    const { pending } = await beginAuthorization('https://entry.example', { ...CFG, fetchImpl });
+    const session = await completeAuthorization(pending, { code: 'CODE', state: pending.state }, { ...CFG, fetchImpl });
+    expect(session.did).toBe('did:plc:alice');
+    expect(session.pds).toBe('https://pds.example');
+  });
+
+  it('refuses a token with no subject when no DID was resolved up front', async () => {
+    const base = providerFetch().fetchImpl;
+    const fetchImpl = ((input: RequestInfo | URL, init?: RequestInit) => {
+      const url = typeof input === 'string' ? input : input instanceof URL ? input.href : input.url;
+      if (url.includes('/token')) return Promise.resolve(json({ access_token: 'AT', token_type: 'DPoP' }));
+      return base(input, init);
+    }) as typeof fetch;
+    const { pending } = await beginAuthorization('https://entry.example', { ...CFG, fetchImpl });
+    await expect(completeAuthorization(pending, { code: 'CODE', state: pending.state }, { ...CFG, fetchImpl })).rejects.toThrow(/subject/);
+  });
+});

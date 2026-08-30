@@ -69,7 +69,7 @@ async function openGarden(container: HTMLElement): Promise<void> {
               explorerSession = s;
               persistExplorerSession(s);
             },
-            requestSignIn: () => document.querySelector<HTMLElement>('[data-explorer-handle]')?.focus(),
+            requestSignIn: () => document.querySelector<HTMLElement>('[data-explorer-signin]')?.click(),
           })
         : undefined;
 
@@ -108,7 +108,7 @@ async function openGarden(container: HTMLElement): Promise<void> {
       // Gentle degrade: sharing is on but there's no valid session — offer
       // sign-in without ever gating the garden (which just rendered above).
       if (caps.canPersistLikes && !explorerSession) {
-        container.prepend(explorerSignInBanner((handle) => void startExplorerSignIn(handle)));
+        container.prepend(explorerSignInBanner((target, options) => void startExplorerSignIn(target, options ?? {})));
       }
     }
   }

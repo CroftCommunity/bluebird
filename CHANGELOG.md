@@ -7,6 +7,11 @@ here before it lands. Started 2026-08-29; earlier history is in `git log`.
 
 ## 2026-08
 
+- 2026-08-29 Signing in — on Patrol and in the Lodge's "add hearts" banner — opens the
+  workspace **sign-in sheet**: "Choose your atmo provider" (Bluesky, Blacksky, EuroSky with
+  Create account + Sign in; Northsky, invite only, and a handle field behind **Another
+  provider**). A provider tap starts OAuth at that server with no handle; the account
+  comes back from the token. Both pages' CSP now admit each registered provider.
 - 2026-08-29 The `ing.croft.bluebird.*` lexicon register — including one record type it
   cannot yet justify, listed rather than hidden (workspace LEXICONS dimension).
 - 2026-08-26 Playwright aligned to the workspace canon (`^1.61.1`, resolved 1.61.1 pinned

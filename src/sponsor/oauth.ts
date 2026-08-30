@@ -3,6 +3,7 @@ import {
   completeAuthorization,
   putRecord,
   ensureFresh,
+  type BeginOptions,
   type OAuthSession,
   type PendingAuth,
 } from '../atproto/oauth/client.js';
@@ -10,8 +11,9 @@ import { BLUEBIRD_CONFIG_NSID } from '../config/types.js';
 import type { BluebirdConfig } from '../config/types.js';
 
 /**
- * Sponsor-side OAuth glue. Bluesky OAuth is the ONLY sign-in path (app passwords
- * are rejected everywhere, §S2). Tokens live in sessionStorage — ephemeral,
+ * Sponsor-side OAuth glue. atproto OAuth is the ONLY sign-in path (app passwords
+ * are rejected everywhere, §S2) — at any atmo provider the sign-in sheet offers,
+ * or by handle (croft-pwa/docs/DESIGN.md § Flows › Sign in). Tokens live in sessionStorage — ephemeral,
  * per-tab, never written to disk — and the flow's pending state survives the
  * authorization redirect there too.
  *
@@ -27,10 +29,10 @@ const KEY_PENDING = 'bluebird.oauth.pending';
 const KEY_SESSION = 'bluebird.oauth.session';
 const KEY_HANDLE = 'bluebird.oauth.handle';
 
-/** The typed sign-in value, kept only if it's a handle (not a DID), for display. */
-function normalizeHandle(handleOrDid: string): string | null {
-  const v = handleOrDid.trim().replace(/^@/, '');
-  return v && !v.startsWith('did:') ? v : null;
+/** The typed sign-in value, kept only if it's a handle (not a DID or an entryway), for display. */
+function normalizeHandle(target: string): string | null {
+  const v = target.trim().replace(/^@/, '');
+  return v && !v.startsWith('did:') && !/^https:\/\//.test(v) ? v : null;
 }
 
 function cfg(): { clientId: string; redirectUri: string; scope: string } {
@@ -58,11 +60,14 @@ export function clearSession(): void {
   ss()?.removeItem(KEY_SESSION);
 }
 
-/** Begin sign-in: PAR, stash the pending state, and hand off to the auth server. */
-export async function startSignIn(handleOrDid: string): Promise<void> {
-  const { authorizeUrl, pending } = await beginAuthorization(handleOrDid.trim(), cfg());
+/**
+ * Begin sign-in: PAR, stash the pending state, and hand off to the auth server.
+ * `target` is a provider entryway (server first, DID from the token) or a handle/DID.
+ */
+export async function startSignIn(target: string, options: BeginOptions = {}): Promise<void> {
+  const { authorizeUrl, pending } = await beginAuthorization(target.trim(), cfg(), {}, options);
   ss()?.setItem(KEY_PENDING, JSON.stringify(pending));
-  const handle = normalizeHandle(handleOrDid);
+  const handle = normalizeHandle(target);
   if (handle) ss()?.setItem(KEY_HANDLE, handle);
   else ss()?.removeItem(KEY_HANDLE);
   window.location.assign(authorizeUrl);
