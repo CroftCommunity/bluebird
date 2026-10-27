@@ -12,9 +12,12 @@ this repo; earlier deferrals live in `IDEAS.md` and the `RUN-*-SUMMARY.md` files
 
 ## Design standard gaps (croft-pwa/docs/DESIGN.md)
 
-- [x] ~~**Sign-in copy: the noun is "atmo provider", not Bluesky.**~~ Done 2026-08-29 (sheet + banner + Patrol; "Provider host (optional)"). `src/social/like-ui.ts`
-  says *Your Bluesky handle* and `src/sponsor.ts` *Sign in with Bluesky* for a field that
-  takes a handle on any host; `src/sponsor.ts` also says *PDS host (optional)*. Use the
+- [ ] **Sign-in copy: the noun is "atmo provider", not Bluesky.** Partly done 2026-08-29
+  (sheet, banner, Patrol; "Provider host (optional)"). Remaining: the signed-out publish hint
+  in `src/sponsor.ts` `publishRow` still says *Sign in with Bluesky above to publish this
+  record to your PDS.* Before 2026-08-29 `src/social/like-ui.ts` said *Your Bluesky handle*
+  and `src/sponsor.ts` *Sign in with Bluesky* for a field that takes a handle on any host,
+  and *PDS host (optional)*. Use the
   sheet's words and the verbatim gloss (DESIGN.md § Copy). Workspace audit check 45 FLAGs
   this until it changes.
 - [x] ~~**Adopt the sign-in flow.**~~ Done 2026-08-29: `src/signin/{providers.json,providers.ts,sheet.ts}`, both surfaces open the one sheet, `tests/e2e/signin-sheet.spec.ts` + `tests/live/signin-providers.live.spec.ts`. Both surfaces (sponsor page, explorer banner) are
