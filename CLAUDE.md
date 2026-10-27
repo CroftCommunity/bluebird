@@ -41,9 +41,10 @@ an `overrides` entry forcing a single `playwright-core` (`CroftC/.claude/WEB-TES
 ## Concurrent sessions (workspace norm)
 
 Multiple agent sessions share the `CroftC/` workspace. Do multi-turn work in a dedicated
-worktree — `git -C bluebird worktree add ../worktrees/bluebird/<slug> -b claude/<slug>` —
-never in this checkout (peer sessions stage with `git add -A`; loose files get swept into
-unrelated commits). Contested surfaces here: **landing on `main`** (a push deploys
+worktree — `git -C bluebird worktree add ../worktrees/<feature>/bluebird -b claude/<feature>` —
+never in this checkout (stage by path, never `git add -A`; loose files in a shared checkout
+get swept into unrelated commits). Commit on a `claude/*` branch, push and open the PR
+without asking; ask before merging (`CroftC/.claude/COORDINATION.md`). Contested surfaces here: **landing on `main`** (a push deploys
 `bluebird.croft.ing`) and the OAuth module, which other repos port from. Open PRs live
 upstream — check `gh pr list` before assuming a branch is abandoned. Full protocol and
 the reasons behind it: `CroftC/.claude/COORDINATION.md`.

@@ -1,6 +1,8 @@
 # Followup TODO: the 4-part hardening/feature plan sequence
 
-**Status:** TODO / deferred (2026-07-20). Not yet planned in full. This is a
+**Status:** Item 1 (PWA hardening, iOS) is PARKED 2026-10-27 on the branch
+`pwa-hardening-ios`, blocked on an iPhone (`TODO.md` § Parked on a device).
+TODO / deferred (2026-07-20). Not yet planned in full. This is a
 resumable stub — it records the agreed sequence and the Phase-0 discovery
 findings gathered so far, so a later session picks up with grounding rather than
 starting cold. Method agreed: **phase-plan each in order (three-pass), then
