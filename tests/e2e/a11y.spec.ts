@@ -43,11 +43,19 @@ for (const path of PAGES) {
       await page.goto(path, { waitUntil: 'load' });
 
       const results = await new AxeBuilder({ page }).analyze();
+      // Report the offending node(s) — selector + computed colors/ratio — not just
+      // a count, so a failure is actionable from the CI log alone.
       const blocking = results.violations
         .filter((v) => v.impact === 'serious' || v.impact === 'critical')
-        .map((v) => `${v.id} (${v.impact ?? '?'}) × ${v.nodes.length}`);
+        .flatMap((v) =>
+          v.nodes.map((n) => {
+            const d = (n.any?.[0]?.data ?? {}) as Record<string, string | number | undefined>;
+            const f = (k: string): string => String(d[k] ?? '?');
+            return `${v.id} (${v.impact ?? '?'}) ${n.target.join(' ')} — ratio=${f('contrastRatio')} fg=${f('fgColor')} bg=${f('bgColor')} size=${f('fontSize')} weight=${f('fontWeight')} expected=${f('expectedContrastRatio')}`;
+          }),
+        );
 
-      expect(blocking, blocking.join(' · ')).toEqual([]);
+      expect(blocking, `\n${blocking.join('\n')}`).toEqual([]);
     });
   }
 }
