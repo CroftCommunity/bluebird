@@ -23,3 +23,17 @@ this repo; earlier deferrals live in `IDEAS.md` and the `RUN-*-SUMMARY.md` files
   posture, Create only where signups are open, the handle seam; reference
   `croft-pwa/src/signin/`. The container is this repo's call (page or sheet); the copy,
   registry and both-direction Create rule are not. Check 45 NOTEs the missing registry.
+
+## Parked on a device
+
+- **PWA hardening for iOS — blocked on an iPhone** (parked 2026-10-27, closing draft #33
+  unmerged). The plan and the work live on the branch `pwa-hardening-ios`, kept on origin:
+  `plans/2026-07-23-1-plan-pwa-hardening-ios.md` there is the newest copy (2026-07-27, 1249
+  lines; the 708-line copy on `fix-sponsor-a11y-contrast` is an older pass). Two parts:
+  - *Phase 1a, landable without a device:* the generic crypto core pulled out of
+    `src/crypto/vault.ts` (`wrapJson`/`unwrapJson`/`passphraseMaterial`/`prfEnroll`/`prfGet`),
+    behavior-preserving for the audit vault, with `tests/unit/vault-core.test.ts` and a
+    pre-refactor fixture. Land it fresh off main when a second consumer needs it.
+  - *Phase 0, needs a real iPhone:* `probe.html` + `docs/PROBE-DEVICE-SCRIPT.md` (D1–D6:
+    storage across a cold launch, WebAuthn PRF stability). Branch-only, never merges.
+    `CroftC/.claude/TESTBED.md` registers no iOS device, so it waits for one.
